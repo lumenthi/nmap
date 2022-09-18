@@ -1,0 +1,18 @@
+==== SCAN TYPES ====
+Mandatory: SYN, NULL, ACK, FIN, XMAS, UDP
+
+== SYN ==
+https://nmap.org/book/synscan.html
+= OPEN =
+	1. Send a TCP packet with the SYN flag on port X
+	2. Host responds with SYN / ACK flags, meaning that the port is open
+	3. Send a RST packet to reset connection
+= CLOSED =
+	1. Send a TCP packet with the SYN flag on port X
+	2. Host responds with a RST packet
+= FILTERED =
+	1. Send a TCP packet with the SYN flag on port X
+	2. Host does not respond
+	3. Send a SYN packet again
+	4. If another time out, the port is tag as filtered
+	(Nmap will also consider a port filtered if it receives certain ICMP error messages back)
