@@ -1,0 +1,26 @@
+◦ alarm
+◦ bind
+◦ close
+◦ connect
+◦ exit
+◦ fflush, fileno, fopen, fwrite, fclose
+◦ freeifaddrs
+◦ getservbyport, gethostbyname, getifaddrs
+◦ gettimeofday
+◦ getuid
+◦ htonl, htons, ntohs
+◦ inet_addr
+◦ inet_ntoa, inet_ntop, inet_pton
+◦ pcap_breakloop, pcap_close, pcap_compile, pcap_dispatch
+◦ pcap_geterr, pcap_lookupdev, pcap_lookupnet, pcap_open_live
+◦ pcap_setfilter
+◦ perror
+◦ poll
+◦ pthread_create, pthread_exit, pthread_join
+◦ pthread_mutex_init, pthread_mutex_lock, pthread_mutex_unlock
+◦ recvfrom, recv
+◦ sendto
+◦ setsockopt, socket
+◦ sigaction, sigemptyset
+◦ printf and its family.
+◦ Your libft functions.
