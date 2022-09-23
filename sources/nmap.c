@@ -1,14 +1,55 @@
 #include "nmap.h"
 
-static unsigned short csum(unsigned short *buf, int len)
+static unsigned short checksum(const char *buf, unsigned int size)
 {
-	unsigned long sum;
+	unsigned sum = 0, i;
 
-	for(sum=0; len>0; len--)
-		sum += *buf++;
-	sum = (sum >> 16) + (sum &0xffff);
-	sum += (sum >> 16);
-	return (unsigned short)(~sum);
+	/* Accumulate checksum */
+	for (i = 0; i < size - 1; i += 2)
+	{
+		unsigned short word16 = *(unsigned short *) &buf[i];
+		sum += word16;
+	}
+
+	/* Handle odd-sized case */
+	if (size & 1)
+	{
+		unsigned short word16 = (unsigned char) buf[i];
+		sum += word16;
+	}
+
+	/* Fold to get the ones-complement result */
+	while (sum >> 16) sum = (sum & 0xFFFF)+(sum >> 16);
+
+	/* Invert to get the negative in ones-complement arithmetic */
+	return ~sum;
+}
+
+static unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp)
+{
+	struct pseudo_header
+	{
+		u_int32_t source_address;
+		u_int32_t dest_address;
+		u_int8_t placeholder;
+		u_int8_t protocol;
+		u_int16_t tcp_length;
+	} psh;
+
+	char ppacket[sizeof(struct pseudo_header) + sizeof(struct tcphdr)];
+
+	psh.source_address = ip->saddr;
+	psh.dest_address = ip->daddr;
+	psh.placeholder = 0;
+	psh.protocol = IPPROTO_TCP;
+	/* TODO: Options calculation */
+	psh.tcp_length = htons(sizeof(struct tcphdr));
+
+	ft_memcpy(ppacket, (char*)&psh, sizeof(struct pseudo_header));
+	ft_memcpy(ppacket+sizeof(struct pseudo_header),
+		tcp, sizeof(struct tcphdr));
+
+	return checksum(ppacket, sizeof(ppacket));
 }
 
 static void send_syn(int sockfd,
@@ -70,13 +111,14 @@ static void send_syn(int sockfd,
 	tcp->urg_ptr = 0;
 
 	/* Checksums */
-	ip->check = csum((unsigned short *)packet, sizeof(packet));
+	tcp->check = tcp_checksum(ip, tcp);
+	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	printf("TCP: %ld\n", sizeof(struct tcphdr));
-	printf("len: %d\n", ip->tot_len);
+	printf("[*] IP checksum: %d\n", ip->check);
+	printf("[*] TCP checksum: %d\n", tcp->check);
 	printf("proto: %d\n", ip->protocol);
 
-	sendto(sockfd, packet, ip->tot_len, 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
+	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
 	write(sockfd, packet, sizeof(packet));
 }
 
@@ -120,7 +162,8 @@ int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 	/* TODO: check return */
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
 
-	printf("[*] Destination: %s (%s)\n", destination, inet_ntoa(daddr->sin_addr));
+	printf("[*] Destination: %s (%s) on port: %d\n",
+		destination, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
 
 	return 0;
 }
@@ -168,9 +211,8 @@ int syn_scan(char *destination, uint16_t port)
 	return 0;
 }
 
-int ft_nmap(char *destination, uint8_t args, char *path)
+int ft_nmap(char *destination, uint16_t port, char *path)
 {
-	(void)args;
 
 	if (!destination) {
 		fprintf(stderr, "%s: Empty hostname\n", path);
@@ -183,7 +225,7 @@ int ft_nmap(char *destination, uint8_t args, char *path)
 		return 1;
 	}
 
-	syn_scan(destination, 22);
+	syn_scan(destination, port);
 
 	return 0;
 }

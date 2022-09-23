@@ -110,7 +110,7 @@ typedef struct	s_data {
 }; */
 
 /* nmap.c */
-int		ft_nmap(char *destination, uint8_t args,
+int ft_nmap(char *destination, uint16_t port,
 	char *path);
 
 #endif
