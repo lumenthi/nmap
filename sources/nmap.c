@@ -1,5 +1,113 @@
 #include "nmap.h"
 
+static char	*print_ip(struct in_addr _addr)
+{
+	struct sockaddr_in	addr =
+	{
+		AF_INET,
+		0,
+		_addr,
+		{ 0 }
+	};
+	static char	host[512];
+	ft_bzero(host, sizeof(host));
+	if (getnameinfo((struct sockaddr*)&addr, sizeof(struct sockaddr),
+			host, sizeof(host), NULL, 0, 0))
+		return inet_ntoa(addr.sin_addr);
+	return host;
+}
+
+void	print_ip4_header(struct ip *header)
+{
+	printf("\e[32m+----------------------+----IP-----+------------------+\n");
+	//	Version
+	printf("\e[32m|\e[33m  Version %-2hhu \e[32m/\e[33m", header->ip_v);
+	//	IHL
+	printf(" IHL %-2hhu \e[32m|\e[33m", header->ip_hl);
+	//	Type of service
+	printf("   TOS %-3hx \e[32m|\e[33m", header->ip_tos);
+	//	Total length
+	printf("  Total len %-5hd \e[32m|\n", ntohs(header->ip_len));
+
+	printf("\e[32m+----------------------+-+---------+------------------+\n");
+
+	//	Identification
+	printf("\e[32m|\e[33m         ID %-5hu       \e[32m|\e[33m",
+		ntohs(header->ip_id));
+	//	Flags / Offset
+	printf("         Offset %-5hu       \e[32m|\n", ntohs(header->ip_off));
+
+	printf("\e[32m+--------------+---------+--------+-------------------+\n");
+
+	//	TTL
+	printf("\e[32m|\e[33m    TTL %-3hhu   \e[32m|\e[33m", header->ip_ttl);
+	//	Protocol
+	printf("    Protocol %-3hhu  \e[32m|\e[33m", header->ip_p);
+	//	Header cheskum
+	printf("   Checksum %-5hx  \e[32m|\n", ntohs(header->ip_sum));
+
+	printf("\e[32m+--------------+------------------+-------------------+\n");
+
+	struct in_addr	*addr = &header->ip_src;
+	printf("\e[32m|\e[33m       Source addr %s (%s)      \e[32m|\n",
+		inet_ntoa(*addr), print_ip(*addr));
+
+	printf("\e[32m+-----------------------------------------------------+\n");
+
+	addr = &header->ip_dst;
+	printf("\e[32m|\e[33m       Dest addr %s (%s)        \e[32m|\n",
+		inet_ntoa(*addr), print_ip(*addr));
+
+	printf("\e[32m+-----------------------------------------------------+\e[0m\n");
+}
+
+void	print_tcp_header(struct tcphdr *header)
+{
+	printf("\e[35m+--------------+------TCP------+-------------+\n");
+
+	//	Source port
+	printf("\e[35m|\e[33m   Source port %-5hu  \e[35m|\e[33m", ntohs(header->th_sport));
+	//	Dest port
+	printf("   Dest port %-5hu   \e[35m|\n", ntohs(header->th_dport));
+
+	printf("\e[35m+----------------------+---------------------+\n");
+
+	//	Sequence number
+	printf("\e[35m|\e[33m   Sequ number %-5u  \e[35m|\e[33m", ntohs(header->th_seq));
+	//	Ack number
+	printf("    Ack number %-5x \e[35m|\n", ntohs(header->th_ack));
+
+	printf("\e[35m+----------------------+---------------------+\n");
+
+	//	Flags
+	printf("\e[35m|\e[33m   Flags ");
+	if (header->th_flags & TH_FIN)
+		printf("/FIN");
+	if (header->th_flags & TH_SYN)
+		printf("/SYN");
+	if (header->th_flags & TH_RST)
+		printf("/RST");
+	if (header->th_flags & TH_PUSH)
+		printf("/PUSH");
+	if (header->th_flags & TH_ACK)
+		printf("/ACK");
+	if (header->th_flags & TH_URG)
+		printf("/URG");
+	//	Window size
+	printf(" \e[35m|\e[33m    Winsize %-5d \e[35m|\n", ntohs(header->th_win));
+
+	printf("\e[35m+----------------------+---------------------+\n");
+
+	//	Checksum
+	printf("\e[35m|\e[33m   Checksum %-5x  \e[35m|\e[33m", ntohs(header->th_sum));
+	//	Urgent pointer
+	printf("    Urgent pointer %-5d \e[35m|\n", ntohs(header->th_urp));
+
+	printf("\e[35m+----------------------+---------------------+\n");
+
+	printf("\e[35m+--------------------------------------------+\e[0m\n");
+}
+
 static unsigned short checksum(const char *buf, unsigned int size)
 {
 	unsigned sum = 0, i;
@@ -72,7 +180,7 @@ static void send_syn(int sockfd,
 	/* Total length */
 	ip->tot_len = sizeof(packet);
 	/* TODO: Identification (check notes.txt) */
-	ip->id = htonl(rand() % 65535);
+	ip->id = htonl(rand());
 	/* TODO: Set don't fragment flag ! IP Flags + Fragment offset */
 	ip->frag_off = 0;
 	/* TTL */
@@ -82,20 +190,23 @@ static void send_syn(int sockfd,
 	/* Checksum */
 	ip->check = 0; /* TODO: Calculate it after the TCP header */
 	/* Source ip */
-	ip->saddr = saddr->sin_addr.s_addr;
+	memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
 	/* Dest ip */
-	ip->daddr = daddr->sin_addr.s_addr;
+	memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
+	// tcp->dest = inet_addr("127.0.0.1");
 
 	/* Source port */
 	tcp->source = saddr->sin_port;
+	memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
 	/* Destination port */
 	tcp->dest = daddr->sin_port;
+	memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
 	/* Seq num */
-	tcp->seq = htonl(1);
+	tcp->seq = htonl(0);
 	/* Ack num */
 	tcp->ack_seq = htonl(0);
 	/* Sizeof header */
-	tcp->doff = 10;
+	tcp->doff = 5;
 	/* FLAGS */
 	tcp->fin = 0;
 	tcp->syn = 1;
@@ -114,11 +225,10 @@ static void send_syn(int sockfd,
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	printf("[*] IP checksum: %d\n", ip->check);
-	printf("[*] TCP checksum: %d\n", tcp->check);
-	printf("proto: %d\n", ip->protocol);
+	print_ip4_header((struct ip *)ip);
+	print_tcp_header(tcp);
 
-	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
+	/* sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr)); */
 	write(sockfd, packet, sizeof(packet));
 }
 
@@ -129,7 +239,7 @@ int sconfig(int sockfd, struct sockaddr_in *saddr)
 	ft_memset(saddr, 0, sizeof(*saddr));
 
 	saddr->sin_family = AF_INET;
-	saddr->sin_port = htons(rand() % 65535);
+	saddr->sin_port = htons(48866);
 	if (inet_pton(AF_INET, "127.0.0.1", &(saddr->sin_addr)) != 1)
 		return 1;
 
@@ -188,7 +298,7 @@ int syn_scan(char *destination, uint16_t port)
 
 	/* Set options */
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		fprintf(stderr, "%s: Failed to set TTL option\n", destination);
+		fprintf(stderr, "%s: Failed to set header option\n", destination);
 		close(sockfd);
 		return 1;
 	}
