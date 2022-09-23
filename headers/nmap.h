@@ -18,6 +18,14 @@
 #include <netinet/udp.h>
 #include <netinet/tcp.h>
 
+/* struct hostent {
+	char	*h_name;		host name
+	char	**h_aliases;	array pointer to alternative hostanmaes
+	int		h_addrtype;		host address type
+	int		h_length;		length of address
+	char	**h_addr_list;	array pointer to network addresses
+} */
+
 /* struct sockaddr {
 	ushort	sa_family;
 	char	sa_data[14];
