@@ -27,7 +27,7 @@ void	print_ip4_header(struct ip *header)
 	//	Type of service
 	printf("   TOS %-3hx \e[32m|\e[33m", header->ip_tos);
 	//	Total length
-	printf("  Total len %-5hd \e[32m|\n", ntohs(header->ip_len));
+	printf("  Total len %-5hd \e[32m|\n", header->ip_len);
 
 	printf("\e[32m+----------------------+-+---------+------------------+\n");
 
@@ -193,13 +193,10 @@ static void send_syn(int sockfd,
 	memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
 	/* Dest ip */
 	memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
-	// tcp->dest = inet_addr("127.0.0.1");
 
 	/* Source port */
-	tcp->source = saddr->sin_port;
 	memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
 	/* Destination port */
-	tcp->dest = daddr->sin_port;
 	memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
 	/* Seq num */
 	tcp->seq = htonl(0);
