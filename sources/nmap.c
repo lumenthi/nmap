@@ -11,14 +11,14 @@ static unsigned short csum(unsigned short *buf, int len)
 	return (unsigned short)(~sum);
 }
 
-static void send_syn(int sockfd, t_data *g_data)
+static void send_syn(int sockfd,
+	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
 {
 	unsigned int len = 0;
 
 	char packet[sizeof(struct iphdr)+sizeof(struct tcphdr)+len];
 	struct iphdr *ip = (struct iphdr *)packet;
 	struct tcphdr *tcp = (struct tcphdr *)(packet+sizeof(struct iphdr));
-	(void)g_data;
 
 	ft_memset(packet, 0, sizeof(packet));
 
@@ -41,18 +41,18 @@ static void send_syn(int sockfd, t_data *g_data)
 	/* Checksum */
 	ip->check = 0; /* TODO: Calculate it after the TCP header */
 	/* Source ip */
-	ip->saddr = *(uint32_t *)&g_data->servaddr.sin_addr;
+	ip->saddr = saddr->sin_addr.s_addr;
 	/* Dest ip */
-	ip->daddr = *(uint32_t *)&g_data->servaddr.sin_addr;
+	ip->daddr = daddr->sin_addr.s_addr;
 
 	/* Source port */
-	tcp->source = htons(57686);
+	tcp->source = saddr->sin_port;
 	/* Destination port */
-	tcp->dest = *(uint16_t *)&g_data->servaddr.sin_addr;
+	tcp->dest = daddr->sin_port;
 	/* Seq num */
 	tcp->seq = htonl(1);
 	/* Ack num */
-	tcp->ack_seq = 0;
+	tcp->ack_seq = htonl(0);
 	/* Sizeof header */
 	tcp->doff = 10;
 	/* FLAGS */
@@ -76,13 +76,33 @@ static void send_syn(int sockfd, t_data *g_data)
 	printf("len: %d\n", ip->tot_len);
 	printf("proto: %d\n", ip->protocol);
 
-	sendto(sockfd, packet, ip->tot_len, 0, g_data->host_addr, sizeof(struct sockaddr_in));
+	sendto(sockfd, packet, ip->tot_len, 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
 	write(sockfd, packet, sizeof(packet));
 }
 
-int sconfig(struct sockaddr_in *saddr)
+int sconfig(int sockfd, struct sockaddr_in *saddr)
 {
+	socklen_t addlen = sizeof(struct sockaddr);
+
 	ft_memset(saddr, 0, sizeof(*saddr));
+
+	saddr->sin_family = AF_INET;
+	saddr->sin_port = htons(rand() % 65535);
+	if (inet_pton(AF_INET, "127.0.0.1", &(saddr->sin_addr)) != 1)
+		return 1;
+
+	/* TODO: Remove, debug */
+	printf("[*] Selected port number: %d\n", ntohs(saddr->sin_port));
+	return 0;
+
+	if ((bind(sockfd, (struct sockaddr *)saddr, sizeof(struct sockaddr)) != 0))
+		return 1;
+
+	/* TODO: getsockname not allowed */
+	getsockname(sockfd, (struct sockaddr *)saddr, &addlen);
+
+	printf("[*] Selected port number: %d\n", ntohs(saddr->sin_port));
+
 	return 0;
 }
 
@@ -96,9 +116,11 @@ int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 		return 1;
 
 	daddr->sin_family = host->h_addrtype;
-	daddr->sin_port = port;
+	daddr->sin_port = htons(port);
 	/* TODO: check return */
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
+
+	printf("[*] Destination: %s (%s)\n", destination, inet_ntoa(daddr->sin_addr));
 
 	return 0;
 }
@@ -110,13 +132,10 @@ int syn_scan(char *destination, uint16_t port)
 	struct sockaddr_in saddr;
 	struct sockaddr_in daddr;
 
-	sconfig(&saddr);
 	if (dconfig(destination, port, &daddr) != 0) {
 		fprintf(stderr, "%s: Name or service not known\n", destination);
 		return 1;
 	}
-
-	printf("%s: %s\n", destination, inet_ntoa(daddr.sin_addr));
 
 	/* Socket creation */
 	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
@@ -131,18 +150,19 @@ int syn_scan(char *destination, uint16_t port)
 		return 1;
 	}
 
-	/* int ret = connect(sockfd, g_data.host_addr, sizeof(g_data.servaddr));
-	if (ret != 0) {
-		fprintf(stderr, "%s: Failed to connect to host\n", destination);
-		freeaddrinfo(g_data.host_info);
+	if (sconfig(sockfd, &saddr)) {
+		fprintf(stderr, "%s: Source configuration failed\n", destination);
 		close(sockfd);
 		return 1;
-	}*/ 
+	}
 
-	(void)send_syn;
-	// send_syn(sockfd, &g_data);
+	if ((connect(sockfd, (struct sockaddr *)&daddr, sizeof(struct sockaddr)) != 0)) {
+		fprintf(stderr, "%s: Failed to connect to host\n", destination);
+		close(sockfd);
+		return 1;
+	}
 
-	//printf("%s: %s\n", destination, ipv4);
+	send_syn(sockfd, &saddr, &daddr);
 
 	close(sockfd);
 	return 0;

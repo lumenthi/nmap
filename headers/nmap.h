@@ -19,11 +19,12 @@
 #include <netinet/tcp.h>
 
 /* struct hostent {
-	char	*h_name;		host name
-	char	**h_aliases;	array pointer to alternative hostanmaes
-	int		h_addrtype;		host address type
-	int		h_length;		length of address
-	char	**h_addr_list;	array pointer to network addresses
+	char	*h_name;				host name
+	char	**h_aliases;			array pointer to alternative hostanmaes
+	int		h_addrtype;				host address type
+	int		h_length;				length of address
+	char	**h_addr_list;			array pointer to network addresses
+	#define h_addr h_addr_list[0]	for backward compatibility
 } */
 
 /* struct sockaddr {
