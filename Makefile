@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/18 10:55:26 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/09/23 14:00:06 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -53,6 +53,7 @@ HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 SRCS = main.c \
 		nmap.c \
+		print.c
 
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
 
@@ -109,4 +110,4 @@ re: fclean # Make -j support
 	@ $(MAKE) all
 
 run: all # scanme.nmap.org | testphp.vulnweb.com
-	@ sudo ./$(NAME) scanme.nmap.org
+	@ sudo ./$(NAME) scanme.nmap.org 22

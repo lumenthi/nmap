@@ -49,8 +49,12 @@ typedef struct	s_data {
 	struct sockaddr_in	servaddr;
 
 	char				*address;
-
 }						t_data;
+
+struct	tcp_packet {
+	struct iphdr		ip;
+	struct tcphdr		tcp;
+};
 
 /* struct iphdr
 {
@@ -108,6 +112,10 @@ typedef struct	s_data {
 	__sum16	check;
 	__be16	urg_ptr;
 }; */
+
+/* print.c */
+void	print_ip4_header(struct ip *header);
+void	print_tcp_header(struct tcphdr *header);
 
 /* nmap.c */
 int ft_nmap(char *destination, uint16_t port,
