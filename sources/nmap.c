@@ -1,5 +1,27 @@
 #include "nmap.h"
 
+static unsigned int ft_random(unsigned int min, unsigned int max)
+{
+	unsigned int ret = -1;
+	int fd = open("/dev/urandom", O_RDONLY);
+	char data[1];
+
+	if (fd < 0)
+		return 32770;
+	else {
+		while (ret < min || ret > max) {
+			if (ret == 0)
+				ret = -1;
+			read(fd, data, 1);
+			ret *= data[0];
+			if (ret > max)
+				ret = -1;
+		}
+	}
+	close(fd);
+	return ret;
+}
+
 static unsigned short checksum(const char *buf, unsigned int size)
 {
 	unsigned sum = 0, i;
@@ -52,16 +74,18 @@ static unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp)
 	return checksum(ppacket, sizeof(ppacket));
 }
 
-static void update_cursor(int sockfd, unsigned int len)
+static void update_cursor(int sockfd, unsigned int len, int sport)
 {
 	char buffer[len];
 	struct tcp_packet *packet;
+	int pport = -1;
 
-	read(sockfd, buffer, len);
-	packet = (struct tcp_packet *)buffer;
-	printf("[*] Sent packet\n");
-	print_ip4_header((struct ip *)&packet->ip);
-	print_tcp_header(&packet->tcp);
+	while (pport != sport) {
+		// printf("sport: %d, pport: %d\n", sport, pport);
+		recv(sockfd, buffer, len, 0);
+		packet = (struct tcp_packet *)buffer;
+		pport = packet->tcp.source;
+	}
 }
 
 static void send_syn(int sockfd,
@@ -84,7 +108,7 @@ static void send_syn(int sockfd,
 	/* Total length */
 	ip->tot_len = htons(sizeof(packet));
 	/* TODO: Identification (check notes.txt) */
-	ip->id = htonl(rand());
+	ip->id = htons(ft_random(0, 600));
 	/* IP Flags + Fragment offset TODO: Set don't fragment flag ! */
 	ip->frag_off = 0;
 	/* TTL */
@@ -126,36 +150,56 @@ static void send_syn(int sockfd,
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	/* sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr)); */
 	/* TODO: Error check */
-	write(sockfd, packet, sizeof(packet));
-	/* Make our cursor ready for read */
-	update_cursor(sockfd, sizeof(packet));
+	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
+	if (ip->saddr == ip->daddr)
+		update_cursor(sockfd, sizeof(packet), tcp->source);
+	printf("[*] Sent packet\n");
+	print_ip4_header((struct ip *)ip);
+	print_tcp_header(tcp);
 }
 
-static int sconfig(int sockfd, struct sockaddr_in *saddr)
+static int sconfig(char *destination, struct sockaddr_in *saddr)
 {
-	socklen_t addlen = sizeof(struct sockaddr);
+	struct ifaddrs *addrs;
+	struct ifaddrs *tmp;
 
 	ft_memset(saddr, 0, sizeof(*saddr));
 
 	saddr->sin_family = AF_INET;
-	saddr->sin_port = htons(48866);
-	if (inet_pton(AF_INET, "127.0.0.1", &(saddr->sin_addr)) != 1)
-		return 1;
+	/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
+	saddr->sin_port = htons(ft_random(32768, 60999));
 
-	/* TODO: Remove, debug */
+	if (!ft_strcmp(destination, "127.0.0.1")) {
+		if (inet_pton(AF_INET, "127.0.0.1", &(saddr->sin_addr)) != 1)
+			return 1;
+	}
+	else {
+		/* TODO: Error handling no/invalid interfaces */
+		/* TODO: Check return */
+		getifaddrs(&addrs);
+		tmp = addrs;
+		while (tmp)
+		{
+			if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
+			{
+				struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
+				// printf("%s: %s\n", tmp->ifa_name, inet_ntoa(pAddr->sin_addr));
+				/* TODO: Recognition of good interface */
+				if (!(tmp->ifa_flags & IFF_LOOPBACK)) {
+					/* TODO: Check if null ? | Error check */
+					if (inet_pton(AF_INET, inet_ntoa(pAddr->sin_addr), &(saddr->sin_addr)) != 1)
+						return 1;
+					break ;
+				}
+			}
+			tmp = tmp->ifa_next;
+		}
+		freeifaddrs(addrs);
+	}
+
+	printf("[*] Selected source address: %s\n", inet_ntoa(saddr->sin_addr));
 	printf("[*] Selected port number: %d\n", ntohs(saddr->sin_port));
-	return 0;
-
-	if ((bind(sockfd, (struct sockaddr *)saddr, sizeof(struct sockaddr)) != 0))
-		return 1;
-
-	/* TODO: getsockname not allowed */
-	getsockname(sockfd, (struct sockaddr *)saddr, &addlen);
-
-	printf("[*] Selected port number: %d\n", ntohs(saddr->sin_port));
-
 	return 0;
 }
 
@@ -170,11 +214,11 @@ static int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 
 	daddr->sin_family = host->h_addrtype;
 	daddr->sin_port = htons(port);
-	/* TODO: check return */
+	/* TODO: Check memcpy return */
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
 
 	printf("[*] Destination: %s (%s) on port: %d\n",
-		destination, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
+		host->h_name, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
 
 	return 0;
 }
@@ -197,7 +241,7 @@ static int read_syn_ack(int sockfd)
 	else if (ret == 0)
 		printf("Packet timeout\n");
 	else {
-		read(sockfd, buffer, len);
+		recv(sockfd, buffer, len, 0);
 		packet = (struct tcp_packet *)buffer;
 		/* TODO: Error checking ? */
 		printf("[*] Received packet\n");
@@ -233,7 +277,7 @@ int syn_scan(char *destination, uint16_t port)
 		return 1;
 	}
 
-	if (sconfig(sockfd, &saddr)) {
+	if (sconfig(inet_ntoa(daddr.sin_addr), &saddr)) {
 		fprintf(stderr, "%s: Source configuration failed\n", destination);
 		close(sockfd);
 		return 1;
