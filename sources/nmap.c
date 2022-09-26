@@ -1,25 +1,20 @@
 #include "nmap.h"
 
-static unsigned int ft_random(unsigned int min, unsigned int max)
+static int ft_random(int min, int max)
 {
-	unsigned int ret = -1;
 	int fd = open("/dev/urandom", O_RDONLY);
-	char data[1];
+	int data = -1;
 
 	if (fd < 0)
-		return 32770;
+		return -1;
 	else {
-		while (ret < min || ret > max) {
-			if (ret == 0)
-				ret = -1;
-			read(fd, data, 1);
-			ret *= data[0];
-			if (ret > max)
-				ret = -1;
+		while (data < min || data > max) {
+			read(fd, &data, 2);
+			data *= data < 0 ? -1 : 1;
 		}
 	}
 	close(fd);
-	return ret;
+	return data;
 }
 
 static unsigned short checksum(const char *buf, unsigned int size)
@@ -188,8 +183,10 @@ static int sconfig(char *destination, struct sockaddr_in *saddr)
 				/* TODO: Recognition of good interface */
 				if (!(tmp->ifa_flags & IFF_LOOPBACK)) {
 					/* TODO: Check if null ? | Error check */
-					if (inet_pton(AF_INET, inet_ntoa(pAddr->sin_addr), &(saddr->sin_addr)) != 1)
+					if (inet_pton(AF_INET, inet_ntoa(pAddr->sin_addr), &(saddr->sin_addr)) != 1) {
+						freeifaddrs(addrs);
 						return 1;
+					}
 					break ;
 				}
 			}
@@ -226,28 +223,20 @@ static int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 static int read_syn_ack(int sockfd)
 {
 	int ret;
-	fd_set set;
-	struct timeval timeout = {5, 0};
 	unsigned int len = sizeof(struct iphdr) + sizeof(struct tcphdr);
 	char buffer[len];
 	struct tcp_packet *packet;
 
-	FD_ZERO(&set); /* Init fd set */
-	FD_SET(sockfd, &set);
-
-	ret = select(sockfd+1, &set, NULL, NULL, &timeout);
-	if (ret == -1) /* TODO: Select error handling */
-		printf("Select error\n");
-	else if (ret == 0)
-		printf("Packet timeout\n");
-	else {
-		recv(sockfd, buffer, len, 0);
-		packet = (struct tcp_packet *)buffer;
-		/* TODO: Error checking ? */
-		printf("[*] Received packet\n");
-		print_ip4_header((struct ip *)&packet->ip);
-		print_tcp_header(&packet->tcp);
+	ret = recv(sockfd, buffer, len, 0);
+	if (ret < 0) {
+		printf("[*] Packet timeout\n");
+		return 1;
 	}
+	packet = (struct tcp_packet *)buffer;
+	/* TODO: Error checking ? */
+	printf("[*] Received packet\n");
+	print_ip4_header((struct ip *)&packet->ip);
+	print_tcp_header(&packet->tcp);
 
 	return 0;
 }
@@ -258,6 +247,8 @@ int syn_scan(char *destination, uint16_t port)
 	int one = 1;
 	struct sockaddr_in saddr;
 	struct sockaddr_in daddr;
+	/* TODO: Find real SYN timeout */
+	struct timeval timeout = {2, 0};
 
 	if (dconfig(destination, port, &daddr) != 0) {
 		fprintf(stderr, "%s: Name or service not known\n", destination);
@@ -273,6 +264,13 @@ int syn_scan(char *destination, uint16_t port)
 	/* Set options */
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		fprintf(stderr, "%s: Failed to set header option\n", destination);
+		close(sockfd);
+		return 1;
+	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+		sizeof(timeout)) != 0)
+	{
+		fprintf(stderr, "%s: Failed to set timeout option\n", destination);
 		close(sockfd);
 		return 1;
 	}
@@ -298,7 +296,6 @@ int syn_scan(char *destination, uint16_t port)
 
 int ft_nmap(char *destination, uint16_t port, char *path)
 {
-
 	if (!destination) {
 		fprintf(stderr, "%s: Empty hostname\n", path);
 		return 1;
