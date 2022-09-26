@@ -22,6 +22,11 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 
+#define OPEN 0
+#define CLOSED 1
+#define FILTERED 2
+#define TIMEOUT 3
+
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
 {

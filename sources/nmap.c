@@ -230,7 +230,7 @@ static int read_syn_ack(int sockfd)
 	ret = recv(sockfd, buffer, len, 0);
 	if (ret < 0) {
 		printf("[*] Packet timeout\n");
-		return 1;
+		return TIMEOUT;
 	}
 	packet = (struct tcp_packet *)buffer;
 	/* TODO: Error checking ? */
@@ -238,7 +238,14 @@ static int read_syn_ack(int sockfd)
 	print_ip4_header((struct ip *)&packet->ip);
 	print_tcp_header(&packet->tcp);
 
-	return 0;
+	if (packet->tcp.rst)
+		return CLOSED;
+
+	if (packet->tcp.ack && packet->tcp.syn)
+		return OPEN;
+
+	/* TODO: ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13) */
+	return FILTERED;
 }
 
 int syn_scan(char *destination, uint16_t port)
@@ -249,6 +256,7 @@ int syn_scan(char *destination, uint16_t port)
 	struct sockaddr_in daddr;
 	/* TODO: Find real SYN timeout */
 	struct timeval timeout = {2, 0};
+	int ret;
 
 	if (dconfig(destination, port, &daddr) != 0) {
 		fprintf(stderr, "%s: Name or service not known\n", destination);
@@ -287,15 +295,24 @@ int syn_scan(char *destination, uint16_t port)
 		return 1;
 	}
 
+	/* TODO: Error check */
 	send_syn(sockfd, &saddr, &daddr);
-	read_syn_ack(sockfd);
+	if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
+		send_syn(sockfd, &saddr, &daddr);
+		if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
+			return FILTERED;
+	}
 
 	close(sockfd);
-	return 0;
+	return ret;
 }
 
 int ft_nmap(char *destination, uint16_t port, char *path)
 {
+	int ret;
+	char *status[] = {"OPEN",
+		"CLOSED", "FILTERED"};
+
 	if (!destination) {
 		fprintf(stderr, "%s: Empty hostname\n", path);
 		return 1;
@@ -307,7 +324,8 @@ int ft_nmap(char *destination, uint16_t port, char *path)
 		return 1;
 	}
 
-	syn_scan(destination, port);
+	ret = syn_scan(destination, port);
+	printf("[*] Syn scan result: %s\n", status[ret]);
 
 	return 0;
 }

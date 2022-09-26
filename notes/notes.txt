@@ -1,0 +1,8 @@
+# Host netcat server
+$ nc -l 127.0.0.1 -p 4242 -v -k
+
+# Error
+$ sudo ./ft_nmap scanme.org 4242
+$ sudo nmap -p 4242 scanme.org
+--------------------------------
+Should be filtered
