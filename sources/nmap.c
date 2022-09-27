@@ -126,8 +126,8 @@ static int send_syn(int sockfd,
 	tcp->seq = htons(0);
 	/* Ack num */
 	tcp->ack_seq = htons(0);
-	/* Sizeof header */
-	tcp->doff = 5;
+	/* Sizeof header / 4 TODO: Options handling */
+	tcp->doff = sizeof(struct tcphdr) /  4;
 	/* FLAGS */
 	tcp->fin = 0;
 	tcp->syn = 1;
@@ -151,9 +151,9 @@ static int send_syn(int sockfd,
 	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
 	if (ip->saddr == ip->daddr)
 		update_cursor(sockfd, sizeof(packet), tcp->source);
-	printf("[*] Sent packet\n");
 	print_ip4_header((struct ip *)ip);
 	print_tcp_header(tcp);
+	printf("[*] Sent packet\n");
 	return 0;
 }
 
@@ -166,6 +166,7 @@ static int sconfig(char *destination, struct sockaddr_in *saddr)
 
 	saddr->sin_family = AF_INET;
 	/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
+	/* TODO: Read port range ? */
 	saddr->sin_port = htons(ft_random(32768, 60999));
 
 	if (!ft_strcmp(destination, "127.0.0.1")) {
@@ -198,8 +199,9 @@ static int sconfig(char *destination, struct sockaddr_in *saddr)
 		freeifaddrs(addrs);
 	}
 
-	printf("[*] Selected source address: %s\n", inet_ntoa(saddr->sin_addr));
-	printf("[*] Selected port number: %d\n", ntohs(saddr->sin_port));
+	printf("[*] Source: %s on port: %d\n",
+		inet_ntoa(saddr->sin_addr), ntohs(saddr->sin_port));
+
 	return 0;
 }
 
@@ -207,14 +209,12 @@ static int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 {
 	struct hostent *host;
 
-	/* TODO: check memset returns */
 	ft_memset(daddr, 0, sizeof(*daddr));
 	if (!(host = gethostbyname(destination)))
 		return 1;
 
 	daddr->sin_family = host->h_addrtype;
 	daddr->sin_port = htons(port);
-	/* TODO: Check memcpy return */
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
 
 	printf("[*] Destination: %s (%s) on port: %d\n",
@@ -236,9 +236,11 @@ static int read_syn_ack(int sockfd)
 		printf("[*] Packet timeout\n");
 		return TIMEOUT;
 	}
+	printf("[*] Received packet\n");
+	if (ret < (int)sizeof(struct tcp_packet))
+		return ERROR;
 	packet = (struct tcp_packet *)buffer;
 	/* TODO: Error checking ? */
-	printf("[*] Received packet\n");
 	print_ip4_header((struct ip *)&packet->ip);
 	print_tcp_header(&packet->tcp);
 
@@ -261,6 +263,8 @@ int syn_scan(char *destination, uint16_t port)
 	/* TODO: Real timeout ? */
 	struct timeval timeout = {1, 533000};
 	int ret;
+	struct servent *s_service;
+	char *service = "unknown";
 
 	if (dconfig(destination, port, &daddr) != 0) {
 		fprintf(stderr, "%s: Name or service not known\n", destination);
@@ -298,6 +302,12 @@ int syn_scan(char *destination, uint16_t port)
 		close(sockfd);
 		return ERROR;
 	}
+
+	/* Service detection */
+	if ((s_service = getservbyport(htons(port), NULL)))
+		service = s_service->s_name;
+
+	printf("[*] Found service: %s\n", service);
 
 	/* TODO: Error check */
 	send_syn(sockfd, &saddr, &daddr);
