@@ -339,7 +339,7 @@ int ft_nmap(char *destination, uint16_t port, char *path)
 	}
 
 	ret = syn_scan(destination, port);
-	printf("[*] Syn scan result: %s\n", status[ret]);
+	printf("[*] SYN scan result: %s\n", status[ret]);
 
 	return 0;
 }

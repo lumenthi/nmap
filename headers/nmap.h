@@ -82,14 +82,6 @@
 
 typedef struct	s_data {
 	unsigned long long	opt;
-	char				*path;
-	char				ipv4[INET_ADDRSTRLEN];
-	struct addrinfo		*host_info;
-
-	struct sockaddr		*host_addr;
-	struct sockaddr_in	servaddr;
-
-	char				*address;
 	char				*destination;
 	uint16_t			dest_port;
 }						t_data;

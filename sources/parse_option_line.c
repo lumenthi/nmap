@@ -97,11 +97,11 @@ int	parse_nmap_options(int ac, char **av)
 				g_data.opt |= OPT_VERBOSE_INFO;
 				if (optarg != NULL) {
 					printf("optarg = %s\n", optarg);
-					if (strcmp(optarg, "DEBUG") == 0) {
+					if (ft_strcmp(optarg, "DEBUG") == 0) {
 						g_data.opt |= OPT_VERBOSE_DEBUG;
 						g_data.opt &= ~OPT_VERBOSE_INFO;
 					}
-					else if (strcmp(optarg, "INFO") == 0)
+					else if (ft_strcmp(optarg, "INFO") == 0)
 						g_data.opt |= OPT_VERBOSE_INFO;
 					else
 						fprintf(stderr, "Invalid verbose level\n");
@@ -119,7 +119,7 @@ int	parse_nmap_options(int ac, char **av)
 						perror("ft_nmap: ft_strdup");
 						free_and_exit(EXIT_FAILURE);
 					}
-					printf("Destination = %s\n", g_data.destination);
+					/* printf("Destination = %s\n", g_data.destination); */
 					break;
 				}
 			case 'V':
