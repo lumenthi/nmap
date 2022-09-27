@@ -1,10 +1,22 @@
 #include "nmap.h"
+#include "options.h"
 
-int main(int argc, char **argv)
+t_data	g_data;
+
+void	init_data(void)
+{
+	ft_bzero(&g_data, sizeof(g_data));
+	/* TODO: init default settings */
+}
+
+int		main(int argc, char **argv)
 {
 	if (argc < 3)
 		return 1;
 
-	ft_nmap(argv[1], atoi(argv[2]), argv[0]);
+	init_data();
+	if (parse_nmap_options(argc, argv) != 0)
+		free_and_exit(EXIT_FAILURE);
+	ft_nmap(g_data.destination, g_data.dest_port, argv[0]);
 	return 0;
 }
