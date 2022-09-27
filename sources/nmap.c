@@ -77,13 +77,14 @@ static void update_cursor(int sockfd, unsigned int len, int sport)
 
 	while (pport != sport) {
 		// printf("sport: %d, pport: %d\n", sport, pport);
-		recv(sockfd, buffer, len, 0);
+		if (recv(sockfd, buffer, len, MSG_DONTWAIT) < 0)
+			return;
 		packet = (struct tcp_packet *)buffer;
 		pport = packet->tcp.source;
 	}
 }
 
-static void send_syn(int sockfd,
+static int send_syn(int sockfd,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
 {
 	unsigned int len = 0;
@@ -122,9 +123,9 @@ static void send_syn(int sockfd,
 	/* Destination port */
 	memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
 	/* Seq num */
-	tcp->seq = htonl(0);
+	tcp->seq = htons(0);
 	/* Ack num */
-	tcp->ack_seq = htonl(0);
+	tcp->ack_seq = htons(0);
 	/* Sizeof header */
 	tcp->doff = 5;
 	/* FLAGS */
@@ -145,6 +146,7 @@ static void send_syn(int sockfd,
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
+	printf("[*] Ready to send packet...\n");
 	/* TODO: Error check */
 	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
 	if (ip->saddr == ip->daddr)
@@ -152,6 +154,7 @@ static void send_syn(int sockfd,
 	printf("[*] Sent packet\n");
 	print_ip4_header((struct ip *)ip);
 	print_tcp_header(tcp);
+	return 0;
 }
 
 static int sconfig(char *destination, struct sockaddr_in *saddr)
@@ -227,6 +230,7 @@ static int read_syn_ack(int sockfd)
 	char buffer[len];
 	struct tcp_packet *packet;
 
+	printf("[*] Ready to receive...\n");
 	ret = recv(sockfd, buffer, len, 0);
 	if (ret < 0) {
 		printf("[*] Packet timeout\n");

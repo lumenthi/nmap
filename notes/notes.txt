@@ -6,3 +6,6 @@ $ sudo ./ft_nmap scanme.org 4242
 $ sudo nmap -p 4242 scanme.org
 --------------------------------
 Should be filtered
+
+# Filter a port
+$ sudo /sbin/iptables -A INPUT -p tcp --destination-port 4241 -j DROP
