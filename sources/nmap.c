@@ -258,45 +258,45 @@ int syn_scan(char *destination, uint16_t port)
 	int one = 1;
 	struct sockaddr_in saddr;
 	struct sockaddr_in daddr;
-	/* TODO: Find real SYN timeout */
-	struct timeval timeout = {2, 0};
+	/* TODO: Real timeout ? */
+	struct timeval timeout = {1, 533000};
 	int ret;
 
 	if (dconfig(destination, port, &daddr) != 0) {
 		fprintf(stderr, "%s: Name or service not known\n", destination);
-		return 1;
+		return DOWN;
 	}
 
 	/* Socket creation */
 	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		fprintf(stderr, "%s: Failed to create TCP socket\n", destination);
-		return 1;
+		return ERROR;
 	}
 
 	/* Set options */
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		fprintf(stderr, "%s: Failed to set header option\n", destination);
 		close(sockfd);
-		return 1;
+		return ERROR;
 	}
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
 		sizeof(timeout)) != 0)
 	{
 		fprintf(stderr, "%s: Failed to set timeout option\n", destination);
 		close(sockfd);
-		return 1;
+		return ERROR;
 	}
 
 	if (sconfig(inet_ntoa(daddr.sin_addr), &saddr)) {
 		fprintf(stderr, "%s: Source configuration failed\n", destination);
 		close(sockfd);
-		return 1;
+		return ERROR;
 	}
 
 	if ((connect(sockfd, (struct sockaddr *)&daddr, sizeof(struct sockaddr)) != 0)) {
 		fprintf(stderr, "%s: Failed to connect to host\n", destination);
 		close(sockfd);
-		return 1;
+		return ERROR;
 	}
 
 	/* TODO: Error check */
@@ -315,7 +315,7 @@ int ft_nmap(char *destination, uint16_t port, char *path)
 {
 	int ret;
 	char *status[] = {"OPEN",
-		"CLOSED", "FILTERED"};
+		"CLOSED", "FILTERED", "DOWN", "ERROR"};
 
 	if (!destination) {
 		fprintf(stderr, "%s: Empty hostname\n", path);

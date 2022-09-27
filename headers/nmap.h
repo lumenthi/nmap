@@ -22,10 +22,14 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 
+/* SCAN RET */
 #define OPEN 0
 #define CLOSED 1
 #define FILTERED 2
-#define TIMEOUT 3
+#define DOWN 3
+#define ERROR 4
+/* USEFUL IN SCANS */
+#define TIMEOUT 5
 
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs

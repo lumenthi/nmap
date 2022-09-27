@@ -9,3 +9,7 @@ Should be filtered
 
 # Filter a port
 $ sudo /sbin/iptables -A INPUT -p tcp --destination-port 4241 -j DROP
+
+# SYN scan timeout
+$ grep -nr "select" notes/strace.txt
+select(5, [4], [4], [4], {tv_sec=1, tv_usec=533000})
