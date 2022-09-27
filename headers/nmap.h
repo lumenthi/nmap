@@ -81,7 +81,7 @@
 }; */
 
 typedef struct	s_data {
-	uint8_t				args;
+	unsigned long long	opt;
 	char				*path;
 	char				ipv4[INET_ADDRSTRLEN];
 	struct addrinfo		*host_info;
@@ -90,6 +90,8 @@ typedef struct	s_data {
 	struct sockaddr_in	servaddr;
 
 	char				*address;
+	char				*destination;
+	uint16_t			dest_port;
 }						t_data;
 
 struct	tcp_packet {
@@ -154,12 +156,17 @@ struct	tcp_packet {
 	__be16	urg_ptr;
 }; */
 
+extern t_data	g_data;
+
 /* print.c */
 void	print_ip4_header(struct ip *header);
 void	print_tcp_header(struct tcphdr *header);
 
 /* nmap.c */
-int ft_nmap(char *destination, uint16_t port,
-	char *path);
+int		ft_nmap(char *destination, uint16_t port,
+		char *path);
+
+/* free_and_exit.c */
+void	free_and_exit(int exit_val);
 
 #endif

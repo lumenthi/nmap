@@ -103,7 +103,10 @@ SRCS = ft_atoi.c \
 		ft_putaddress.c \
 		ft_exit.c \
 		ft_puthex.c \
-		ft_strisnum.c
+		ft_strisnum.c \
+		ft_getopt.c \
+		is_arg_an_opt.c \
+		ft_strbegin.c \
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
