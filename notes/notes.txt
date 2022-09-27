@@ -13,3 +13,8 @@ $ sudo /sbin/iptables -A INPUT -p tcp --destination-port 4241 -j DROP
 # SYN scan timeout
 $ grep -nr "select" notes/strace.txt
 select(5, [4], [4], [4], {tv_sec=1, tv_usec=533000})
+
+# destination display before exiting
+# leak g_data.destination in ft_strdup->parse_nmap_options
+
+# match nmap port state when invalid packet
