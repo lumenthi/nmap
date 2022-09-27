@@ -1,1 +1,5 @@
 .vagrant
+*.o
+objs/*
+ft_nmap
+*.a

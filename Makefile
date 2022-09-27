@@ -53,7 +53,9 @@ HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 SRCS = main.c \
 		nmap.c \
-		print.c
+		print.c \
+		parse_option_line.c \
+		free_and_exit.c \
 
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
 

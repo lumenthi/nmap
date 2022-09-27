@@ -14,6 +14,7 @@
 # define LIBFT_H
 
 # include <string.h>
+# include <getopt.h>
 
 typedef struct	s_list
 {
@@ -99,5 +100,12 @@ void			ft_putaddress(void *addr);
 void			ft_exit(const char *msg);
 void			ft_puthex(int zero, int caps, size_t input);
 int				ft_strisnum(char *str);
+int				ft_strbegin(char const *s1, char const *s2);
+int				ft_optbegin(char const *s1, char const *s2);
+int				is_arg_an_opt(char * const argv[], int argi,
+					const char *optstring, const struct option *longopts);
+int				ft_getopt_long(int argc, char * const argv[],
+					const char *optstring, char **optarg,
+					const struct option *longopts, int *longindex);
 
 #endif
