@@ -23,15 +23,13 @@ static unsigned short checksum(const char *buf, unsigned int size)
 	unsigned sum = 0, i;
 
 	/* Accumulate checksum */
-	for (i = 0; i < size - 1; i += 2)
-	{
+	for (i = 0; i < size - 1; i += 2) {
 		unsigned short word16 = *(unsigned short *) &buf[i];
 		sum += word16;
 	}
 
 	/* Handle odd-sized case */
-	if (size & 1)
-	{
+	if (size & 1) {
 		unsigned short word16 = (unsigned char) buf[i];
 		sum += word16;
 	}
@@ -314,6 +312,7 @@ int syn_scan(char *destination, uint16_t port)
 	}
 
 	/* Service detection */
+	/* Network services database file /etc/services */
 	if ((s_service = getservbyport(htons(port), NULL)))
 		service = s_service->s_name;
 
