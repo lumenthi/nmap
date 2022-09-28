@@ -3,8 +3,7 @@
 
 void	free_all()
 {
-	if (g_data.destination)
-		free(g_data.destination);
+	free_ips(&g_data.ips);
 }
 
 void	free_and_exit(int exit_val)

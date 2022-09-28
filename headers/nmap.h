@@ -80,13 +80,30 @@
 	char			sin_zero[8];
 }; */
 
+struct s_scan {
+	int					scantype; /* Type of scan */
+	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
+	char				*service; /* Found service */
+	uint16_t			sport; /* Source port */
+	uint16_t			dport; /* Destination port */
+	struct s_scan		*next; /* Next scan */
+};
+
+struct s_ip {
+	struct sockaddr_in	*saddr; /* sockaddr_in of source */
+	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*destination; /* user input */
+	int					status; /* [UP/DOWN] */
+	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
+	struct s_ip			*next; /* next ip */
+};
+
 typedef struct	s_data {
 	unsigned long long	opt;
-	char				*destination;
-	uint16_t			dest_port;
+	struct s_ip			*ips;
 }						t_data;
 
-struct	tcp_packet {
+struct			tcp_packet {
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
@@ -155,10 +172,14 @@ void	print_ip4_header(struct ip *header);
 void	print_tcp_header(struct tcphdr *header);
 
 /* nmap.c */
-int		ft_nmap(char *destination, uint16_t port,
-		char *path);
+int		ft_nmap(char *path);
 
 /* free_and_exit.c */
 void	free_and_exit(int exit_val);
+
+/* list.c */
+void	push_ip(struct s_ip **head, struct s_ip *new);
+void	push_ports(struct s_ip **input, uint16_t start, uint16_t end);
+void	free_ips(struct s_ip **ip);
 
 #endif

@@ -330,25 +330,31 @@ int syn_scan(char *destination, uint16_t port)
 	return ret;
 }
 
-int ft_nmap(char *destination, uint16_t port, char *path)
+int ft_nmap(char *path)
 {
 	int ret;
 	char *status[] = {"OPEN",
 		"CLOSED", "FILTERED", "DOWN", "ERROR"};
-
-	if (!destination) {
-		fprintf(stderr, "%s: Empty hostname\n", path);
-		return 1;
-	}
+	struct s_ip *ips = g_data.ips;
+	struct s_scan *scans;
 
 	if (getuid() != 0) {
-		fprintf(stderr, "%s: %s: Not allowed to create raw sockets, run as root\n",
-			path, destination);
+		fprintf(stderr, "%s: Not allowed to create raw sockets, run as root\n",
+			path);
 		return 1;
 	}
 
-	ret = syn_scan(destination, port);
-	printf("[*] SYN scan result: %s\n", status[ret]);
-
+	while (ips) {
+		scans = ips->scans;
+		while (scans) {
+			printf("==============\n");
+			ret = syn_scan(ips->destination, scans->dport);
+			printf("[*] SYN scan result: %s\n", status[ret]);
+			printf("==============\n");
+			scans = scans->next;
+		}
+		ips = ips->next;
+	}
+	free_ips(&g_data.ips);
 	return 0;
 }

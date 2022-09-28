@@ -31,7 +31,7 @@ struct s_ip {
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN] */
-	struct s_port		*ports; /* list of ports to scan along with the type of scan */
+	struct s_port		*scans; /* list of ports to scan along with the type of scan */
 	struct s_ip			*next; /* next ip */
 };
 
@@ -47,6 +47,24 @@ struct s_port {
 # Main thread reads scan list and redistributes tasks to workers
 # When a worker is done, it sends the result to the main thread
 
+www.google.com:
+22  SYN     | 22  XMAS  | 22  UDP   | 23  SYN
+ [SCANNING]    [OPEN]      [CLOSED]     [READY]
+
 127.0.0.1:
 22  SYN     | 22  XMAS  | 22  UDP   | 23  SYN
  [SCANNING]    [OPEN]      [CLOSED]     [READY]
+
+./ft_nmap localhost -p 22 --scan=SYN,,FIN
+
+ip.txt = 127.0.0.1
+		 www.google.com
+
+./ft_nmap localhost --file ip.txt -p 22 --scan=SYN,FIN
+
+127.0.0.1 -> www.google.com
+
+1 - 1024
+
+min = 1
+max = 1024

@@ -22,6 +22,6 @@
 # define MAX_THREAD 255
 
 /* parse_option_line.c */
-int	parse_nmap_options(int ac, char **av);
+int	parse_nmap_args(int ac, char **av);
 
 #endif

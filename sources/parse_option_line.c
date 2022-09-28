@@ -13,9 +13,9 @@ typedef struct s_set {
 	size_t				nb_ranges;
 	size_t				nb_single_values;
 	t_range				*ranges;
-	int					*single_values;
 	int					min;
 	int					max;
+	int					*single_values;
 	char				padding[0];
 } t_set;
 
@@ -33,19 +33,17 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
-int			parse_positive_range(t_set *set, char *arg)
+int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 {
 	size_t	i, j;
 	int		is_range;
-	t_range	curr_range;
 
-	(void)curr_range;
 	i = 0;
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
-		curr_range.start = 0;
-		curr_range.end = 0;
+		curr_range->start = 0;
+		curr_range->end = 0;
 		while (arg[j] && arg[j] != ',') {
 			if (arg[j] == '-') {
 				if (is_range == 1) {
@@ -55,11 +53,11 @@ int			parse_positive_range(t_set *set, char *arg)
 				}
 				set->nb_ranges++;
 				is_range = 1;
-				curr_range.start = ft_atoi(arg + i);
+				curr_range->start = ft_atoi(arg + i);
 				if (arg[j + 1])
-					curr_range.end = ft_atoi(arg + j + 1);
+					curr_range->end = ft_atoi(arg + j + 1);
 				else
-					curr_range.end = set->max;
+					curr_range->end = set->max;
 			}
 			j++;
 		}
@@ -72,7 +70,7 @@ int			parse_positive_range(t_set *set, char *arg)
  **	Parse all the options
  */
 
-int	parse_nmap_options(int ac, char **av)
+int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1;
 	char		*optarg = NULL;
@@ -88,6 +86,12 @@ int	parse_nmap_options(int ac, char **av)
 		{"scan",	required_argument,	0, 's'},
 		{0,			0,					0,	0 }
 	};
+	t_range	curr_range;
+	struct s_ip *tmp;
+
+	/* TODO: 1 - 1024 default values */
+	curr_range.start = 1;
+	curr_range.end = 22;
 
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
@@ -106,20 +110,15 @@ int	parse_nmap_options(int ac, char **av)
 					else
 						fprintf(stderr, "Invalid verbose level\n");
 				}
-				if (g_data.opt & OPT_VERBOSE_INFO)
-					printf("Verbose level = INFO\n");
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
-					printf("Verbose level = DEBUG\n");
 				break;
 			case 'i':
 				{
-					g_data.destination = ft_strdup(optarg);
+					/* g_data.destination = ft_strdup(optarg);
 					if (g_data.destination == NULL)
 					{
 						perror("ft_nmap: ft_strdup");
 						free_and_exit(EXIT_FAILURE);
-					}
-					/* printf("Destination = %s\n", g_data.destination); */
+					} */
 					break;
 				}
 			case 'V':
@@ -131,12 +130,11 @@ int	parse_nmap_options(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					/*t_set	set;
+					/* t_set	set;
 					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg);*/
-					g_data.dest_port = ft_atoi(optarg);
+					parse_positive_range(&set, optarg, &curr_range); */
 					break;
 				}
 			case '?':
@@ -154,6 +152,12 @@ int	parse_nmap_options(int ac, char **av)
 	}
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
+			/* TODO: Check malloc ret */
+			tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
+			ft_memset(tmp, 0, sizeof(struct s_ip));
+			tmp->destination = av[i];
+			push_ports(&tmp, curr_range.start, curr_range.end);
+			push_ip(&g_data.ips, tmp);
 		}
 	}
 	return 0;
