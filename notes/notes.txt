@@ -18,3 +18,35 @@ select(5, [4], [4], [4], {tv_sec=1, tv_usec=533000})
 # leak g_data.destination in ft_strdup->parse_nmap_options
 
 # match nmap port state when invalid packet
+
+# Data structure
+
+struct t_data {
+	unsigned long long	opt;
+	struct s_ip			*ips;
+};
+
+struct s_ip {
+	struct sockaddr_in	*saddr; /* sockaddr_in of source */
+	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*destination; /* user input */
+	int					status; /* [UP/DOWN] */
+	struct s_port		*ports; /* list of ports to scan along with the type of scan */
+	struct s_ip			*next; /* next ip */
+};
+
+struct s_port {
+	int					scantype; /* Type of scan */
+	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
+	char				*service /* Found service */
+	uint16_t			sport; /* Source port */
+	uint16_t			dport; /* Destination port */
+	struct s_port		*next; /* Next scan */
+};
+
+# Main thread reads scan list and redistributes tasks to workers
+# When a worker is done, it sends the result to the main thread
+
+127.0.0.1:
+22  SYN     | 22  XMAS  | 22  UDP   | 23  SYN
+ [SCANNING]    [OPEN]      [CLOSED]     [READY]

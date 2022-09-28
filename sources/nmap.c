@@ -1,4 +1,5 @@
 #include "nmap.h"
+#include "options.h"
 
 static int ft_random(int min, int max)
 {
@@ -126,7 +127,8 @@ static int send_syn(int sockfd,
 	tcp->seq = htons(0);
 	/* Ack num */
 	tcp->ack_seq = htons(0);
-	/* Sizeof header / 4 TODO: Options handling */
+	/* Sizeof header / 4 */
+	/* TODO: Options handling */
 	tcp->doff = sizeof(struct tcphdr) /  4;
 	/* FLAGS */
 	tcp->fin = 0;
@@ -146,14 +148,18 @@ static int send_syn(int sockfd,
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	printf("[*] Ready to send packet...\n");
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		printf("[*] Ready to send SYN packet...\n");
 	/* TODO: Error check */
 	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
 	if (ip->saddr == ip->daddr)
 		update_cursor(sockfd, sizeof(packet), tcp->source);
-	print_ip4_header((struct ip *)ip);
-	print_tcp_header(tcp);
-	printf("[*] Sent packet\n");
+	if (g_data.opt & OPT_VERBOSE_DEBUG) {
+		print_ip4_header((struct ip *)ip);
+		print_tcp_header(tcp);
+	}
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		printf("[*] Sent SYN packet\n");
 	return 0;
 }
 
@@ -174,8 +180,7 @@ static int sconfig(char *destination, struct sockaddr_in *saddr)
 			return 1;
 	}
 	else {
-		/* TODO: Error handling no/invalid interfaces */
-		/* TODO: Check return */
+		/* TODO: Error handling no/invalid interfaces & returns check */
 		getifaddrs(&addrs);
 		tmp = addrs;
 		while (tmp)
@@ -230,19 +235,24 @@ static int read_syn_ack(int sockfd)
 	char buffer[len];
 	struct tcp_packet *packet;
 
-	printf("[*] Ready to receive...\n");
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		printf("[*] Ready to receive...\n");
 	ret = recv(sockfd, buffer, len, 0);
 	if (ret < 0) {
-		printf("[*] Packet timeout\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+			printf("[*] Packet timeout\n");
 		return TIMEOUT;
 	}
-	printf("[*] Received packet\n");
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		printf("[*] Received packet\n");
 	if (ret < (int)sizeof(struct tcp_packet))
 		return ERROR;
 	packet = (struct tcp_packet *)buffer;
 	/* TODO: Error checking ? */
-	print_ip4_header((struct ip *)&packet->ip);
-	print_tcp_header(&packet->tcp);
+	if (g_data.opt & OPT_VERBOSE_DEBUG) {
+		print_ip4_header((struct ip *)&packet->ip);
+		print_tcp_header(&packet->tcp);
+	}
 
 	if (packet->tcp.rst)
 		return CLOSED;
