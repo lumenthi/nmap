@@ -6,7 +6,7 @@
 /*   By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/11 10:50:56 by lumenthi          #+#    #+#             */
-/*   Updated: 2022/08/20 09:40:28 by lumenthi         ###   ########.fr       */
+/*   Updated: 2022/09/29 12:50:30 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,5 +107,6 @@ int				is_arg_an_opt(char * const argv[], int argi,
 int				ft_getopt_long(int argc, char * const argv[],
 					const char *optstring, char **optarg,
 					const struct option *longopts, int *longindex);
+int				ft_random(int min, int max);
 
 #endif

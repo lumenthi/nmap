@@ -173,6 +173,19 @@ extern t_data	g_data;
 /* print.c */
 void	print_ip4_header(struct ip *header);
 void	print_tcp_header(struct tcphdr *header);
+void	print_time(struct timeval start_time,
+	struct timeval end_time);
+
+/* scan_syn.c */
+int		syn_scan(char *destination, uint16_t port);
+
+/* addr_config.c */
+int		dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr);
+int		sconfig(char *destination, struct sockaddr_in *saddr);
+
+/* checksum.c */
+unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
+unsigned short checksum(const char *buf, unsigned int size);
 
 /* nmap.c */
 int		ft_nmap(char *path);

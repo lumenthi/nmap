@@ -107,3 +107,13 @@ void	print_tcp_header(struct tcphdr *header)
 
 	printf("\e[35m+--------------------------------------------+\e[0m\n");
 }
+
+void print_time(struct timeval start_time, struct timeval end_time)
+{
+	long int sec = end_time.tv_sec - start_time.tv_sec;
+	long int usec = end_time.tv_usec - start_time.tv_usec;
+	long long total_usec = sec*1000000+usec;
+
+	printf("[*] Scan time: %lld.%03lld ms\n",
+		total_usec/1000, total_usec%1000);
+}
