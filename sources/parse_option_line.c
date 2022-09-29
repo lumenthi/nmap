@@ -89,9 +89,8 @@ int	parse_nmap_args(int ac, char **av)
 	t_range	curr_range;
 	struct s_ip *tmp;
 
-	/* TODO: 1 - 1024 default values */
-	curr_range.start = 1;
-	curr_range.end = 22;
+	curr_range.start = DEFAULT_START_PORT;
+	curr_range.end = DEFAULT_END_PORT;
 
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
@@ -135,6 +134,8 @@ int	parse_nmap_args(int ac, char **av)
 					set.min = 1;
 					set.max = MAX_PORT;
 					parse_positive_range(&set, optarg, &curr_range); */
+					curr_range.start = ft_atoi(optarg);
+					curr_range.end = ft_atoi(optarg);
 					break;
 				}
 			case '?':
@@ -152,12 +153,13 @@ int	parse_nmap_args(int ac, char **av)
 	}
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
-			/* TODO: Check malloc ret */
 			tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
-			ft_memset(tmp, 0, sizeof(struct s_ip));
-			tmp->destination = av[i];
-			push_ports(&tmp, curr_range.start, curr_range.end);
-			push_ip(&g_data.ips, tmp);
+			if (tmp) {
+				ft_memset(tmp, 0, sizeof(struct s_ip));
+				tmp->destination = av[i];
+				push_ports(&tmp, curr_range.start, curr_range.end);
+				push_ip(&g_data.ips, tmp);
+			}
 		}
 	}
 	return 0;

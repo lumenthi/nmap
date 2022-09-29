@@ -21,6 +21,9 @@
 # define MAX_PORT 1024
 # define MAX_THREAD 255
 
+# define DEFAULT_START_PORT 1
+# define DEFAULT_END_PORT 1024
+
 /* parse_option_line.c */
 int	parse_nmap_args(int ac, char **av);
 

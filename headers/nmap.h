@@ -28,6 +28,7 @@
 #define FILTERED 2
 #define DOWN 3
 #define ERROR 4
+#define UNKNOWN 5
 /* USEFUL IN SCANS */
 #define TIMEOUT 5
 
@@ -86,6 +87,8 @@ struct s_scan {
 	char				*service; /* Found service */
 	uint16_t			sport; /* Source port */
 	uint16_t			dport; /* Destination port */
+	struct timeval		start_time; /* Scan start time */
+	struct timeval		end_time; /* Scan end time */
 	struct s_scan		*next; /* Next scan */
 };
 

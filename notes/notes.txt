@@ -68,3 +68,6 @@ ip.txt = 127.0.0.1
 
 min = 1
 max = 1024
+
+# nmap multiple ports (not range) handling ?
+./ft_nmap localhsot -p 22,4242

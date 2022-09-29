@@ -259,7 +259,17 @@ static int read_syn_ack(int sockfd)
 		return OPEN;
 
 	/* TODO: ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13) */
-	return FILTERED;
+	return UNKNOWN;
+}
+
+static void print_time(struct timeval start_time, struct timeval end_time)
+{
+	long int sec = end_time.tv_sec - start_time.tv_sec;
+	long int usec = end_time.tv_usec - start_time.tv_usec;
+	long long total_usec = sec*1000000+usec;
+
+	printf("[*] Scan time: %lld.%03lld ms\n",
+		total_usec/1000, total_usec%1000);
 }
 
 int syn_scan(char *destination, uint16_t port)
@@ -318,13 +328,24 @@ int syn_scan(char *destination, uint16_t port)
 
 	printf("[*] Found service: %s\n", service);
 
-	/* TODO: Error check */
+	/* TODO: Set in structure */
+	struct timeval start_time;
+	gettimeofday(&start_time, NULL);
+
+	/* Scanning process */
+	/* TODO: send_syn error check */
 	send_syn(sockfd, &saddr, &daddr);
 	if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
 		send_syn(sockfd, &saddr, &daddr);
 		if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
-			return FILTERED;
+			ret = FILTERED;
 	}
+
+	/* TODO: Set in structure */
+	struct timeval end_time;
+	gettimeofday(&end_time, NULL);
+
+	print_time(start_time, end_time);
 
 	close(sockfd);
 	return ret;
@@ -334,7 +355,7 @@ int ft_nmap(char *path)
 {
 	int ret;
 	char *status[] = {"OPEN",
-		"CLOSED", "FILTERED", "DOWN", "ERROR"};
+		"CLOSED", "FILTERED", "DOWN", "ERROR", "UNKNOWN"};
 	struct s_ip *ips = g_data.ips;
 	struct s_scan *scans;
 
