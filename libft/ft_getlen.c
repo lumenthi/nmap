@@ -1,21 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_power.c                                         :+:      :+:    :+:   */
+/*   ft_getlen.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lumenthi <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: lnicosia <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2017/11/23 16:54:23 by lumenthi          #+#    #+#             */
-/*   Updated: 2017/11/23 16:55:43 by lumenthi         ###   ########.fr       */
+/*   Created: 2019/04/19 13:46:12 by lnicosia          #+#    #+#             */
+/*   Updated: 2019/04/19 13:49:31 by lnicosia         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-long long	ft_power(int nb, int power)
+size_t	ft_getlen(long nb)
 {
-	if (power == 0)
+	size_t	len;
+
+	if (!nb)
 		return (1);
-	else
-		return (nb * ft_power(nb, power - 1));
+	len = 0;
+	while (nb != 0)
+	{
+		nb /= 10;
+		len++;
+	}
+	return (len);
 }
