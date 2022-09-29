@@ -47,12 +47,25 @@ void	free_scans(struct s_scan **scan)
 
 	while (current != NULL) {
 		next = current->next;
+
+		if (current->shostname)
+			free(current->shostname);
+		if (current->saddr)
+			free(current->saddr);
+
+		if (current->dhostname)
+			free(current->dhostname);
+		if (current->daddr)
+			free(current->daddr);
+
+		if (current->service)
+			free(current->service);
+
 		free(current);
 		current = next;
 	}
 	*scan = NULL;
 }
-
 
 void	free_ips(struct s_ip **ip)
 {

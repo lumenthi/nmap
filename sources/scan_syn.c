@@ -130,81 +130,77 @@ static int read_syn_ack(int sockfd)
 	return UNKNOWN;
 }
 
-int syn_scan(char *destination, uint16_t port)
+int syn_scan(struct s_scan *scan)
 {
 	int sockfd;
 	int one = 1;
-	struct sockaddr_in saddr;
-	struct sockaddr_in daddr;
+	struct sockaddr_in *saddr = scan->saddr;
+	struct sockaddr_in *daddr = scan->daddr;
 	/* TODO: Real timeout ? */
 	struct timeval timeout = {1, 533000};
 	int ret;
 	struct servent *s_service;
 	char *service = "unknown";
 
-	if (dconfig(destination, port, &daddr) != 0) {
-		fprintf(stderr, "%s: Name or service not known\n", destination);
-		return DOWN;
-	}
+	/* printf("[*] Destination: %s (%s) on port: %d\n",
+		scan->dhostname, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
+
+	printf("[*] Source: %s on port: %d\n",
+		inet_ntoa(saddr->sin_addr), ntohs(saddr->sin_port)); */
 
 	/* Socket creation */
 	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
-		fprintf(stderr, "%s: Failed to create TCP socket\n", destination);
-		return ERROR;
+		fprintf(stderr, "Failed to create socket\n");
+		scan->status = ERROR;
+		return 1;
 	}
 
 	/* Set options */
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		fprintf(stderr, "%s: Failed to set header option\n", destination);
+		fprintf(stderr, "Failed to set header option\n");
+		scan->status = ERROR;
 		close(sockfd);
-		return ERROR;
+		return 1;
 	}
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
 		sizeof(timeout)) != 0)
 	{
-		fprintf(stderr, "%s: Failed to set timeout option\n", destination);
+		fprintf(stderr, "Failed to set timeout option\n");
+		scan->status = ERROR;
 		close(sockfd);
-		return ERROR;
+		return 1;
 	}
 
-	if (sconfig(inet_ntoa(daddr.sin_addr), &saddr)) {
-		fprintf(stderr, "%s: Source configuration failed\n", destination);
+	if ((connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr)) != 0)) {
+		fprintf(stderr, "Failed to connect to host\n");
+		scan->status = ERROR;
 		close(sockfd);
-		return ERROR;
-	}
-
-	if ((connect(sockfd, (struct sockaddr *)&daddr, sizeof(struct sockaddr)) != 0)) {
-		fprintf(stderr, "%s: Failed to connect to host\n", destination);
-		close(sockfd);
-		return ERROR;
+		return 1;
 	}
 
 	/* Service detection */
 	/* Network services database file /etc/services */
-	if ((s_service = getservbyport(htons(port), NULL)))
+	if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
 		service = s_service->s_name;
 
-	printf("[*] Found service: %s\n", service);
+	scan->service = ft_strdup(service);
 
-	/* TODO: Set in structure */
-	struct timeval start_time;
-	gettimeofday(&start_time, NULL);
+	/* TODO: Set in structure, error check */
+	gettimeofday(&scan->start_time, NULL);
 
 	/* Scanning process */
 	/* TODO: send_syn error check */
-	send_syn(sockfd, &saddr, &daddr);
+	send_syn(sockfd, saddr, daddr);
 	if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
-		send_syn(sockfd, &saddr, &daddr);
+		send_syn(sockfd, saddr, daddr);
 		if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
 			ret = FILTERED;
 	}
 
-	/* TODO: Set in structure */
-	struct timeval end_time;
-	gettimeofday(&end_time, NULL);
-
-	print_time(start_time, end_time);
+	/* TODO: Set in structure, error check */
+	gettimeofday(&scan->end_time, NULL);
 
 	close(sockfd);
-	return ret;
+	scan->status = ret;
+	return 0;
 }

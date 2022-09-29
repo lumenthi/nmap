@@ -62,7 +62,7 @@
 
 /* struct hostent {
 	char	*h_name;				host name
-	char	**h_aliases;			array pointer to alternative hostanmaes
+	char	**h_aliases;			array pointer to alternative hostnames
 	int		h_addrtype;				host address type
 	int		h_length;				length of address
 	char	**h_addr_list;			array pointer to network addresses
@@ -82,6 +82,10 @@
 }; */
 
 struct s_scan {
+	char				*shostname; /* found source hostname */
+	struct sockaddr_in	*saddr; /* sockaddr_in of source */
+	char				*dhostname; /* found source hostname */
+	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
 	char				*service; /* Found service */
@@ -175,12 +179,14 @@ void	print_ip4_header(struct ip *header);
 void	print_tcp_header(struct tcphdr *header);
 void	print_time(struct timeval start_time,
 	struct timeval end_time);
+void	print_scans(struct s_ip *ips);
 
 /* scan_syn.c */
-int		syn_scan(char *destination, uint16_t port);
+int		syn_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
-int		dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr);
+int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
+	char **hostname);
 int		sconfig(char *destination, struct sockaddr_in *saddr);
 
 /* checksum.c */

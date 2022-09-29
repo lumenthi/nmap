@@ -1,7 +1,8 @@
 #include "nmap.h"
 
 /* Fill destination sockaddr_in */
-int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
+int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
+	char **hostname)
 {
 	struct hostent *host;
 
@@ -13,8 +14,7 @@ int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr)
 	daddr->sin_port = htons(port);
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
 
-	printf("[*] Destination: %s (%s) on port: %d\n",
-		host->h_name, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
+	*hostname = ft_strdup(host->h_name);
 
 	return 0;
 }
@@ -60,9 +60,6 @@ int sconfig(char *destination, struct sockaddr_in *saddr)
 		}
 		freeifaddrs(addrs);
 	}
-
-	printf("[*] Source: %s on port: %d\n",
-		inet_ntoa(saddr->sin_addr), ntohs(saddr->sin_port));
 
 	return 0;
 }
