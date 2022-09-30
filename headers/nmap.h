@@ -33,6 +33,10 @@
 #define UP 7
 #define READY 8
 
+/* Default ephemeral ports */
+#define DEFAULT_EPHEMERAL_MIN 32768
+#define DEFAULT_EPHEMERAL_MAX 60999
+
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
 {
