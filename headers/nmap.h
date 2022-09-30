@@ -22,14 +22,20 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 
-/* SCAN RET */
+/* STATUS */
 #define OPEN 0
 #define CLOSED 1
 #define FILTERED 2
 #define DOWN 3
 #define ERROR 4
-/* USEFUL IN SCANS */
-#define TIMEOUT 5
+#define UNKNOWN 5
+#define TIMEOUT 6
+#define UP 7
+#define READY 8
+
+/* Default ephemeral ports */
+#define DEFAULT_EPHEMERAL_MIN 32768
+#define DEFAULT_EPHEMERAL_MAX 60999
 
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
@@ -61,7 +67,7 @@
 
 /* struct hostent {
 	char	*h_name;				host name
-	char	**h_aliases;			array pointer to alternative hostanmaes
+	char	**h_aliases;			array pointer to alternative hostnames
 	int		h_addrtype;				host address type
 	int		h_length;				length of address
 	char	**h_addr_list;			array pointer to network addresses
@@ -80,13 +86,36 @@
 	char			sin_zero[8];
 }; */
 
+struct s_scan {
+	struct sockaddr_in	*saddr; /* sockaddr_in of source */
+	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*dhostname; /* found destination hostname */
+	int					scantype; /* Type of scan */
+	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
+	char				*service; /* Found service */
+	uint16_t			sport; /* Source port */
+	uint16_t			dport; /* Destination port */
+	struct timeval		start_time; /* Scan start time */
+	struct timeval		end_time; /* Scan end time */
+	struct s_scan		*next; /* Next scan */
+};
+
+struct s_ip {
+	struct sockaddr_in	*saddr; /* sockaddr_in of source */
+	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*dhostname; /* found ip hostnme */
+	char				*destination; /* user input */
+	int					status; /* [UP/DOWN/ERROR] */
+	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
+	struct s_ip			*next; /* next ip */
+};
+
 typedef struct	s_data {
 	unsigned long long	opt;
-	char				*destination;
-	uint16_t			dest_port;
+	struct s_ip			*ips;
 }						t_data;
 
-struct	tcp_packet {
+struct			tcp_packet {
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
@@ -153,12 +182,31 @@ extern t_data	g_data;
 /* print.c */
 void	print_ip4_header(struct ip *header);
 void	print_tcp_header(struct tcphdr *header);
+void	print_time(struct timeval start_time,
+	struct timeval end_time);
+void	print_scans(struct s_ip *ips);
+
+/* scan_syn.c */
+int		syn_scan(struct s_scan *to_scan);
+
+/* addr_config.c */
+int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
+	char **hostname);
+int		sconfig(char *destination, struct sockaddr_in *saddr);
+
+/* checksum.c */
+unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
+unsigned short checksum(const char *buf, unsigned int size);
 
 /* nmap.c */
-int		ft_nmap(char *destination, uint16_t port,
-		char *path);
+int		ft_nmap(char *path);
 
 /* free_and_exit.c */
 void	free_and_exit(int exit_val);
+
+/* list.c */
+void	push_ip(struct s_ip **head, struct s_ip *new);
+void	push_ports(struct s_ip **input, uint16_t start, uint16_t end);
+void	free_ips(struct s_ip **ip);
 
 #endif

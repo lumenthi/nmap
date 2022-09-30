@@ -6,16 +6,14 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/23 14:00:06 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/09/30 10:43:57 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
-
-.PHONY : all clean fclean re run
 
 NAME = ft_nmap
 
 CC = gcc
-FLAGS = -Wall -Werror -Wextra 
+FLAGS = -Wall -Werror -Wextra
 
 GREEN = '\033[4;32m'
 RED = '\033[4;31m'
@@ -57,6 +55,11 @@ SRCS = main.c \
 		nmap.c \
 		parse_option_line.c \
 		free_and_exit.c \
+		list.c \
+		scan_syn.c \
+		checksum.c \
+		addr_config.c \
+		print.c
 
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
 
@@ -67,6 +70,8 @@ SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
 #####################
+
+TODOS=$(shell grep -nr "TODO" $(SRCDIR) $(HEADDIR) | wc -l)
 
 SHOULD_COUNT=1
 FILES_TO_COMPILE = 0
@@ -80,17 +85,18 @@ all:
 
 ###### BINARY COMPILATION ######
 
-$(NAME):  $(LIBFT) $(OBJS) ${HEADERS}
-	$(CC) $(OBJS) -o $(NAME) $(LIBFT)
+$(NAME): $(LIBFT) $(OBJS) ${HEADERS}
+	@ $(CC) $(OBJS) -o $(NAME) $(LIBFT)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(NAME) $(BLANK)
-	@ printf "%b" $(WARNING)
-	@ grep -nr "TODO" $(SRCDIR) $(HEADDIR) || true
-	@ printf "%b" $(BLANK)
+	@ if [ $(TODOS) -gt 0 ]; then\
+		printf "%b[WARNING]%b You have %d TODOs pending, run make todo to check them.\n"\
+			$(WARNING) $(BLANK) $(TODOS);\
+	fi
 
 ###############################
 
 $(LIBFT):
-	 $(MAKE) -s -C $(LIBDIR)
+	 @ $(MAKE) -s -C $(LIBDIR)
 
 I = 1
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
@@ -125,7 +131,9 @@ fclean: clean
 re: fclean # Make -j support
 	@ $(MAKE) all
 
-run: all # scanme.nmap.org | testphp.vulnweb.com
-	@ sudo ./$(NAME) scanme.nmap.org 22
+todo:
+	@ printf "%b" $(WARNING)
+	@ grep -nr "TODO" $(SRCDIR) $(HEADDIR) || true
+	@ printf "%b" $(BLANK)
 
-.PHONY: all
+.PHONY: all clean fclean re todo
