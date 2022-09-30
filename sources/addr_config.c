@@ -28,32 +28,32 @@ int sconfig(char *destination, struct sockaddr_in *saddr)
 	ft_memset(saddr, 0, sizeof(*saddr));
 
 	saddr->sin_family = AF_INET;
-	/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
-	/* TODO: Read port range ? */
-	saddr->sin_port = htons(ft_random(32768, 60999));
+	saddr->sin_port = 0;
 
 	if (!ft_strcmp(destination, "127.0.0.1")) {
 		if (inet_pton(AF_INET, "127.0.0.1", &(saddr->sin_addr)) != 1)
 			return 1;
+		return 0;
 	}
 	else {
-		/* TODO: Error handling no/invalid interfaces & returns check */
-		getifaddrs(&addrs);
+		if (getifaddrs(&addrs) != 0)
+			return 1;
 		tmp = addrs;
 		while (tmp)
 		{
 			if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
 			{
 				struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
-				// printf("%s: %s\n", tmp->ifa_name, inet_ntoa(pAddr->sin_addr));
-				/* TODO: Recognition of good interface */
+				/* printf("%s: %s\n", tmp->ifa_name, inet_ntoa(pAddr->sin_addr)); */
 				if (!(tmp->ifa_flags & IFF_LOOPBACK)) {
-					/* TODO: Check if null ? | Error check */
 					if (inet_pton(AF_INET, inet_ntoa(pAddr->sin_addr), &(saddr->sin_addr)) != 1) {
 						freeifaddrs(addrs);
 						return 1;
 					}
-					break ;
+					else {
+						freeifaddrs(addrs);
+						return 0;
+					}
 				}
 			}
 			tmp = tmp->ifa_next;
@@ -61,5 +61,5 @@ int sconfig(char *destination, struct sockaddr_in *saddr)
 		freeifaddrs(addrs);
 	}
 
-	return 0;
+	return 1;
 }

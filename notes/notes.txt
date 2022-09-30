@@ -71,3 +71,7 @@ max = 1024
 
 # nmap multiple ports (not range) handling ?
 ./ft_nmap localhsot -p 22,4242
+
+# Print packet stderr
+# Color reset after packets
+# Makefile counter

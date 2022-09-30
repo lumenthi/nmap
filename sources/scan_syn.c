@@ -34,9 +34,10 @@ static int send_syn(int sockfd,
 	ip->tos = 0;
 	/* Total length */
 	ip->tot_len = htons(sizeof(packet));
-	/* TODO: Identification (check notes.txt) */
-	ip->id = htons(ft_random(0, 600));
-	/* IP Flags + Fragment offset TODO: Set don't fragment flag ! */
+	/* Identification (notes/ip.txt) */
+	ip->id = 0;
+	/* TODO: Set don't fragment flag ! */
+	/* IP Flags + Fragment offset */
 	ip->frag_off = 0;
 	/* TTL */
 	ip->ttl = 64;
@@ -80,8 +81,9 @@ static int send_syn(int sockfd,
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Ready to send SYN packet...\n");
-	/* TODO: Error check */
-	sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr, sizeof(struct sockaddr));
+	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
+		sizeof(struct sockaddr)) < 0)
+		return 1;
 	if (ip->saddr == ip->daddr)
 		update_cursor(sockfd, sizeof(packet), tcp->source);
 	if (g_data.opt & OPT_VERBOSE_DEBUG) {
@@ -90,6 +92,7 @@ static int send_syn(int sockfd,
 	}
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Sent SYN packet\n");
+
 	return 0;
 }
 
@@ -110,10 +113,14 @@ static int read_syn_ack(int sockfd)
 	}
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Received packet\n");
+
+	/* Invalid packet (packet too small) */
 	if (ret < (int)sizeof(struct tcp_packet))
 		return ERROR;
+
+	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
-	/* TODO: Error checking ? */
+
 	if (g_data.opt & OPT_VERBOSE_DEBUG) {
 		print_ip4_header((struct ip *)&packet->ip);
 		print_tcp_header(&packet->tcp);
@@ -192,27 +199,38 @@ int syn_scan(struct s_scan *scan)
 	/* Network services database file /etc/services */
 	if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
 		service = s_service->s_name;
-
 	scan->service = ft_strdup(service);
 
-	/* TODO: Set in structure, error check */
-	gettimeofday(&scan->start_time, NULL);
-
-	/* Scanning process */
-	/* TODO: send_syn error check */
-	send_syn(sockfd, saddr, daddr);
-	if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
-		send_syn(sockfd, saddr, daddr);
-		if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
-			ret = FILTERED;
+	/* Scan start time */
+	if ((gettimeofday(&scan->start_time, NULL)) != 0) {
+		scan->start_time.tv_sec = 0;
+		scan->start_time.tv_usec = 0;
 	}
 
-	/* TODO: Set in structure, error check */
-	gettimeofday(&scan->end_time, NULL);
+	/* Scanning process */
+	if (send_syn(sockfd, saddr, daddr) != 0)
+		ret = ERROR;
+	else {
+		if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
+			if (send_syn(sockfd, saddr, daddr) != 0)
+				ret = ERROR;
+			else {
+				if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
+					ret = FILTERED;
+			}
+		}
+	}
 
-	close(sockfd);
+	/* Scan end time */
+	if ((gettimeofday(&scan->end_time, NULL)) != 0) {
+		scan->end_time.tv_sec = 0;
+		scan->end_time.tv_usec = 0;
+	}
+
 	scan->status = ret;
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Port status: %d\n", ret);
+
+	close(sockfd);
 	return 0;
 }

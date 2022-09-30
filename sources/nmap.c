@@ -35,6 +35,8 @@ int ft_nmap(char *path)
 				scan->status = ERROR;
 			else {
 				ft_memcpy(scan->saddr, ip->saddr, sizeof(struct sockaddr_in));
+				/* TODO: Read port range ? */
+				/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
 				scan->sport = ft_random(32768, 60999);
 			}
 
