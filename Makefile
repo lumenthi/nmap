@@ -76,7 +76,7 @@ TODOS=$(shell grep -nr "TODO" $(SRCDIR) $(HEADDIR) | wc -l)
 SHOULD_COUNT=1
 FILES_TO_COMPILE = 0
 ifeq ($(SHOULD_COUNT), 1)
-	FILES_TO_COMPILE=$(shell make -n SHOULD_COUNT=0 | grep "gcc -c" | wc -l)
+	FILES_TO_COMPILE:=$(shell make -n SHOULD_COUNT=0 | grep "gcc -c" | wc -l)
 endif
 
 all:
