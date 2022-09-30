@@ -83,10 +83,11 @@ void			ft_lstadd(t_list **alst, t_list *new);
 void			ft_lstiter(t_list *lst, void (*f)(t_list *elem));
 t_list			*ft_lstmap(t_list *lst, t_list *(*f)(t_list *elem));
 void			ft_lstpush(t_list *alst, t_list *new);
-int				ft_intlen(int n);
+int				ft_intlen(long long n);
+size_t			ft_getlen(long n);
 int				ft_count_words(char *str);
 int				ft_sqrt(int nb);
-int				ft_power(int nb, int power);
+long long		ft_power(int nb, int power);
 int				ft_isspace(char c);
 void			*ft_realloc(void *ptr, size_t size);
 void			ft_strswap(char **s1, char **s2);
@@ -107,5 +108,6 @@ int				is_arg_an_opt(char * const argv[], int argi,
 int				ft_getopt_long(int argc, char * const argv[],
 					const char *optstring, char **optarg,
 					const struct option *longopts, int *longindex);
+double			ft_ceil(double nb);
 
 #endif

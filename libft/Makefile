@@ -25,6 +25,8 @@ RED = '\033[4;31m'
 TICK = '\033[1;32m~\033[0m'
 CROSS = '\033[1;31mx\033[0m'
 
+NPROC = $(shell nproc)
+
 INCLUDES = libft.h
 
 SRCS = ft_atoi.c \
@@ -107,15 +109,19 @@ SRCS = ft_atoi.c \
 		ft_getopt.c \
 		is_arg_an_opt.c \
 		ft_strbegin.c \
+		print_packet.c \
+		ft_ceil.c \
+		ft_getlen.c \
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
-all: $(NAME)
+all:
+	@ $(MAKE) -s $(NAME)
 
 $(OBJDIR)/%.o: %.c
 	@ mkdir -p $(OBJDIR)
-	@ $(CC) -c $(FLAGS) -o $@ $<
+	 $(CC) -c $(FLAGS) -o $@ $<
 
 $(NAME): $(OBJS)
 	@ ar rc $(NAME) $(OBJS)
