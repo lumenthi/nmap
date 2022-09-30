@@ -11,6 +11,7 @@ void print_scans(struct s_ip *ips)
 	long int usec;
 	long long total_usec;
 	size_t ctotal;
+	size_t copen;
 	size_t cclose; /* Close counter */
 	size_t cerror; /* Error counter */
 	uint8_t menu; /* 0 or 1, to set if the menu bar is diplayed */
@@ -19,6 +20,7 @@ void print_scans(struct s_ip *ips)
 		ctotal = 0;
 		cclose = 0;
 		cerror = 0;
+		copen = 0;
 		menu = 0;
 		printf("%s is %s\n", ip->destination, status[ip->status]);
 		if (ip->status == UP) {
@@ -39,13 +41,14 @@ void print_scans(struct s_ip *ips)
 					printf("% 4d   %s % 4lld.%03lldms    %s\n",
 						scan->dport, status[scan->status],
 						total_usec/1000, total_usec %1000, scan->service);
+					copen++;
 				}
 				ctotal++;
 				scan = scan->next;
 			}
 		}
-		printf("Scanned %ld port(s), %ld error(s), %ld closed\n",
-			ctotal, cerror, cclose);
+		printf("Scanned %ld port(s), %ld error(s), %ld open, %ld closed\n",
+			ctotal, cerror, copen, cclose);
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;

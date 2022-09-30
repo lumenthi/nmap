@@ -111,8 +111,6 @@ static int read_syn_ack(int sockfd)
 			fprintf(stderr, "[*] Packet timeout\n");
 		return TIMEOUT;
 	}
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Received packet\n");
 
 	/* Invalid packet (packet too small) */
 	if (ret < (int)sizeof(struct tcp_packet))
@@ -120,6 +118,10 @@ static int read_syn_ack(int sockfd)
 
 	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Received packet with protocol: %d\n",
+			packet->ip.protocol);
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG) {
 		print_ip4_header((struct ip *)&packet->ip);
@@ -133,32 +135,35 @@ static int read_syn_ack(int sockfd)
 		return OPEN;
 
 	/* TODO: ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13) */
-	return UNKNOWN;
+	/* TODO: return UNKNOWN; */
+	return CLOSED;
 }
 
 int syn_scan(struct s_scan *scan)
 {
 	int sockfd;
 	int one = 1;
-	struct sockaddr_in *saddr = scan->saddr;
-	struct sockaddr_in *daddr = scan->daddr;
 	struct timeval timeout = {1, 533000};
 	int ret;
 	struct servent *s_service;
 	char *service = "unknown";
 
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "=========================================\n");
+
 	/* Prepare ports */
-	saddr->sin_port = htons(scan->sport);
-	daddr->sin_port = htons(scan->dport);
+	scan->saddr->sin_port = htons(scan->sport);
+	scan->daddr->sin_port = htons(scan->dport);
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[*] Destination: %s (%s) on port: %d\n",
-			scan->dhostname, inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port));
+			scan->dhostname, inet_ntoa(scan->daddr->sin_addr),
+			ntohs(scan->daddr->sin_port));
 	}
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[*] Source: %s on port: %d\n",
-			inet_ntoa(saddr->sin_addr), ntohs(saddr->sin_port));
+			inet_ntoa(scan->saddr->sin_addr), ntohs(scan->saddr->sin_port));
 	}
 
 	/* Socket creation */
@@ -208,11 +213,11 @@ int syn_scan(struct s_scan *scan)
 	}
 
 	/* Scanning process */
-	if (send_syn(sockfd, saddr, daddr) != 0)
+	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 		ret = ERROR;
 	else {
 		if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
-			if (send_syn(sockfd, saddr, daddr) != 0)
+			if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 				ret = ERROR;
 			else {
 				if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
@@ -230,6 +235,9 @@ int syn_scan(struct s_scan *scan)
 	scan->status = ret;
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Port status: %d\n", ret);
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "=========================================\n");
 
 	close(sockfd);
 	return 0;
