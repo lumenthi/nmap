@@ -12,7 +12,7 @@
 
 #include "libft.h"
 
-int	ft_intlen(int n)
+int	ft_intlen(long long n)
 {
 	int count;
 

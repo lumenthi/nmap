@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/01/04 10:37:11 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/29 12:50:47 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/09/30 09:34:11 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,6 +24,8 @@ RED = '\033[4;31m'
 
 TICK = '\033[1;32m~\033[0m'
 CROSS = '\033[1;31mx\033[0m'
+
+NPROC = $(shell nproc)
 
 INCLUDES = libft.h
 
@@ -107,16 +109,20 @@ SRCS = ft_atoi.c \
 		ft_getopt.c \
 		is_arg_an_opt.c \
 		ft_strbegin.c \
+		print_packet.c \
+		ft_ceil.c \
+		ft_getlen.c \
 		ft_random.c
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
-all: $(NAME)
+all:
+	@ $(MAKE) -s $(NAME)
 
 $(OBJDIR)/%.o: %.c
 	@ mkdir -p $(OBJDIR)
-	@ $(CC) -c $(FLAGS) -o $@ $<
+	 $(CC) -c $(FLAGS) -o $@ $<
 
 $(NAME): $(OBJS)
 	@ ar rc $(NAME) $(OBJS)
