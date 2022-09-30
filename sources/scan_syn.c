@@ -86,10 +86,8 @@ static int send_syn(int sockfd,
 		return 1;
 	if (ip->saddr == ip->daddr)
 		update_cursor(sockfd, sizeof(packet), tcp->source);
-	if (g_data.opt & OPT_VERBOSE_DEBUG) {
+	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)ip);
-		print_tcp_header(tcp);
-	}
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Sent SYN packet\n");
 
@@ -119,14 +117,8 @@ static int read_syn_ack(int sockfd)
 	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Received packet with protocol: %d\n",
-			packet->ip.protocol);
-
-	if (g_data.opt & OPT_VERBOSE_DEBUG) {
+	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)&packet->ip);
-		print_tcp_header(&packet->tcp);
-	}
 
 	if (packet->tcp.rst)
 		return CLOSED;

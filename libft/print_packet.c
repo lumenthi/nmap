@@ -8,8 +8,13 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+void	print_ip4_header(struct ip *header);
+void	print_icmp_header(struct icmphdr *header);
+void	print_tcp_header(struct tcphdr *header);
+void	print_udp_header(struct udphdr *header);
+
 #define PRINT_BITS(text_color, line_color) \
-	printf("+--+--+--+--+--+--+--+--+--+--+--+--+" \
+	fprintf(stderr, "+--+--+--+--+--+--+--+--+--+--+--+--+" \
 	"--+--+--+--+--+--+--+--+--+--+--+--+" \
 	"--+--+--+--+--+--+--+--+\n" \
 	"|"text_color" 0"line_color"| "text_color"1"line_color"| "text_color"2" \
@@ -62,7 +67,7 @@ static void	print_line(const char *color)
 
 	for (int i = 0; i < LINE_LEN; i++)
 		buff[i] = '-';
-	printf("\n%s%s\n", color, buff);
+	fprintf(stderr, "\n%s%s\n", color, buff);
 }
 
 static void	print_last_line(const char *color)
@@ -73,7 +78,7 @@ static void	print_last_line(const char *color)
 		buff[i] = '-';
 	buff[0] = '\\';
 	buff[LINE_LEN - 1] = '/';
-	printf("\n%s%s\n", color, buff);
+	fprintf(stderr, "\n%s%s\n", color, buff);
 }
 
 static void	print_title_line(const char *title, const char *text_color,
@@ -101,7 +106,7 @@ static void	print_title_line(const char *title, const char *text_color,
 	for (size_t i = 15 + half + len; i < LINE_LEN - 1 + 15; i++)
 		buff[i] = '-';
 	buff[LINE_LEN - 1 + 15] = '\\';
-	printf("\n%s\n", buff);
+	fprintf(stderr, "\n%s\n", buff);
 }
 
 static void print_value(int value, int value_len, size_t size, char specifier)
@@ -124,7 +129,7 @@ static void print_value(int value, int value_len, size_t size, char specifier)
 		index = 2;
 	len = ft_strlen(width[index]);
 	width[index][len - 1] = specifier;
-	printf(width[index], value_len, value);
+	fprintf(stderr, width[index], value_len, value);
 }
 
 static void print_data(const char *name, int value, size_t size, char specifier,
@@ -135,20 +140,20 @@ static void print_data(const char *name, int value, size_t size, char specifier,
 	int	value_len;
 
 	available_space = size * 3 - 1;
-	//printf("\nName : %s\n", name);
-	//printf("available space = %ld\n", available_space);
+	//fprintf(stderr, "\nName : %s\n", name);
+	//fprintf(stderr, "available space = %ld\n", available_space);
 	value_len = ft_getlen(ft_power(2, size)); 
-	//printf("name len = %ld\n", ft_strlen(name));
-	//printf("value len = %d\n", value_len);
+	//fprintf(stderr, "name len = %ld\n", ft_strlen(name));
+	//fprintf(stderr, "value len = %d\n", value_len);
 	//	Final string = (space) + name + space + value + (space)
 	padding = available_space - ft_strlen(name) - 1 - value_len;
-	//printf("padding = %d\n", padding);
-	//printf("left padding = %d\n", padding / 2);
-	//printf("right padding = %d\n|", (int)ft_ceil(padding / 2.0));
-	printf("%*s", (int)ft_ceil(padding / 2.0), "");
-	printf("%s%s ", text_color, name);
+	//fprintf(stderr, "padding = %d\n", padding);
+	//fprintf(stderr, "left padding = %d\n", padding / 2);
+	//fprintf(stderr, "right padding = %d\n|", (int)ft_ceil(padding / 2.0));
+	fprintf(stderr, "%*s", (int)ft_ceil(padding / 2.0), "");
+	fprintf(stderr, "%s%s ", text_color, name);
 	print_value(value, value_len, size, specifier);
-	printf("%*s%s|", padding / 2, "", line_color);
+	fprintf(stderr, "%*s%s|", padding / 2, "", line_color);
 }
 
 static char	*get_ip(struct in_addr _addr)
@@ -184,9 +189,9 @@ static void	print_ip(const char *name, struct in_addr ip, const char *text_color
 	ip_len = ft_strlen(ip_str);
 	hostname_len = ft_strlen(hostname);
 	padding = LINE_LEN - name_len - 1 - hostname_len - 1 - ip_len - 2 - 2;
-	printf("%s|%*s%s", line_color, (int)padding / 2, "", text_color);
-	printf("%s %s (%s)", name, hostname, ip_str);
-	printf("%*s%s|", (int)ft_ceil(padding / 2.0), "", line_color);
+	fprintf(stderr, "%s|%*s%s", line_color, (int)padding / 2, "", text_color);
+	fprintf(stderr, "%s %s (%s)", name, hostname, ip_str);
+	fprintf(stderr, "%*s%s|", (int)ft_ceil(padding / 2.0), "", line_color);
 }
 
 static void	print_tcp_flags(struct tcphdr *header, const char *text_color,
@@ -210,45 +215,45 @@ static void	print_tcp_flags(struct tcphdr *header, const char *text_color,
 	if (header->th_flags & TH_URG)
 		count++;
 	padding = 9 * 3 - 1 - (count * 4 - 1);
-	printf("%*s%s", padding / 2, "", text_color);
+	fprintf(stderr, "%*s%s", padding / 2, "", text_color);
 	first = 0;
 	if (header->th_flags & TH_FIN) {
 		if (first > 0)
-			printf("/");
-		printf("FIN");
+			fprintf(stderr, "/");
+		fprintf(stderr, "FIN");
 		first++;
 	}
 	if (header->th_flags & TH_SYN) {
 		if (first > 0)
-			printf("/");
-		printf("SYN");
+			fprintf(stderr, "/");
+		fprintf(stderr, "SYN");
 		first++;
 	}
 	if (header->th_flags & TH_RST) {
 		if (first > 0)
-			printf("/");
-		printf("RST");
+			fprintf(stderr, "/");
+		fprintf(stderr, "RST");
 		first++;
 	}
 	if (header->th_flags & TH_PUSH) {
 		if (first > 0)
-			printf("/");
-		printf("PUSH");
+			fprintf(stderr, "/");
+		fprintf(stderr, "PUSH");
 		first++;
 	}
 	if (header->th_flags & TH_ACK) {
 		if (first > 0)
-			printf("/");
-		printf("ACK");
+			fprintf(stderr, "/");
+		fprintf(stderr, "ACK");
 		first++;
 	}
 	if (header->th_flags & TH_URG) {
 		if (first > 0)
-			printf("/");
-		printf("URG");
+			fprintf(stderr, "/");
+		fprintf(stderr, "URG");
 		first++;
 	}
-	printf("%*s%s|", (int)ft_ceil(padding / 2.0), "", line_color);
+	fprintf(stderr, "%*s%s|", (int)ft_ceil(padding / 2.0), "", line_color);
 }
 
 void	print_ip4_header(struct ip *header)
@@ -256,7 +261,7 @@ void	print_ip4_header(struct ip *header)
 	print_title_line("IP", PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 	PRINT_BITS(PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Version", header->ip_v, 4, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 	print_data("IHL", header->ip_hl, 4, 'u',
@@ -268,7 +273,7 @@ void	print_ip4_header(struct ip *header)
 
 	print_line(PACKET_COLOR_GREEN);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Identification", ntohs(header->ip_id), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 	print_data("Fragment offset", ntohs(header->ip_off), 16, 'u',
@@ -276,7 +281,7 @@ void	print_ip4_header(struct ip *header)
 
 	print_line(PACKET_COLOR_GREEN);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("TTL", header->ip_ttl, 8, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 	print_data("Protocol", header->ip_p, 8, 'u',
@@ -289,7 +294,24 @@ void	print_ip4_header(struct ip *header)
 	print_line(PACKET_COLOR_GREEN);
 	print_ip("Destination address", header->ip_dst, PACKET_COLOR_YELLOW, PACKET_COLOR_GREEN);
 	print_last_line(PACKET_COLOR_GREEN);
-	printf(PACKET_COLOR_RESET);
+	fprintf(stderr, PACKET_COLOR_RESET);
+
+	//	Only print next headers if there are no options
+	if (header->ip_hl > 5)
+		return;
+	switch (header->ip_p) {
+		case 1:
+			print_icmp_header((struct icmphdr*)header + 1);
+			break;
+		case 6:
+			print_tcp_header((struct tcphdr*)header + 1);
+			break;
+		case 17:
+			print_udp_header((struct udphdr*)header + 1);
+			break;
+		default:
+			break;
+	}
 }
 
 void	print_icmp_header(struct icmphdr *header)
@@ -297,7 +319,7 @@ void	print_icmp_header(struct icmphdr *header)
 	print_title_line("ICMP", PACKET_COLOR_YELLOW, PACKET_COLOR_CYAN);
 	PRINT_BITS(PACKET_COLOR_YELLOW, PACKET_COLOR_CYAN);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Type", header->type, 8, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_CYAN);
 	print_data("Code", header->code, 8, 'u',
@@ -307,14 +329,14 @@ void	print_icmp_header(struct icmphdr *header)
 	
 	print_line(PACKET_COLOR_CYAN);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("ID", ntohs(header->un.echo.id), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_CYAN);
 	print_data("Sequence", ntohs(header->un.echo.sequence), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_CYAN);
 
 	print_last_line(PACKET_COLOR_CYAN);
-	printf(PACKET_COLOR_RESET);
+	fprintf(stderr, PACKET_COLOR_RESET);
 }
 
 void	print_udp_header(struct udphdr *header)
@@ -322,7 +344,7 @@ void	print_udp_header(struct udphdr *header)
 	print_title_line("UDP", PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	PRINT_BITS(PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Source port", ntohs(header->uh_sport), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	print_data("Destination port", ntohs(header->uh_dport), 16, 'u',
@@ -330,14 +352,14 @@ void	print_udp_header(struct udphdr *header)
 
 	print_line(PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Length", ntohs(header->uh_ulen), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	print_data("Checksum", ntohs(header->uh_sum), 16, 'x',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
 	print_last_line(PACKET_COLOR_MAGENTA);
-	printf(PACKET_COLOR_RESET);
+	fprintf(stderr, PACKET_COLOR_RESET);
 }
 
 void	print_tcp_header(struct tcphdr *header)
@@ -345,7 +367,7 @@ void	print_tcp_header(struct tcphdr *header)
 	print_title_line("TCP", PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	PRINT_BITS(PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Source port", ntohs(header->th_sport), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	print_data("Destination port", ntohs(header->th_dport), 16, 'u',
@@ -353,19 +375,19 @@ void	print_tcp_header(struct tcphdr *header)
 
 	print_line(PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Sequence number", ntohl(header->th_seq), 32, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
 	print_line(PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Acknowledgment number", ntohl(header->th_ack), 32, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
 	print_line(PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Off", ntohs(header->th_ack), 7, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	print_tcp_flags(header, PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
@@ -374,12 +396,14 @@ void	print_tcp_header(struct tcphdr *header)
 
 	print_line(PACKET_COLOR_MAGENTA);
 
-	printf("|");
+	fprintf(stderr, "|");
 	print_data("Checksum", ntohs(header->th_sum), 16, 'x',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 	print_data("Urgent pointer", ntohs(header->th_urp), 16, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
+	if (header->th_off > 5)
+		print_line(PACKET_COLOR_MAGENTA);
 	// Options
 	for (int i = 0; i < header->th_off - 5; i++)
 	{
@@ -391,13 +415,13 @@ void	print_tcp_header(struct tcphdr *header)
 		} *opt;
 
 		opt = (struct tcp_opt*)((void*)header + sizeof(struct tcphdr) + i * 4);
-		printf("\e[35m|\e[33m   TCP Option (%hhu)", opt->kind);
-		printf(" Len = %hhu", opt->len);
-		printf(" Value = 0x%0x%0x", opt->data1, opt->data2);
-		printf(" \e[35m|\n");
+		fprintf(stderr, "\e[35m|\e[33m   TCP Option (%hhu)", opt->kind);
+		fprintf(stderr, " Len = %hhu", opt->len);
+		fprintf(stderr, " Value = 0x%0x%0x", opt->data1, opt->data2);
+		fprintf(stderr, " \e[35m|");
 	}
 
 	print_last_line(PACKET_COLOR_MAGENTA);
 	
-	printf(PACKET_COLOR_RESET);
+	fprintf(stderr, PACKET_COLOR_RESET);
 }

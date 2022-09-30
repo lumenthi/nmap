@@ -181,7 +181,6 @@ extern t_data	g_data;
 
 /* print.c */
 void	print_ip4_header(struct ip *header);
-void	print_tcp_header(struct tcphdr *header);
 void	print_time(struct timeval start_time,
 	struct timeval end_time);
 void	print_scans(struct s_ip *ips);
