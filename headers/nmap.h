@@ -22,15 +22,16 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 
-/* SCAN RET */
+/* STATUS */
 #define OPEN 0
 #define CLOSED 1
 #define FILTERED 2
 #define DOWN 3
 #define ERROR 4
 #define UNKNOWN 5
-/* USEFUL IN SCANS */
-#define TIMEOUT 5
+#define TIMEOUT 6
+#define UP 7
+#define READY 8
 
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
@@ -82,10 +83,9 @@
 }; */
 
 struct s_scan {
-	char				*shostname; /* found source hostname */
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	char				*dhostname; /* found source hostname */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
 	char				*service; /* Found service */
@@ -99,8 +99,9 @@ struct s_scan {
 struct s_ip {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	char				*dhostname; /* found ip hostnme */
 	char				*destination; /* user input */
-	int					status; /* [UP/DOWN] */
+	int					status; /* [UP/DOWN/ERROR] */
 	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
 	struct s_ip			*next; /* next ip */
 };

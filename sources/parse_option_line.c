@@ -99,7 +99,6 @@ int	parse_nmap_args(int ac, char **av)
 				/* TODO: optional argument for short options */
 				g_data.opt |= OPT_VERBOSE_INFO;
 				if (optarg != NULL) {
-					printf("optarg = %s\n", optarg);
 					if (ft_strcmp(optarg, "DEBUG") == 0) {
 						g_data.opt |= OPT_VERBOSE_DEBUG;
 						g_data.opt &= ~OPT_VERBOSE_INFO;

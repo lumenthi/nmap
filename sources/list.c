@@ -48,13 +48,9 @@ void	free_scans(struct s_scan **scan)
 	while (current != NULL) {
 		next = current->next;
 
-		if (current->shostname)
-			free(current->shostname);
 		if (current->saddr)
 			free(current->saddr);
 
-		if (current->dhostname)
-			free(current->dhostname);
 		if (current->daddr)
 			free(current->daddr);
 
@@ -74,6 +70,12 @@ void	free_ips(struct s_ip **ip)
 
 	while (current != NULL) {
 		next = current->next;
+		if (current->saddr)
+			free(current->saddr);
+		if (current->daddr)
+			free(current->daddr);
+		if (current->dhostname)
+			free(current->dhostname);
 		free_scans(&current->scans);
 		free(current);
 		current = next;
