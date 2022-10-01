@@ -1,4 +1,5 @@
 #include "nmap.h"
+#include "options.h"
 
 void push_scan(struct s_scan **head, struct s_scan *new)
 {
@@ -13,16 +14,41 @@ void push_scan(struct s_scan **head, struct s_scan *new)
 	}
 }
 
+static struct s_scan *create_scan(uint16_t port, int scantype)
+{
+	struct s_scan *tmp;
+
+	tmp = (struct s_scan *)malloc(sizeof(struct s_scan));
+	if (tmp) {
+		ft_memset(tmp, 0, sizeof(struct s_scan));
+		tmp->dport = port;
+		tmp->scantype = scantype;
+	}
+
+	return tmp;
+}
+
 void	push_ports(struct s_ip **input, uint16_t start, uint16_t end)
 {
 	struct s_ip *ip = *input;
 	struct s_scan *tmp;
 
 	while (start <= end) {
-		tmp = (struct s_scan *)malloc(sizeof(struct s_scan));
-		ft_memset(tmp, 0, sizeof(struct s_scan));
-		tmp->dport = start;
-		push_scan(&ip->scans, tmp);
+		if (g_data.opt & OPT_SCAN_SYN) {
+			tmp = create_scan(start, OPT_SCAN_SYN);
+			if (tmp)
+				push_scan(&ip->scans, tmp);
+		}
+		if (g_data.opt & OPT_SCAN_NULL) {
+			tmp = create_scan(start, OPT_SCAN_NULL);
+			if (tmp)
+				push_scan(&ip->scans, tmp);
+		}
+		if (g_data.opt & OPT_SCAN_FIN) {
+			tmp = create_scan(start, OPT_SCAN_FIN);
+			if (tmp)
+				push_scan(&ip->scans, tmp);
+		}
 		start++;
 	}
 }

@@ -1,23 +1,6 @@
 #include "options.h"
 #include "libft.h"
 #include "nmap.h"
-#include <stdio.h>
-
-typedef struct s_range {
-	int					start;
-	int					end;
-	char				padding[0];
-} t_range;
-
-typedef struct s_set {
-	size_t				nb_ranges;
-	size_t				nb_single_values;
-	t_range				*ranges;
-	int					min;
-	int					max;
-	int					*single_values;
-	char				padding[0];
-} t_set;
 
 static void	print_version(void)
 {
@@ -66,6 +49,51 @@ int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 	return 0;
 }
 
+static int get_next_scan(char *current)
+{
+	int len = 0;
+
+	while (*current && *current != ',') {
+		len++;
+		current++;
+	}
+
+	return len;
+}
+
+static int parse_scans(char *optarg)
+{
+	int valid;
+	char *current = optarg;
+	int curr_len;
+
+	g_data.opt &= ~OPT_SCAN_SYN;
+
+	while ((curr_len = get_next_scan(current))) {
+		valid = 0;
+		/* printf("[*] Current OPT: %s with size: %d\n",
+			current, curr_len); */
+		if (ft_strncmp(current, "SYN", curr_len) == 0) {
+			g_data.opt |= OPT_SCAN_SYN;
+			valid++;
+		}
+		if (ft_strncmp(current, "NULL", curr_len) == 0) {
+			g_data.opt |= OPT_SCAN_NULL;
+			valid++;
+		}
+		if (ft_strncmp(current, "FIN", curr_len) == 0) {
+			g_data.opt |= OPT_SCAN_FIN;
+			valid++;
+		}
+		if (!valid)
+			return 1;
+		current += *(current+curr_len) == ',' ?
+			curr_len+1 : curr_len;
+	}
+
+	return 0;
+}
+
 /*
  **	Parse all the options
  */
@@ -89,12 +117,19 @@ int	parse_nmap_args(int ac, char **av)
 	t_range	curr_range;
 	struct s_ip *tmp;
 
-	curr_range.start = DEFAULT_START_PORT;
-	curr_range.end = DEFAULT_END_PORT;
+	init_data(&curr_range);
 
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
 		switch (opt) {
+			case 's':
+				{
+					if (parse_scans(optarg) != 0) {
+						fprintf(stderr, "Invalid scan type\n");
+						return 1;
+					}
+					break;
+				}
 			case 'v':
 				/* TODO: optional argument for short options */
 				g_data.opt |= OPT_VERBOSE_INFO;
@@ -105,18 +140,14 @@ int	parse_nmap_args(int ac, char **av)
 					}
 					else if (ft_strcmp(optarg, "INFO") == 0)
 						g_data.opt |= OPT_VERBOSE_INFO;
-					else
+					else {
 						fprintf(stderr, "Invalid verbose level\n");
+						return 1;
+					}
 				}
 				break;
 			case 'i':
 				{
-					/* g_data.destination = ft_strdup(optarg);
-					if (g_data.destination == NULL)
-					{
-						perror("ft_nmap: ft_strdup");
-						free_and_exit(EXIT_FAILURE);
-					} */
 					break;
 				}
 			case 'V':

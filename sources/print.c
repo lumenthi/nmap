@@ -30,7 +30,7 @@ void print_scans(struct s_ip *ips)
 					cclose++;
 				else if (scan->status == ERROR)
 					cerror++;
-				else {
+				else if (scan->status == OPEN) {
 					if (!menu) {
 						printf("PORT   STATE       TIME       SERVICE\n");
 						menu = 1;
@@ -43,6 +43,8 @@ void print_scans(struct s_ip *ips)
 						total_usec/1000, total_usec %1000, scan->service);
 					copen++;
 				}
+				else
+					ctotal--;
 				ctotal++;
 				scan = scan->next;
 			}
