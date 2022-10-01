@@ -28,29 +28,29 @@ static struct s_scan *create_scan(uint16_t port, int scantype)
 	return tmp;
 }
 
+static void	push_scantype(struct s_scan **head, uint16_t port)
+{
+	int scans[] = {OPT_SCAN_SYN, OPT_SCAN_NULL, OPT_SCAN_FIN,
+		OPT_SCAN_XMAS, OPT_SCAN_ACK, OPT_SCAN_UDP, 0};
+	int i = 0;
+	struct s_scan *tmp;
+
+	while (scans[i]) {
+		if (g_data.opt & scans[i]) {
+			tmp = create_scan(port, scans[i]);
+			if (tmp)
+				push_scan(head, tmp);
+		}
+		i++;
+	}
+}
+
 void	push_ports(struct s_ip **input, uint16_t start, uint16_t end)
 {
 	struct s_ip *ip = *input;
-	struct s_scan *tmp;
 
-	while (start <= end) {
-		if (g_data.opt & OPT_SCAN_SYN) {
-			tmp = create_scan(start, OPT_SCAN_SYN);
-			if (tmp)
-				push_scan(&ip->scans, tmp);
-		}
-		if (g_data.opt & OPT_SCAN_NULL) {
-			tmp = create_scan(start, OPT_SCAN_NULL);
-			if (tmp)
-				push_scan(&ip->scans, tmp);
-		}
-		if (g_data.opt & OPT_SCAN_FIN) {
-			tmp = create_scan(start, OPT_SCAN_FIN);
-			if (tmp)
-				push_scan(&ip->scans, tmp);
-		}
-		start++;
-	}
+	while (start <= end)
+		push_scantype(&ip->scans, start++);
 }
 
 void	push_ip(struct s_ip **head, struct s_ip *new)

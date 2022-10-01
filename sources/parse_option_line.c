@@ -61,31 +61,33 @@ static int get_next_scan(char *current)
 	return len;
 }
 
+static int enable_scan(char *str, int str_len)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", NULL};
+	int i = 0; /* Start at SYN */
+
+	while (scans[i]) {
+		if (ft_strncmp(str, scans[i], str_len) == 0) {
+			/* i+2 since our first scantype starts at 1UL<<2 in options.h */
+			g_data.opt |= (1UL << (i+2));
+			return 1;
+		}
+		i++;
+	}
+	return 0;
+}
+
 static int parse_scans(char *optarg)
 {
-	int valid;
 	char *current = optarg;
 	int curr_len;
 
 	g_data.opt &= ~OPT_SCAN_SYN;
 
 	while ((curr_len = get_next_scan(current))) {
-		valid = 0;
 		/* printf("[*] Current OPT: %s with size: %d\n",
 			current, curr_len); */
-		if (ft_strncmp(current, "SYN", curr_len) == 0) {
-			g_data.opt |= OPT_SCAN_SYN;
-			valid++;
-		}
-		if (ft_strncmp(current, "NULL", curr_len) == 0) {
-			g_data.opt |= OPT_SCAN_NULL;
-			valid++;
-		}
-		if (ft_strncmp(current, "FIN", curr_len) == 0) {
-			g_data.opt |= OPT_SCAN_FIN;
-			valid++;
-		}
-		if (!valid)
+		if (!(enable_scan(current, curr_len)))
 			return 1;
 		current += *(current+curr_len) == ',' ?
 			curr_len+1 : curr_len;
