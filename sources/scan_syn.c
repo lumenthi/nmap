@@ -202,7 +202,6 @@ int syn_scan(struct s_scan *scan)
 
 	/* Service detection */
 	/* Network services database file /etc/services */
-	/* TODO: Only once per port if possible */
 	if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
 		service = s_service->s_name;
 	scan->service = ft_strdup(service);

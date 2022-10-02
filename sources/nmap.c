@@ -38,11 +38,13 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 
 int run_scan(struct s_scan *scan)
 {
-	syn_scan(scan);
-	/*if (scan->scantype == OPT_SCAN_SYN)
+	/* syn_scan(scan); */
+	if (scan->scantype == OPT_SCAN_SYN)
 		syn_scan(scan);
-	else
-		printf("[*] Scan %d not implemented yet\n", scan->scantype);*/
+	else {
+		printf("[*] Scan %d not implemented yet\n", scan->scantype);
+		scan->status = ERROR;
+	}
 
 	return 0;
 }
