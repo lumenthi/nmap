@@ -6,11 +6,12 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/30 10:43:57 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/02 18:06:24 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = ft_nmap
+SERVER_NAME = ft_server
 
 CC = gcc
 FLAGS = -Wall -Werror -Wextra
@@ -51,6 +52,7 @@ HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 ###### SOURCES ######
 
+SERVER_SRCS = server.c
 SRCS = main.c \
 		nmap.c \
 		parse_option_line.c \
@@ -61,12 +63,15 @@ SRCS = main.c \
 		addr_config.c \
 		print.c
 
+SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
+
 
 #####################
 
 ###### OBJECTS ######
 
+SERVER_OBJS = $(addprefix $(OBJDIR)/, $(SERVER_SRCS:.c=.o))
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
 #####################
@@ -94,6 +99,9 @@ $(NAME): $(LIBFT) $(OBJS) ${HEADERS}
 	fi
 
 ###############################
+
+$(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
+	@ $(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
@@ -127,6 +135,12 @@ fclean: clean
 	printf "Removed %b%b%b binary\n" $(RED) $(NAME) $(BLANK) \
 	|| (printf " %b | " $(CROSS) && \
 	printf "No %b%b%b binary\n" $(RED) $(NAME) $(BLANK))
+	@ test -f $(SERVER_NAME) && \
+	rm -rf $(SERVER_NAME) && \
+	printf " %b | " $(TICK) && \
+	printf "Removed %b%b%b binary\n" $(RED) $(SERVER_NAME) $(BLANK) \
+	|| (printf " %b | " $(CROSS) && \
+	printf "No %b%b%b binary\n" $(RED) $(SERVER_NAME) $(BLANK))
 
 re: fclean # Make -j support
 	@ $(MAKE) all
@@ -135,5 +149,7 @@ todo:
 	@ printf "%b" $(WARNING)
 	@ grep -nr "TODO" $(SRCDIR) $(HEADDIR) || true
 	@ printf "%b" $(BLANK)
+
+server: $(SERVER_NAME)
 
 .PHONY: all clean fclean re todo

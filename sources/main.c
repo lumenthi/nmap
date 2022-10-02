@@ -17,6 +17,7 @@ void	init_data(t_range *port_range)
 	/* TODO: init default settings */
 }
 
+/* TODO: Once finished, remove server related code in makefile/sources */
 /* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {
