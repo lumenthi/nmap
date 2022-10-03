@@ -3,3 +3,4 @@
 objs/*
 ft_nmap
 *.a
+ft_server

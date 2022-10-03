@@ -112,3 +112,13 @@ PORT   STATE  SERVICE
 5/tcp  closed rje
 6/tcp  closed unknown
 [...]
+
+sudo iptables -A OUTPUT -p tcp --source-port 4242 --tcp-flags RST RST -j DROP
+
+non root scans with DGRAM sockets
+
+vagrant@stretch:/vagrant$ nmap localhost -p 4242
+4242/tcp filtered vrml-multi-use
+
+vagrant@stretch:/vagrant$ sudo nmap localhost -p 4242
+4242/tcp open  vrml-multi-use

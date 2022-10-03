@@ -1,5 +1,4 @@
 #include "libft.h"
-
 #include <unistd.h>
 #include <stdio.h>
 #include <netdb.h>
@@ -17,11 +16,16 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define SA struct sockaddr
 
 #define ACK			1
 #define GARBAGE		2
+
+#define ENABLE 1
+#define DISABLE 2
 
 int run = 1;
 
@@ -49,7 +53,7 @@ static void intHandler(int code)
 }
 
 static void update_cursor(int sockfd, unsigned int len, int sport,
-	struct iphdr *ip)
+	struct iphdr *ip, uint16_t bindport)
 {
 	if (ip->saddr != ip->daddr)
 		return;
@@ -62,11 +66,16 @@ static void update_cursor(int sockfd, unsigned int len, int sport,
 		if (recv(sockfd, buffer, len, MSG_DONTWAIT) < 0)
 			return;
 		packet = (struct tcp_packet *)buffer;
-		pport = packet->tcp.source;
+		/* printf("bindport: %d, dest: %d\n", bindport, ntohs(packet->tcp.dest)); */
+		if (packet->tcp.dest == htons(bindport)) {
+			pport = packet->tcp.dest;
+			/* printf("pport: %d, sport: %d\n", ntohs(pport), ntohs(sport)); */
+		}
 	}
 }
 
-static int server_response(int sockfd, uint8_t type, void *received)
+static int server_response(int sockfd, uint8_t type, void *received,
+	uint16_t bindport)
 {
 	(void)type;
 	/* Data len */
@@ -92,6 +101,7 @@ static int server_response(int sockfd, uint8_t type, void *received)
 	destination = inet_ntoa(*(struct in_addr *)&rip->saddr);
 	dconfig(destination, tcp->source, &daddr, NULL);
 	sconfig(destination, &saddr);
+	saddr.sin_port = rtcp->dest;
 
 	ft_memset(packet, 0, sizeof(packet));
 
@@ -152,13 +162,13 @@ static int server_response(int sockfd, uint8_t type, void *received)
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	print_ip4_header((struct ip *)packet);
+	/* print_ip4_header((struct ip *)packet); */
 
 	/* Sending handcrafted packet */
 	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&daddr,
 		sizeof(struct sockaddr)) > 0)
 	{
-		update_cursor(sockfd, sizeof(packet), tcp->source, ip);
+		update_cursor(sockfd, sizeof(packet), tcp->source, ip, bindport);
 		printf("[*] Sent packet:\n");
 		print_ip4_header((struct ip *)packet);
 		return 1;
@@ -171,7 +181,38 @@ static int server_response(int sockfd, uint8_t type, void *received)
 	return 0;
 }
 
-static void server(uint16_t port)
+
+static void iptable(char *sport, uint8_t mode)
+{
+	char *aiptables_enable[] = {"/sbin/iptables", "-A", "OUTPUT", "-p", "tcp",
+		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
+		"DROP", NULL};
+	char *aiptables_disable[] = {"/sbin/iptables", "-D", "OUTPUT", "-p", "tcp",
+		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
+		"DROP", NULL};
+
+	int status;
+	pid_t pid = fork();
+
+	if (pid == -1)
+		printf("[!] Failed to execute iptable commande\n");
+	else if (pid > 0)
+		waitpid(pid, &status, 0);
+	else {
+		if (mode == ENABLE) {
+			if (execve("/sbin/iptables", aiptables_enable, NULL) == -1)
+				printf("[!] Failed to set IPTABLE rule, run as sudo\n");
+		}
+		else if (mode == DISABLE) {
+			if (execve("/sbin/iptables", aiptables_disable, NULL) == -1)
+				printf("[!] Failed to unset IPTABLE rule\n");
+		}
+		_exit(EXIT_FAILURE);   // exec never returns
+	}
+}
+
+/* sport: string port */
+static void server(char *sport, uint16_t port)
 {
 	int len = 1024;
 	char buffer[len];
@@ -181,6 +222,8 @@ static void server(uint16_t port)
 	struct tcp_packet *packet;
 
 	signal(SIGINT, intHandler);
+
+	iptable(sport, ENABLE);
 
 	sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	if (sockfd == -1) {
@@ -212,16 +255,17 @@ static void server(uint16_t port)
 		if (packet->tcp.dest == htons(port)) {
 			printf("[*] Received packet:\n");
 			print_ip4_header((struct ip*)packet);
-			server_response(sockfd, ACK, (void*)packet);
+			server_response(sockfd, ACK, (void*)packet, port);
 		}
 	}
 
 	printf("\n[*] Stopping server...\n");
+	iptable(sport, DISABLE);
 	close(sockfd);
 }
 
 int main(int argc, char **argv)
 {
 	if (argc > 1)
-		server(atoi(argv[1]));
+		server(argv[1], atoi(argv[1]));
 }
