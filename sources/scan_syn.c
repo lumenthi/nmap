@@ -1,8 +1,12 @@
 #include "nmap.h"
 #include "options.h"
 
-static void update_cursor(int sockfd, unsigned int len, int sport)
+static void update_cursor(int sockfd, unsigned int len, int sport,
+	struct iphdr *ip)
 {
+	if (ip->saddr != ip->daddr)
+		return;
+
 	char buffer[len];
 	struct tcp_packet *packet;
 	int pport = -1;
@@ -89,8 +93,7 @@ static int send_syn(int sockfd,
 		return 1;
 
 	/* Make the cursor ready to receive */
-	if (ip->saddr == ip->daddr)
-		update_cursor(sockfd, sizeof(packet), tcp->source);
+	update_cursor(sockfd, sizeof(packet), tcp->source, ip);
 
 	/* Verbose prints */
 	if (g_data.opt & OPT_VERBOSE_DEBUG)

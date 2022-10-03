@@ -30,6 +30,10 @@ struct			tcp_packet {
 	struct tcphdr		tcp;
 };
 
+int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
+	char **hostname);
+int sconfig(char *destination, struct sockaddr_in *saddr);
+
 void	print_ip4_header(struct ip *header);
 void	print_icmp_header(struct icmphdr *header);
 void	print_tcp_header(struct tcphdr *header);
@@ -44,11 +48,36 @@ static void intHandler(int code)
 	run = 0;
 }
 
+static void update_cursor(int sockfd, unsigned int len, int sport,
+	struct iphdr *ip)
+{
+	if (ip->saddr != ip->daddr)
+		return;
+
+	char buffer[len];
+	struct tcp_packet *packet;
+	int pport = -1;
+
+	while (pport != sport) {
+		if (recv(sockfd, buffer, len, MSG_DONTWAIT) < 0)
+			return;
+		packet = (struct tcp_packet *)buffer;
+		pport = packet->tcp.source;
+	}
+}
+
 static int server_response(int sockfd, uint8_t type, void *received)
 {
 	(void)type;
 	/* Data len */
 	unsigned int len = 0;
+
+	/* Dest string */
+	char *destination;
+
+	/* Structs addr */
+	struct sockaddr_in saddr;
+	struct sockaddr_in daddr;
 
 	/* For tcp */
 	char packet[sizeof(struct iphdr)+sizeof(struct tcphdr)+len];
@@ -58,6 +87,11 @@ static int server_response(int sockfd, uint8_t type, void *received)
 
 	struct iphdr *ip = (struct iphdr *)packet;
 	struct tcphdr *tcp = (struct tcphdr *)(packet+sizeof(struct iphdr));
+
+	/* Filling sockaddr structs */
+	destination = inet_ntoa(*(struct in_addr *)&rip->saddr);
+	dconfig(destination, tcp->source, &daddr, NULL);
+	sconfig(destination, &saddr);
 
 	ft_memset(packet, 0, sizeof(packet));
 
@@ -83,6 +117,8 @@ static int server_response(int sockfd, uint8_t type, void *received)
 	ip->check = 0; /* Calculated after TCP header */
 	/* Source ip */
 	/* memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr)); */
+	/* Source ip */
+	memcpy(&ip->saddr, &rip->saddr, sizeof(ip->saddr));
 	/* Dest ip */
 	memcpy(&ip->daddr, &rip->saddr, sizeof(ip->daddr));
 
@@ -119,8 +155,18 @@ static int server_response(int sockfd, uint8_t type, void *received)
 	print_ip4_header((struct ip *)packet);
 
 	/* Sending handcrafted packet */
-	if (send(sockfd, packet, sizeof(packet), 0) > 0)
+	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&daddr,
+		sizeof(struct sockaddr)) > 0)
+	{
+		update_cursor(sockfd, sizeof(packet), tcp->source, ip);
+		printf("[*] Sent packet:\n");
+		print_ip4_header((struct ip *)packet);
 		return 1;
+	}
+	else {
+		printf("[!] Failed to send packet\n");
+		exit(1);
+	}
 
 	return 0;
 }
@@ -130,6 +176,7 @@ static void server(uint16_t port)
 	int len = 1024;
 	char buffer[len];
 	int sockfd;
+	int one = 1;
 	struct sockaddr_in servaddr;
 	struct tcp_packet *packet;
 
@@ -138,7 +185,13 @@ static void server(uint16_t port)
 	sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	if (sockfd == -1) {
 		printf("[!] Socket creation failed...\n");
-		exit(0);
+		return;
+	}
+
+	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
+		printf("[!] Socket option failed...\n");
+		close(sockfd);
+		return;
 	}
 
 	servaddr.sin_family = AF_INET;
@@ -147,7 +200,8 @@ static void server(uint16_t port)
 
 	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
 		printf("[!] Socket bind failed...\n");
-		exit(0);
+		close(sockfd);
+		return;
 	}
 
 	printf("[*] Server listening on port %d..\n", port);
@@ -156,6 +210,7 @@ static void server(uint16_t port)
 		recv(sockfd, buffer, len, 0);
 		packet = (struct tcp_packet *)&buffer;
 		if (packet->tcp.dest == htons(port)) {
+			printf("[*] Received packet:\n");
 			print_ip4_header((struct ip*)packet);
 			server_response(sockfd, ACK, (void*)packet);
 		}

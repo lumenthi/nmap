@@ -14,7 +14,8 @@ int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	daddr->sin_port = htons(port);
 	ft_memcpy(&(daddr->sin_addr.s_addr), host->h_addr_list[0], host->h_length);
 
-	*hostname = ft_strdup(host->h_name);
+	if (hostname)
+		*hostname = ft_strdup(host->h_name);
 
 	return 0;
 }

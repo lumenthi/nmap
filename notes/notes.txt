@@ -76,3 +76,39 @@ max = 1024
 sudo ./ft_nmap scanme.org --scan=SYN,FIN -p 4242
 Same for --verbose=, i believe the arg parser is ignoring
 the fact that optarg are given after the '='
+
+localhost is UP
+PORT   SCAN    STATE    TIME        SERVICE
+22     SYN     OPEN     0000.007ms  ssh
+|      FIN     OPEN     0000.003ms  ssh
+1024   SYN     OPEN     0000.005ms  unknown
+|      FIN     OPEN     0000.004ms  unknown
+Scanned 1024 port(s), 0 error(s), 2 open, 0 filtered, 1022 closed
+
+localhost is UP
+PORT   SCAN    STATE    TIME        SERVICE
+22
+|      SYN     OPEN     0000.007ms  ssh
+|      FIN     OPEN     0000.003ms  ssh
++------------------------------------------
+
+1024
+|      SYN     OPEN     0000.005ms  unknown
+|      FIN     OPEN     0000.004ms  unknown
++------------------------------------------
+Scanned 1024 port(s), 0 error(s), 2 open, 0 filtered, 1022 closed
+
+# If number of ports > 26 do not print all status
+sudo nmap -p 1-26,4242 localhost
+PORT   STATE SERVICE
+22/tcp open  ssh
+
+sudo nmap -p 1-26 localhost
+PORT   STATE  SERVICE
+1/tcp  closed tcpmux
+2/tcp  closed compressnet
+3/tcp  closed compressnet
+4/tcp  closed unknown
+5/tcp  closed rje
+6/tcp  closed unknown
+[...]

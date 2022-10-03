@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/02 19:18:39 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/03 10:56:23 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -53,7 +53,9 @@ HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 ###### SOURCES ######
 
 SERVER_SRCS = server.c \
-				checksum.c
+				checksum.c \
+				addr_config.c
+
 SRCS = main.c \
 		nmap.c \
 		parse_option_line.c \
