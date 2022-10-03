@@ -61,7 +61,7 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 	info->tick = 0;
 
 	while (scan) {
-		if (scan->dport == port) {
+		if (scan->dport == port && scan->status != ERROR) {
 			if (scan->status == OPEN || scan->status == FILTERED) {
 				print_content(scan, info);
 				pstatus = scan->status;

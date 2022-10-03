@@ -6,11 +6,12 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/30 10:43:57 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/03 15:20:54 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = ft_nmap
+SERVER_NAME = ft_server
 
 CC = gcc
 FLAGS = -Wall -Werror -Wextra
@@ -52,6 +53,10 @@ HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 ###### SOURCES ######
 
+SERVER_SRCS = server.c \
+				checksum.c \
+				addr_config.c
+
 SRCS = main.c \
 		nmap.c \
 		parse_option_line.c \
@@ -62,12 +67,15 @@ SRCS = main.c \
 		addr_config.c \
 		print.c
 
+SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
+
 
 #####################
 
 ###### OBJECTS ######
 
+SERVER_OBJS = $(addprefix $(OBJDIR)/, $(SERVER_SRCS:.c=.o))
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
 #####################
@@ -82,7 +90,7 @@ endif
 
 all:
 	@ $(MAKE) -s -C $(LIBDIR)
-	@ $(MAKE) --no-print-directory $(NAME)
+	@ $(MAKE) --no-print-directory server $(NAME)
 
 ###### BINARY COMPILATION ######
 
@@ -96,6 +104,11 @@ $(NAME): $(LIBFT) $(OBJS) ${HEADERS}
 	fi
 
 ###############################
+
+$(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
+	@ printf "[Linking] "
+	$(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
+	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
@@ -129,6 +142,12 @@ fclean: clean
 	printf "Removed %b%b%b binary\n" $(RED) $(NAME) $(BLANK) \
 	|| (printf " %b | " $(CROSS) && \
 	printf "No %b%b%b binary\n" $(RED) $(NAME) $(BLANK))
+	@ test -f $(SERVER_NAME) && \
+	rm -rf $(SERVER_NAME) && \
+	printf " %b | " $(TICK) && \
+	printf "Removed %b%b%b binary\n" $(RED) $(SERVER_NAME) $(BLANK) \
+	|| (printf " %b | " $(CROSS) && \
+	printf "No %b%b%b binary\n" $(RED) $(SERVER_NAME) $(BLANK))
 
 re: fclean # Make -j support
 	@ $(MAKE) all
@@ -137,5 +156,7 @@ todo:
 	@ printf "%b" $(WARNING)
 	@ grep -nr "TODO" $(SRCDIR) $(HEADDIR) || true
 	@ printf "%b" $(BLANK)
+
+server: $(SERVER_NAME)
 
 .PHONY: all clean fclean re todo
