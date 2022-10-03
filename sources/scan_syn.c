@@ -104,7 +104,7 @@ static int send_syn(int sockfd,
 	return 0;
 }
 
-static int read_syn_ack(int sockfd)
+static int read_syn_ack(int sockfd, struct sockaddr_in *daddr)
 {
 	int ret;
 	unsigned int len = sizeof(struct iphdr) + sizeof(struct tcphdr);
@@ -127,6 +127,15 @@ static int read_syn_ack(int sockfd)
 
 	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
+
+	/* printf("[*] Waiting for: %d, got: %d\n", ntohs(daddr->sin_port),
+		ntohs(packet->tcp.source)); */
+
+	// static int toto = 0;
+	if (daddr->sin_port != packet->tcp.source) {
+		// printf("Discarded %d\n", ++toto);
+		return INVALID;
+	}
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)&packet->ip);
@@ -219,11 +228,12 @@ int syn_scan(struct s_scan *scan)
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 		ret = ERROR;
 	else {
-		if ((ret = read_syn_ack(sockfd)) == TIMEOUT) {
+		while ((ret = read_syn_ack(sockfd, scan->daddr)) == INVALID);
+		if (ret == TIMEOUT) {
 			if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 				ret = ERROR;
 			else {
-				if ((ret = read_syn_ack(sockfd)) == TIMEOUT)
+				if ((ret = read_syn_ack(sockfd, scan->daddr)) == TIMEOUT)
 					ret = FILTERED;
 			}
 		}

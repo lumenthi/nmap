@@ -109,6 +109,41 @@ static int parse_scans(char *optarg)
 	return 0;
 }
 
+static void assign_ports(uint16_t *port_min, uint16_t *port_max)
+{
+	int device_size = 11;
+	int fd;
+	char data[device_size];
+	int i = 0;
+
+	*port_min = DEFAULT_EPHEMERAL_MIN;
+	*port_max = DEFAULT_EPHEMERAL_MAX;
+
+	fd = open("/proc/sys/net/ipv4/ip_local_port_range", O_RDONLY);
+	if (fd < 0)
+		return;
+
+	device_size = read(fd, data, device_size);
+	*port_min = 0;
+	/* Read min */
+	while (ft_isdigit(data[i]) && i < device_size) {
+		if (ft_isdigit(data[i]))
+			*port_min = *port_min * 10 + (data[i] - '0');
+		i++;
+	}
+	*port_max = 0;
+	/* Read max */
+	while (i < device_size) {
+		if (ft_isdigit(data[i]))
+			*port_max = *port_max * 10 + (data[i] - '0');
+		i++;
+	}
+
+	/* printf("Port min: %d, Port max: %d\n", *port_min, *port_max); */
+
+	close(fd);
+}
+
 /*
  **	Parse all the options
  */
@@ -207,12 +242,32 @@ int	parse_nmap_args(int ac, char **av)
 		}
 		count++;
 	}
+
+	assign_ports(&g_data.port_min, &g_data.port_max);
+
+	if (g_data.port_min > g_data.port_max) {
+		fprintf(stderr, "%s: Source ports configuration error\n",
+			av[0]);
+		return 1;
+	}
+
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
 			tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
 			if (tmp) {
 				ft_memset(tmp, 0, sizeof(struct s_ip));
 				tmp->destination = av[i];
+				/* Default status */
+				tmp->status = UP;
+				/* Prepare addr structs */
+				tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+				tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+				if (!tmp->saddr || !tmp->daddr)
+					tmp->status = ERROR;
+				if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
+					tmp->status = DOWN;
+				if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
+					tmp->status = ERROR;
 				push_ports(&tmp, curr_range.start, curr_range.end);
 				push_ip(&g_data.ips, tmp);
 			}

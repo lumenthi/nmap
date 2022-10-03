@@ -34,6 +34,8 @@
 #define UP 7
 #define READY 8
 #define PRINTED 9
+#define SCANNING 10
+#define INVALID 11
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
@@ -117,6 +119,8 @@ typedef struct	s_data {
 	struct s_ip			*ips;
 	uint8_t				nb_threads;
 	int					created_threads;
+	uint16_t			port_min;
+	uint16_t			port_max;
 	pthread_t			*threads;
 }						t_data;
 
