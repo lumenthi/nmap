@@ -22,13 +22,19 @@ int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 	int		is_range;
 
 	i = 0;
+	printf("Parsing range |%s|\n", arg);
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
 		curr_range->start = 0;
 		curr_range->end = 0;
 		while (arg[j] && arg[j] != ',') {
+			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
+				char *str = strdup(arg + i);
+				str[j] = 0;
+				printf("Current range = |%s|\n", str);
+				free(str);
 				if (is_range == 1) {
 					fprintf(stderr, "Error #486: Your port specifications are illegal." \
 							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
@@ -41,6 +47,13 @@ int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 					curr_range->end = ft_atoi(arg + j + 1);
 				else
 					curr_range->end = set->max;
+				printf("Current range = [%d - %d]\n", curr_range->start, curr_range->end);
+			}
+			else {
+				char *str = strdup(arg + i);
+				str[j] = 0;
+				printf("Current range = |%s|\n", str);
+				free(str);
 			}
 			j++;
 		}
@@ -161,11 +174,11 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					/* t_set	set;
+					t_set	set;
 					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg, &curr_range); */
+					parse_positive_range(&set, optarg, &curr_range);
 					curr_range.start = ft_atoi(optarg);
 					curr_range.end = ft_atoi(optarg);
 					break;

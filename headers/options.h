@@ -36,8 +36,8 @@ typedef struct s_set {
 	size_t				nb_ranges;
 	size_t				nb_single_values;
 	t_range				*ranges;
-	int					min;
 	int					max;
+	int					min;
 	int					*single_values;
 	char				padding[0];
 } t_set;
