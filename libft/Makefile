@@ -112,7 +112,11 @@ SRCS = ft_atoi.c \
 		print_packet.c \
 		ft_ceil.c \
 		ft_getlen.c \
-		ft_random.c
+		ft_random.c \
+		init_tpool.c \
+		free_tpool.c \
+		tpool.c \
+		tpool_job.c
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))

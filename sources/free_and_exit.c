@@ -4,6 +4,7 @@
 void	free_all()
 {
 	free_ips(&g_data.ips);
+	free_tpool(&g_data.tpool);
 }
 
 void	free_and_exit(int exit_val)

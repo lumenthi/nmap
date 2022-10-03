@@ -14,6 +14,7 @@ NAME = ft_nmap
 
 CC = gcc
 FLAGS = -Wall -Werror -Wextra
+LDFLAGS = -lpthread
 
 GREEN = '\033[4;32m'
 RED = '\033[4;31m'
@@ -44,7 +45,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h
+HEADS = nmap.h options.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################
@@ -86,7 +87,8 @@ all:
 ###### BINARY COMPILATION ######
 
 $(NAME): $(LIBFT) $(OBJS) ${HEADERS}
-	@ $(CC) $(OBJS) -o $(NAME) $(LIBFT)
+	@ printf "[Linking] "
+	$(CC) $(OBJS) -o $(NAME) $(LIBFT) $(LDFLAGS)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(NAME) $(BLANK)
 	@ if [ $(TODOS) -gt 0 ]; then\
 		printf "%b[WARNING]%b You have %d TODOs pending, run make todo to check them.\n"\

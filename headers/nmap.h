@@ -2,6 +2,7 @@
 # define TRACEROUTE_H
 
 #include "libft.h"
+#include "tpool.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -112,8 +113,10 @@ struct s_ip {
 };
 
 typedef struct	s_data {
+	t_tpool				tpool;
 	unsigned long long	opt;
 	struct s_ip			*ips;
+	int					nb_threads;
 }						t_data;
 
 struct			tcp_packet {
