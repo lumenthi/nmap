@@ -36,6 +36,19 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 	close(fd);
 }
 
+int run_scan(struct s_scan *scan)
+{
+	/* syn_scan(scan); */
+	if (scan->scantype == OPT_SCAN_SYN)
+		syn_scan(scan);
+	else {
+		printf("[*] Scan %d not implemented yet\n", scan->scantype);
+		scan->status = ERROR;
+	}
+
+	return 0;
+}
+
 int ft_nmap(char *path)
 {
 	struct s_ip *ip = g_data.ips;
@@ -93,7 +106,7 @@ int ft_nmap(char *path)
 			}
 
 			if (scan->status == READY)
-				syn_scan(scan);
+				run_scan(scan);
 			scan = scan->next;
 		}
 		ip = ip->next;

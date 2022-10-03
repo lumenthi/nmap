@@ -32,6 +32,7 @@
 #define TIMEOUT 6
 #define UP 7
 #define READY 8
+#define PRINTED 9
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
