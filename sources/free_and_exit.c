@@ -1,10 +1,22 @@
 #include "nmap.h"
 #include "libft.h"
 
+void free_threads()
+{
+	void *retval;
+	int i = 0;
+
+	if (g_data.threads) {
+		while (i < g_data.created_threads)
+			pthread_join(g_data.threads[i++], &retval);
+		free(g_data.threads);
+	}
+}
+
 void	free_all()
 {
+	free_threads();
 	free_ips(&g_data.ips);
-	free_tpool(&g_data.tpool);
 }
 
 void	free_and_exit(int exit_val)

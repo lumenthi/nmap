@@ -49,6 +49,37 @@ int run_scan(struct s_scan *scan)
 	return 0;
 }
 
+int launch_scan(void *param)
+{
+	(void)param;
+	printf("[*] Im a thread\n");
+	return 0;
+}
+
+int init_threads()
+{
+	void *retval;
+
+	g_data.threads = malloc(sizeof(pthread_t) * g_data.nb_threads);
+	if (!g_data.threads)
+		return -1;
+	ft_bzero(g_data.threads, sizeof(pthread_t) * g_data.nb_threads);
+
+	while (g_data.created_threads < g_data.nb_threads) {
+		if (pthread_create(&g_data.threads[g_data.created_threads], NULL,
+			(void*)launch_scan, NULL) != 0)
+			return -1;
+		g_data.created_threads++;
+	}
+
+	while (g_data.created_threads > 0) {
+		g_data.created_threads--;
+		if (pthread_join(g_data.threads[g_data.created_threads], &retval) != 0)
+			return -1;
+	}
+	return 0;
+}
+
 int ft_nmap(char *path)
 {
 	struct s_ip *ip = g_data.ips;
@@ -67,6 +98,11 @@ int ft_nmap(char *path)
 	if (port_min > port_max) {
 		fprintf(stderr, "%s: Source ports configuration error\n",
 			path);
+		return 1;
+	}
+
+	if (g_data.nb_threads && init_threads() != 0) {
+		fprintf(stderr, "%s: Failed to create threads\n", path);
 		return 1;
 	}
 

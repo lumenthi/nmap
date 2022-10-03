@@ -16,7 +16,7 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
-int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
+static int		parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 {
 	size_t	i, j;
 	int		is_range;
@@ -165,6 +165,16 @@ int	parse_nmap_args(int ac, char **av)
 				{
 					break;
 				}
+			case 't':
+				{
+					int threads = ft_atoi(optarg);
+					if (threads < 0 || threads > 250) {
+						fprintf(stderr, "Invalid thread number [0-250]\n");
+						return 1;
+					}
+					g_data.nb_threads = threads;
+					break;
+				}
 			case 'V':
 				print_version();
 				return 1;
@@ -179,6 +189,7 @@ int	parse_nmap_args(int ac, char **av)
 					set.min = 1;
 					set.max = MAX_PORT;
 					parse_positive_range(&set, optarg, &curr_range); */
+					(void)parse_positive_range;
 					curr_range.start = ft_atoi(optarg);
 					curr_range.end = ft_atoi(optarg);
 					break;

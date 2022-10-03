@@ -2,7 +2,6 @@
 # define TRACEROUTE_H
 
 #include "libft.h"
-#include "tpool.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,6 +21,7 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <linux/if.h>
+#include <pthread.h>
 
 /* STATUS */
 #define OPEN 0
@@ -113,10 +113,11 @@ struct s_ip {
 };
 
 typedef struct	s_data {
-	t_tpool				tpool;
 	unsigned long long	opt;
 	struct s_ip			*ips;
-	int					nb_threads;
+	uint8_t				nb_threads;
+	int					created_threads;
+	pthread_t			*threads;
 }						t_data;
 
 struct			tcp_packet {
@@ -200,6 +201,9 @@ int		sconfig(char *destination, struct sockaddr_in *saddr);
 /* checksum.c */
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
+
+/* parse_option_line.c */
+void print_usage(FILE* f);
 
 /* nmap.c */
 int		ft_nmap(char *path);

@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/01/04 10:37:11 by lumenthi          #+#    #+#              #
-#    Updated: 2022/09/30 09:34:11 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/03 16:11:55 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -112,11 +112,7 @@ SRCS = ft_atoi.c \
 		print_packet.c \
 		ft_ceil.c \
 		ft_getlen.c \
-		ft_random.c \
-		init_tpool.c \
-		free_tpool.c \
-		tpool.c \
-		tpool_job.c
+		ft_random.c
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
