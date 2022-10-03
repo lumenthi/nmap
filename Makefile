@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/03 10:56:23 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/03 15:20:54 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -90,7 +90,7 @@ endif
 
 all:
 	@ $(MAKE) -s -C $(LIBDIR)
-	@ $(MAKE) --no-print-directory $(NAME)
+	@ $(MAKE) --no-print-directory server $(NAME)
 
 ###### BINARY COMPILATION ######
 
@@ -106,7 +106,9 @@ $(NAME): $(LIBFT) $(OBJS) ${HEADERS}
 ###############################
 
 $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
-	@ $(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
+	@ printf "[Linking] "
+	$(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
+	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)

@@ -174,11 +174,11 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					t_set	set;
+					/* t_set	set;
 					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg, &curr_range);
+					parse_positive_range(&set, optarg, &curr_range); */
 					curr_range.start = ft_atoi(optarg);
 					curr_range.end = ft_atoi(optarg);
 					break;
