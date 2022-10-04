@@ -90,8 +90,8 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 		}
 		scan = scan->next;
 	}
-	/* if (info->tick)
-		printf("+------------------------------------------\n"); */
+	if (info->tick)
+		printf("+------------------------------------------\n");
 	return pstatus;
 }
 
