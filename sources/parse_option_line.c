@@ -29,14 +29,12 @@ static int		parse_positive_range(t_set *set, char *arg)
 			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
-				char *str = strdup(arg + i);
-				str[j] = 0;
-				free(str);
 				if (is_range == 1) {
-					fprintf(stderr, "Error #486: Your port specifications are illegal." \
+					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
 							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
-					return 1;
+					return 1;*/
 				}
+				is_range = 1;
 				set->nb_ranges++;
 				j++;
 				while (arg[j] >= '0' && arg[j] <= '9')
@@ -45,11 +43,8 @@ static int		parse_positive_range(t_set *set, char *arg)
 				if (!arg[j])
 					return 0;
 			}
-			else if (arg[j] == ',') {
+			else if (arg[j] == ',' || !arg[j + 1]) {
 				set->nb_single_values++;
-				char *str = strdup(arg + i);
-				str[j] = 0;
-				free(str);
 				if (arg[++j])
 					i = j;
 				if (!arg[j])
@@ -69,8 +64,10 @@ int			set_positive_range(t_set *set, char *arg)
 
 	crange = 0;
 	csingle = 0;
+	/*printf("Parsing range |%s|\n", arg);
 	printf("%ld ranges\n", set->nb_ranges);
-	printf("%ld single values\n", set->nb_single_values);
+	printf("%ld single values\n", set->nb_single_values);*/
+	/* TODO: free set */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
 		set->nb_ranges = 0;
@@ -81,7 +78,6 @@ int			set_positive_range(t_set *set, char *arg)
 		set->nb_single_values = 0;
 		perror("ft_nmap: single values alloc");
 	}
-	printf("Parsing range 2 |%s|\n", arg);
 	i = 0;
 	while (arg[i]) {
 		j = i;
@@ -90,14 +86,14 @@ int			set_positive_range(t_set *set, char *arg)
 			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
-				char *str = strdup(arg + i);
+				/*char *str = strdup(arg + i);
 				str[j] = 0;
 				printf("Current range str = |%s|\n", str);
-				free(str);
+				free(str);*/
 				if (is_range == 1) {
-					fprintf(stderr, "Error #486: Your port specifications are illegal." \
+					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
 							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
-					return 1;
+					return 1;*/
 				}
 				is_range = 1;
 				set->ranges[crange].start = ft_atoi(arg + i);
@@ -105,20 +101,32 @@ int			set_positive_range(t_set *set, char *arg)
 					set->ranges[crange].end = ft_atoi(arg + j + 1);
 				else
 					set->ranges[crange].end = set->max;
+				/*printf("Current range = [%d - %d]\n",
+					set->ranges[crange].start,
+					set->ranges[crange].end);*/
 				crange++;
-				//printf("Current range = [%d - %d]\n", curr_range->start, curr_range->end);
 				j++;
-				while (arg[j] >= '0' && arg[j] <= '9')
+				/* Skip digits and ',' */
+				while ((arg[j] >= '0' && arg[j] <= '9') || arg[j] == ',') {
+					if (arg[j] == ',') {
+						j++;
+						break;
+					}
 					j++;
+				}
 				i = j;
+				//printf("Remaining string = |%s|\n", arg + i);
 				if (!arg[j])
 					return 0;
 			}
-			else if (arg[j] == ',') {
-				char *str = strdup(arg + i);
-				str[j] = 0;
+			else if (arg[j] == ',' || !arg[j + 1]) {
+				/*char *str = strdup(arg + i);
+				if (!arg[j + 1])
+					str[j - i + 1] = 0;
+				else
+					str[j - i] = 0;
 				printf("Current port = |%s|\n", str);
-				free(str);
+				free(str);*/
 				set->single_values[csingle++] = ft_atoi(arg + i);
 				if (arg[++j])
 					i = j;
@@ -258,12 +266,16 @@ int	parse_nmap_args(int ac, char **av)
 		{"scan",	required_argument,	0, 's'},
 		{0,			0,					0,	0 }
 	};
-	t_range	curr_range;
 	t_set	set;
 
-	init_data(&curr_range);
-	ft_bzero(&set, sizeof(set));
+	init_data();
 
+	/* TODO: tmp, do proper init */
+	ft_bzero(&set, sizeof(set));
+	set.nb_ranges = 1;
+	set.ranges = ft_memalloc(sizeof(t_range));
+	set.ranges[0].start = DEFAULT_START_PORT;
+	set.ranges[0].end = DEFAULT_END_PORT;
 	/* Get ephemeral port range for TCP source */
 	assign_ports(&g_data.port_min, &g_data.port_max);
 	if (g_data.port_min > g_data.port_max) {
@@ -322,18 +334,18 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
+					free(set.ranges);
+					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
 					parse_positive_range(&set, optarg);
 					set_positive_range(&set, optarg);
-					curr_range.start = ft_atoi(optarg);
-					curr_range.end = ft_atoi(optarg);
-					for (size_t k = 0; k < set.nb_ranges; k++)
+					/*for (size_t k = 0; k < set.nb_ranges; k++)
 						printf("Range %ld: [%d - %d]\n", k + 1,
 							set.ranges[k].start, set.ranges[k].end);
 					for (size_t k = 0; k < set.nb_single_values; k++)
 						printf("Value %ld = %d\n", k + 1,
-							set.single_values[k]);
+							set.single_values[k]);*/
 					break;
 				}
 			case '?':

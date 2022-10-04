@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#include "set.h"
+
 # define OPT_VERBOSE_INFO		(1UL << 0)
 # define OPT_VERBOSE_DEBUG		(1UL << 1)
 
@@ -27,7 +29,7 @@
 # define DEFAULT_END_PORT 1024
 
 /* main.c */
-void init_data(t_range *port_range);
+void init_data(void);
 
 /* parse_option_line.c */
 int	parse_nmap_args(int ac, char **av);

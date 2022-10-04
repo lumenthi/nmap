@@ -3,13 +3,9 @@
 
 t_data	g_data;
 
-void	init_data(t_range *port_range)
+void	init_data()
 {
 	ft_bzero(&g_data, sizeof(g_data));
-
-	/* Default ports scan */
-	port_range->start = DEFAULT_START_PORT;
-	port_range->end = DEFAULT_END_PORT;
 
 	/* Default SCAN */
 	g_data.opt |= OPT_SCAN_SYN;

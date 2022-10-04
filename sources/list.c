@@ -70,14 +70,22 @@ void	push_ports(struct s_ip **input, t_set *set)
 
 	crange = 0;
 	while (crange < set->nb_ranges) {
-		crange++;
 		start = set->ranges[crange].start;
 		end = set->ranges[crange].end;
+		//printf("Adding range of ports [%d - %d]\n",	start, end);
 		while (start <= end)
+		{
+			//printf("\tAdding ip %s port %d \n",
+			//	inet_ntoa(ip->daddr->sin_addr), start);
 			push_scantype(*input, &ip->scans, start++);
+		}
+		crange++;
 	}
 	csingle = 0;
 	while (csingle < set->nb_single_values) {
+		//printf("%ld Adding ip %s port %d \n", csingle,
+		//	inet_ntoa(ip->daddr->sin_addr), set->single_values[csingle]);
+		push_scantype(*input, &ip->scans, set->single_values[csingle]);
 		csingle++;
 	}
 }
