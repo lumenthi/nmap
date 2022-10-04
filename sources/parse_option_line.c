@@ -16,24 +16,21 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
-int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
+int			parse_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j;
 	int		is_range;
 
 	i = 0;
-	printf("Parsing range |%s|\n", arg);
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
-		curr_range->start = 0;
-		curr_range->end = 0;
-		while (arg[j] && arg[j] != ',') {
+		while (arg[j]) {
+			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
 				char *str = strdup(arg + i);
 				str[j] = 0;
-				printf("Current range = |%s|\n", str);
 				free(str);
 				if (is_range == 1) {
 					fprintf(stderr, "Error #486: Your port specifications are illegal." \
@@ -41,19 +38,92 @@ int			parse_positive_range(t_set *set, char *arg, t_range *curr_range)
 					return 1;
 				}
 				set->nb_ranges++;
-				is_range = 1;
-				curr_range->start = ft_atoi(arg + i);
-				if (arg[j + 1])
-					curr_range->end = ft_atoi(arg + j + 1);
-				else
-					curr_range->end = set->max;
-				printf("Current range = [%d - %d]\n", curr_range->start, curr_range->end);
+				j++;
+				while (arg[j] >= '0' && arg[j] <= '9')
+					j++;
+				i = j;
+				if (!arg[j])
+					return 0;
 			}
-			else {
+			else if (arg[j] == ',') {
+				set->nb_single_values++;
 				char *str = strdup(arg + i);
 				str[j] = 0;
-				printf("Current range = |%s|\n", str);
 				free(str);
+				if (arg[++j])
+					i = j;
+				if (!arg[j])
+					return 0;
+			}
+			j++;
+		}
+		i++;
+	}
+	return 0;
+}
+
+int			set_positive_range(t_set *set, char *arg)
+{
+	size_t	i, j, crange, csingle;
+	int		is_range;
+
+	crange = 0;
+	csingle = 0;
+	printf("%ld ranges\n", set->nb_ranges);
+	printf("%ld single values\n", set->nb_single_values);
+	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
+	if (!set->ranges) {
+		set->nb_ranges = 0;
+		perror("ft_nmap: ranges alloc");
+	}
+	set->single_values = ft_memalloc(sizeof(int) * set->nb_single_values);
+	if (!set->single_values) {
+		set->nb_single_values = 0;
+		perror("ft_nmap: single values alloc");
+	}
+	printf("Parsing range 2 |%s|\n", arg);
+	i = 0;
+	while (arg[i]) {
+		j = i;
+		is_range = 0;
+		while (arg[j]) {
+			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
+			/* Each "," is a new range to parse */
+			if (arg[j] == '-') {
+				char *str = strdup(arg + i);
+				str[j] = 0;
+				printf("Current range str = |%s|\n", str);
+				free(str);
+				if (is_range == 1) {
+					fprintf(stderr, "Error #486: Your port specifications are illegal." \
+							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
+					return 1;
+				}
+				is_range = 1;
+				set->ranges[crange].start = ft_atoi(arg + i);
+				if (arg[j + 1])
+					set->ranges[crange].end = ft_atoi(arg + j + 1);
+				else
+					set->ranges[crange].end = set->max;
+				crange++;
+				//printf("Current range = [%d - %d]\n", curr_range->start, curr_range->end);
+				j++;
+				while (arg[j] >= '0' && arg[j] <= '9')
+					j++;
+				i = j;
+				if (!arg[j])
+					return 0;
+			}
+			else if (arg[j] == ',') {
+				char *str = strdup(arg + i);
+				str[j] = 0;
+				printf("Current port = |%s|\n", str);
+				free(str);
+				set->single_values[csingle++] = ft_atoi(arg + i);
+				if (arg[++j])
+					i = j;
+				if (!arg[j])
+					return 0;
 			}
 			j++;
 		}
@@ -129,8 +199,8 @@ int	parse_nmap_args(int ac, char **av)
 		{"scan",	required_argument,	0, 's'},
 		{0,			0,					0,	0 }
 	};
-	t_range	curr_range;
 	struct s_ip *tmp;
+	t_range	curr_range;
 
 	init_data(&curr_range);
 
@@ -174,13 +244,20 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					/* t_set	set;
+					t_set	set;
 					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg, &curr_range); */
+					parse_positive_range(&set, optarg);
+					set_positive_range(&set, optarg);
 					curr_range.start = ft_atoi(optarg);
 					curr_range.end = ft_atoi(optarg);
+					for (size_t k = 0; k < set.nb_ranges; k++)
+						printf("Range %ld: [%d - %d]\n", k + 1,
+							set.ranges[k].start, set.ranges[k].end);
+					for (size_t k = 0; k < set.nb_single_values; k++)
+						printf("Value %ld = %d\n", k + 1,
+							set.single_values[k]);
 					break;
 				}
 			case '?':
