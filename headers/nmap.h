@@ -2,7 +2,6 @@
 # define TRACEROUTE_H
 
 #include "libft.h"
-#include "tpool.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,6 +21,7 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <linux/if.h>
+#include <pthread.h>
 
 /* STATUS */
 #define OPEN 0
@@ -34,6 +34,8 @@
 #define UP 7
 #define READY 8
 #define PRINTED 9
+#define SCANNING 10
+#define INVALID 11
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
@@ -88,6 +90,22 @@
 	char			sin_zero[8];
 }; */
 
+typedef struct s_range {
+	uint16_t			start;
+	uint16_t			end;
+	char				padding[0];
+} t_range;
+
+typedef struct s_set {
+	size_t				nb_ranges;
+	size_t				nb_single_values;
+	t_range				*ranges;
+	int					max;
+	int					min;
+	int					*single_values;
+	char				padding[0];
+} t_set;
+
 struct s_scan {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
@@ -113,10 +131,13 @@ struct s_ip {
 };
 
 typedef struct	s_data {
-	t_tpool				tpool;
 	unsigned long long	opt;
 	struct s_ip			*ips;
-	int					nb_threads;
+	uint8_t				nb_threads;
+	int					created_threads;
+	uint16_t			port_min;
+	uint16_t			port_max;
+	pthread_t			*threads;
 }						t_data;
 
 struct			tcp_packet {
@@ -201,6 +222,9 @@ int		sconfig(char *destination, struct sockaddr_in *saddr);
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
 
+/* parse_option_line.c */
+void print_usage(FILE* f);
+
 /* nmap.c */
 int		ft_nmap(char *path);
 
@@ -209,7 +233,7 @@ void	free_and_exit(int exit_val);
 
 /* list.c */
 void	push_ip(struct s_ip **head, struct s_ip *new);
-void	push_ports(struct s_ip **input, uint16_t start, uint16_t end);
+void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
 
 #endif

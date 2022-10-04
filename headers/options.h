@@ -26,22 +26,6 @@
 # define DEFAULT_START_PORT 1
 # define DEFAULT_END_PORT 1024
 
-typedef struct s_range {
-	int					start;
-	int					end;
-	char				padding[0];
-} t_range;
-
-typedef struct s_set {
-	size_t				nb_ranges;
-	size_t				nb_single_values;
-	t_range				*ranges;
-	int					max;
-	int					min;
-	int					*single_values;
-	char				padding[0];
-} t_set;
-
 /* main.c */
 void init_data(t_range *port_range);
 

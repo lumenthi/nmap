@@ -122,3 +122,7 @@ vagrant@stretch:/vagrant$ nmap localhost -p 4242
 
 vagrant@stretch:/vagrant$ sudo nmap localhost -p 4242
 4242/tcp open  vrml-multi-use
+
+# Flags d'opti (remove -g ?)
+
+# Timeout in threads ?
