@@ -1,7 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 
-void push_scan(struct s_scan **head, struct s_scan *new)
+static void push_scan(struct s_scan **head, struct s_scan *new)
 {
 	struct s_scan *tmp = *head;
 
@@ -66,8 +66,10 @@ void	push_ports(struct s_ip **input, uint16_t start, uint16_t end)
 {
 	struct s_ip *ip = *input;
 
-	while (start <= end)
+	while (start <= end) {
 		push_scantype(*input, &ip->scans, start++);
+		g_data.port_counter++;
+	}
 }
 
 void	push_ip(struct s_ip **head, struct s_ip *new)

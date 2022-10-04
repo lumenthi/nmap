@@ -1,7 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 
-int run_scan(struct s_scan *scan)
+static int run_scan(struct s_scan *scan)
 {
 	/* printf("[*] Scanning: %d\n", scan->dport); */
 	/* syn_scan(scan); */
@@ -15,7 +15,7 @@ int run_scan(struct s_scan *scan)
 	return 0;
 }
 
-int launch_scan(void *rip)
+static int launch_scan(void *rip)
 {
 	struct s_ip *ip = (struct s_ip *)rip;
 	struct s_scan *scan;
@@ -39,7 +39,7 @@ int launch_scan(void *rip)
 	return 0;
 }
 
-int launch_threads()
+static int launch_threads()
 {
 	void *retval;
 

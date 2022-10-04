@@ -24,16 +24,30 @@ static int scan_index(int scan_code)
 	return count-2;
 }
 
+void print_time(struct timeval start_time, struct timeval end_time)
+{
+	long int diff_sec = end_time.tv_sec - start_time.tv_sec;
+	long int diff_usec = end_time.tv_usec - start_time.tv_usec;
+	long long total_usec = diff_sec*1000000+diff_usec;
+	long long ms = total_usec % 1000000;
+	long long sec = total_usec / 1000000;
+
+	while (ms > 99)
+		ms /= 10;
+
+	printf("\nNmap done in %01lld.%02lld seconds\n", sec, ms);
+}
+
 static void print_content(struct s_scan *scan, struct s_pinfo *info)
 {
 	long int sec;
 	long int usec;
 	long long total_usec;
 
-	char *status[] = {"OPEN", "CLOSED", "FILTERED", "DOWN",
-		"ERROR", "UNKNOWN", "TIMEOUT", "UP", "READY", NULL};
-	char *scans[] = {"SYN", "NULL", "FIN", "XMAS",
-		"ACK", "UDP", NULL};
+	char *status[] = {"open", "closed", "filtered", "down",
+		"error", "unknown", "timeout", "up", "ready", NULL};
+	char *scans[] = {"syn", "null", "fin", "xmas",
+		"ack", "udp", NULL};
 
 	sec = scan->end_time.tv_sec - scan->start_time.tv_sec;
 	usec = scan->end_time.tv_usec - scan->start_time.tv_usec;
@@ -61,7 +75,9 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
-			if (scan->status == OPEN || scan->status == FILTERED) {
+			if ((scan->status == OPEN || scan->status == FILTERED) ||
+				g_data.port_counter < 27)
+			{
 				print_content(scan, info);
 				pstatus = scan->status;
 				info->tick = 1;
@@ -74,8 +90,8 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 		}
 		scan = scan->next;
 	}
-	if (info->tick)
-		printf("+------------------------------------------\n");
+	/* if (info->tick)
+		printf("+------------------------------------------\n"); */
 	return pstatus;
 }
 

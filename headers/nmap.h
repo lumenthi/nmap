@@ -124,6 +124,7 @@ typedef struct	s_data {
 	uint16_t			port_max;
 	pthread_t			*threads;
 	uint8_t				privilegied;
+	int					port_counter;
 }						t_data;
 
 struct			tcp_packet {
