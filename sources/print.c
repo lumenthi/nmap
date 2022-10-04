@@ -43,10 +43,9 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 		printf("PORT   SCAN    STATE    TIME        SERVICE\n");
 		info->menu = 1;
 	}
-	if (info->tick > 0)
-		printf("|      ");
-	else
-		printf("%-6d ", scan->dport);
+	if (!info->tick)
+		printf("%d\n", scan->dport);
+	printf("|      ");
 
 	printf("%-7s %-8s %04lld.%03lldms  %s\n",
 		scans[scan_index(scan->scantype)], status[scan->status],
@@ -75,6 +74,8 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 		}
 		scan = scan->next;
 	}
+	if (info->tick)
+		printf("+------------------------------------------\n");
 	return pstatus;
 }
 
