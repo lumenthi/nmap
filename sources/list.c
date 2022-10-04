@@ -62,13 +62,31 @@ static void	push_scantype(struct s_ip *ip, struct s_scan **head, uint16_t port)
 	}
 }
 
-void	push_ports(struct s_ip **input, uint16_t start, uint16_t end)
+void	push_ports(struct s_ip **input, t_set *set)
 {
 	struct s_ip *ip = *input;
+	size_t		crange, csingle;
+	uint16_t	start, end;
 
-	while (start <= end) {
-		push_scantype(*input, &ip->scans, start++);
-		g_data.port_counter++;
+	crange = 0;
+	while (crange < set->nb_ranges) {
+		start = set->ranges[crange].start;
+		end = set->ranges[crange].end;
+		//printf("Adding range of ports [%d - %d]\n",	start, end);
+		while (start <= end)
+		{
+			//printf("\tAdding ip %s port %d \n",
+			//	inet_ntoa(ip->daddr->sin_addr), start);
+			push_scantype(*input, &ip->scans, start++);
+		}
+		crange++;
+	}
+	csingle = 0;
+	while (csingle < set->nb_single_values) {
+		//printf("%ld Adding ip %s port %d \n", csingle,
+		//	inet_ntoa(ip->daddr->sin_addr), set->single_values[csingle]);
+		push_scantype(*input, &ip->scans, set->single_values[csingle]);
+		csingle++;
 	}
 }
 

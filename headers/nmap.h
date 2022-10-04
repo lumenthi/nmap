@@ -1,7 +1,8 @@
 #ifndef NMAP_H
-# define TRACEROUTE_H
+# define NMAP_H
 
 #include "libft.h"
+#include "set.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -220,7 +221,7 @@ void	free_and_exit(int exit_val);
 
 /* list.c */
 void	push_ip(struct s_ip **head, struct s_ip *new);
-void	push_ports(struct s_ip **input, uint16_t start, uint16_t end);
+void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
 
 #endif

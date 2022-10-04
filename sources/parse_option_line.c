@@ -16,44 +16,122 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
-static int		parse_positive_range(t_set *set, char *arg, t_range *curr_range)
+static int		parse_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j;
 	int		is_range;
 
 	i = 0;
-	printf("Parsing range |%s|\n", arg);
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
-		curr_range->start = 0;
-		curr_range->end = 0;
-		while (arg[j] && arg[j] != ',') {
+		while (arg[j]) {
+			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
-				char *str = strdup(arg + i);
-				str[j] = 0;
-				printf("Current range = |%s|\n", str);
-				free(str);
 				if (is_range == 1) {
-					fprintf(stderr, "Error #486: Your port specifications are illegal." \
+					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
 							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
-					return 1;
+					return 1;*/
 				}
-				set->nb_ranges++;
 				is_range = 1;
-				curr_range->start = ft_atoi(arg + i);
-				if (arg[j + 1])
-					curr_range->end = ft_atoi(arg + j + 1);
-				else
-					curr_range->end = set->max;
-				printf("Current range = [%d - %d]\n", curr_range->start, curr_range->end);
+				set->nb_ranges++;
+				j++;
+				while (arg[j] >= '0' && arg[j] <= '9')
+					j++;
+				i = j;
+				if (!arg[j])
+					return 0;
 			}
-			else {
-				char *str = strdup(arg + i);
+			else if (arg[j] == ',' || !arg[j + 1]) {
+				set->nb_single_values++;
+				if (arg[++j])
+					i = j;
+				if (!arg[j])
+					return 0;
+			}
+			j++;
+		}
+		i++;
+	}
+	return 0;
+}
+
+int			set_positive_range(t_set *set, char *arg)
+{
+	size_t	i, j, crange, csingle;
+	int		is_range;
+
+	crange = 0;
+	csingle = 0;
+	/*printf("Parsing range |%s|\n", arg);
+	printf("%ld ranges\n", set->nb_ranges);
+	printf("%ld single values\n", set->nb_single_values);*/
+	/* TODO: free set */
+	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
+	if (!set->ranges) {
+		set->nb_ranges = 0;
+		perror("ft_nmap: ranges alloc");
+	}
+	set->single_values = ft_memalloc(sizeof(int) * set->nb_single_values);
+	if (!set->single_values) {
+		set->nb_single_values = 0;
+		perror("ft_nmap: single values alloc");
+	}
+	i = 0;
+	while (arg[i]) {
+		j = i;
+		is_range = 0;
+		while (arg[j]) {
+			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
+			/* Each "," is a new range to parse */
+			if (arg[j] == '-') {
+				/*char *str = strdup(arg + i);
 				str[j] = 0;
-				printf("Current range = |%s|\n", str);
-				free(str);
+				printf("Current range str = |%s|\n", str);
+				free(str);*/
+				if (is_range == 1) {
+					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
+							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
+					return 1;*/
+				}
+				is_range = 1;
+				set->ranges[crange].start = ft_atoi(arg + i);
+				if (arg[j + 1])
+					set->ranges[crange].end = ft_atoi(arg + j + 1);
+				else
+					set->ranges[crange].end = set->max;
+				/*printf("Current range = [%d - %d]\n",
+					set->ranges[crange].start,
+					set->ranges[crange].end);*/
+				crange++;
+				j++;
+				/* Skip digits and ',' */
+				while ((arg[j] >= '0' && arg[j] <= '9') || arg[j] == ',') {
+					if (arg[j] == ',') {
+						j++;
+						break;
+					}
+					j++;
+				}
+				i = j;
+				//printf("Remaining string = |%s|\n", arg + i);
+				if (!arg[j])
+					return 0;
+			}
+			else if (arg[j] == ',' || !arg[j + 1]) {
+				/*char *str = strdup(arg + i);
+				if (!arg[j + 1])
+					str[j - i + 1] = 0;
+				else
+					str[j - i] = 0;
+				printf("Current port = |%s|\n", str);
+				free(str);*/
+				set->single_values[csingle++] = ft_atoi(arg + i);
+				if (arg[++j])
+					i = j;
+				if (!arg[j])
+					return 0;
 			}
 			j++;
 		}
@@ -151,7 +229,7 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 	close(fd);
 }
 
-static void add_ip(char *ip_string, t_range curr_range)
+static void add_ip(char *ip_string, t_set *set)
 {
 	struct s_ip *tmp;
 
@@ -170,7 +248,7 @@ static void add_ip(char *ip_string, t_range curr_range)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
 			tmp->status = ERROR;
-		push_ports(&tmp, curr_range.start, curr_range.end);
+		push_ports(&tmp, set);
 		push_ip(&g_data.ips, tmp);
 	}
 }
@@ -195,9 +273,23 @@ int	parse_nmap_args(int ac, char **av)
 		{"scan",	required_argument,	0, 's'},
 		{0,			0,					0,	0 }
 	};
-	t_range	curr_range;
+	t_set	set;
 
-	init_data(&curr_range);
+	init_data();
+
+	/* TODO: tmp, do proper init */
+	ft_bzero(&set, sizeof(set));
+	set.nb_ranges = 1;
+	set.ranges = ft_memalloc(sizeof(t_range));
+	set.ranges[0].start = DEFAULT_START_PORT;
+	set.ranges[0].end = DEFAULT_END_PORT;
+	/* Get ephemeral port range for TCP source */
+	assign_ports(&g_data.port_min, &g_data.port_max);
+	if (g_data.port_min > g_data.port_max) {
+		fprintf(stderr, "%s: Source ports configuration error\n",
+			av[0]);
+		return 1;
+	}
 
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
@@ -256,14 +348,18 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					/* t_set	set;
+					free(set.ranges);
 					ft_bzero(&set, sizeof(set));
 					set.min = 1;
 					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg, &curr_range); */
-					(void)parse_positive_range;
-					curr_range.start = ft_atoi(optarg);
-					curr_range.end = ft_atoi(optarg);
+					parse_positive_range(&set, optarg);
+					set_positive_range(&set, optarg);
+					/*for (size_t k = 0; k < set.nb_ranges; k++)
+						printf("Range %ld: [%d - %d]\n", k + 1,
+							set.ranges[k].start, set.ranges[k].end);
+					for (size_t k = 0; k < set.nb_single_values; k++)
+						printf("Value %ld = %d\n", k + 1,
+							set.single_values[k]);*/
 					break;
 				}
 			case '?':
@@ -280,18 +376,10 @@ int	parse_nmap_args(int ac, char **av)
 		count++;
 	}
 
-	/* Get ephemeral port range for TCP source */
-	assign_ports(&g_data.port_min, &g_data.port_max);
-	if (g_data.port_min > g_data.port_max) {
-		fprintf(stderr, "%s: Source ports configuration error\n",
-			av[0]);
-		return 1;
-	}
-
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
 			/* Pushing ip in the IP list to scan */
-			add_ip(av[i], curr_range);
+			add_ip(av[i], &set);
 		}
 	}
 	return 0;
