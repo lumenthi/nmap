@@ -78,6 +78,8 @@ void	push_ports(struct s_ip **input, t_set *set)
 			//printf("\tAdding ip %s port %d \n",
 			//	inet_ntoa(ip->daddr->sin_addr), start);
 			push_scantype(*input, &ip->scans, start++);
+			/* I use this to keep a track of the number of ports to scan */
+			g_data.port_counter++;
 		}
 		crange++;
 	}
