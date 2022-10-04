@@ -119,9 +119,11 @@ typedef struct	s_data {
 	struct s_ip			*ips;
 	uint8_t				nb_threads;
 	int					created_threads;
+	/* Ephemeral ports */
 	uint16_t			port_min;
 	uint16_t			port_max;
 	pthread_t			*threads;
+	uint8_t				privilegied;
 }						t_data;
 
 struct			tcp_packet {

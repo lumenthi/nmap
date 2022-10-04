@@ -74,34 +74,41 @@ static int get_next_scan(char *current)
 	return len;
 }
 
-static int enable_scan(char *str, int str_len)
+static uint8_t enable_scan(char *str, int str_len)
 {
-	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", NULL};
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+	/* Privileges required for scans */
+	uint8_t pri[] = {1,     1,      1,     1,      1,     1,     0,     0};
 	int i = 0; /* Start at SYN */
 
 	while (scans[i]) {
 		if (ft_strncmp(str, scans[i], str_len) == 0) {
 			/* i+2 since our first scantype starts at 1UL<<2 in options.h */
+			if (g_data.privilegied < pri[i])
+				return SCAN_PRIVILEGES;
 			g_data.opt |= (1UL << (i+2));
-			return 1;
+			return SCAN_VALID;
 		}
 		i++;
 	}
-	return 0;
+	return SCAN_INVALID;
 }
 
-static int parse_scans(char *optarg)
+static uint8_t parse_scans(char *optarg)
 {
 	char *current = optarg;
 	int curr_len;
+	uint8_t ret;
 
-	g_data.opt &= ~OPT_SCAN_SYN;
+	g_data.opt &= g_data.privilegied ?
+		~OPT_SCAN_SYN : ~OPT_SCAN_TCP;
 
 	while ((curr_len = get_next_scan(current))) {
 		/* printf("[*] Current OPT: %s with size: %d\n",
 			current, curr_len); */
-		if (!(enable_scan(current, curr_len)))
-			return 1;
+		ret = enable_scan(current, curr_len);
+		if (ret != SCAN_VALID)
+			return ret;
 		current += *(current+curr_len) == ',' ?
 			curr_len+1 : curr_len;
 	}
@@ -197,8 +204,15 @@ int	parse_nmap_args(int ac, char **av)
 		switch (opt) {
 			case 's':
 				{
-					if (parse_scans(optarg) != 0) {
+					int scan_ret;
+					scan_ret = parse_scans(optarg);
+					if (scan_ret == SCAN_INVALID) {
 						fprintf(stderr, "Invalid scan type\n");
+						return 1;
+					}
+					else if (scan_ret == SCAN_PRIVILEGES) {
+						fprintf(stderr,
+						"You requested a scan type which requires root privileges.\n");
 						return 1;
 					}
 					break;

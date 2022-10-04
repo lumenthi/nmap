@@ -11,8 +11,11 @@ void	init_data(t_range *port_range)
 	port_range->start = DEFAULT_START_PORT;
 	port_range->end = DEFAULT_END_PORT;
 
+	/* Check privilege level, so we adapt scanning method */
+	g_data.privilegied = getuid() == 0 ? 1 : 0;
+
 	/* Default SCAN */
-	g_data.opt |= OPT_SCAN_SYN;
+	g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 
 	/* TODO: init default settings */
 }
@@ -27,7 +30,6 @@ int		main(int argc, char **argv)
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
 	ft_nmap(argv[0]);
-	// ft_nmap(g_data.destination, g_data.dest_port, argv[0]);
 	free_and_exit(EXIT_SUCCESS);
 
 	return 0;

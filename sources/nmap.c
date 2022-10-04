@@ -39,7 +39,7 @@ int launch_scan(void *rip)
 	return 0;
 }
 
-int init_threads()
+int launch_threads()
 {
 	void *retval;
 
@@ -65,13 +65,7 @@ int init_threads()
 
 int ft_nmap(char *path)
 {
-	if (getuid() != 0) {
-		fprintf(stderr, "%s: Not allowed to create raw sockets, run as root\n",
-			path);
-		return 1;
-	}
-
-	if (g_data.nb_threads && init_threads() != 0) {
+	if (g_data.nb_threads && launch_threads() != 0) {
 		fprintf(stderr, "%s: Failed to create threads\n", path);
 		return 1;
 	}

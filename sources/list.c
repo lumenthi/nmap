@@ -48,7 +48,7 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 static void	push_scantype(struct s_ip *ip, struct s_scan **head, uint16_t port)
 {
 	int scans[] = {OPT_SCAN_SYN, OPT_SCAN_NULL, OPT_SCAN_FIN,
-		OPT_SCAN_XMAS, OPT_SCAN_ACK, OPT_SCAN_UDP, 0};
+		OPT_SCAN_XMAS, OPT_SCAN_ACK, OPT_SCAN_UDP, OPT_SCAN_TCP, 0};
 	int i = 0;
 	struct s_scan *tmp;
 
