@@ -22,15 +22,17 @@ int launch_scan(void *rip)
 
 	while (ip) {
 		//printf("[*] Looking for ip: %s\n", ip->destination);
-		scan = ip->scans;
+		if (ip->status == UP) {
+			scan = ip->scans;
 
-		/* Resolve scans for this IP */
-		while (scan && ip->status == UP) {
-			if (scan->status == READY) {
-				scan->status = SCANNING;
-				run_scan(scan);
+			/* Resolve scans for this IP */
+			while (scan) {
+				if (scan->status == READY) {
+					scan->status = SCANNING;
+					run_scan(scan);
+				}
+				scan = scan->next;
 			}
-			scan = scan->next;
 		}
 		ip = ip->next;
 	}

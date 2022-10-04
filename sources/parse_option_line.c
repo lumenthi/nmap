@@ -144,6 +144,30 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 	close(fd);
 }
 
+static void add_ip(char *ip_string, t_range curr_range)
+{
+	struct s_ip *tmp;
+
+	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
+	if (tmp) {
+		ft_memset(tmp, 0, sizeof(struct s_ip));
+		tmp->destination = ip_string;
+		/* Default status */
+		tmp->status = UP;
+		/* Prepare addr structs */
+		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+		if (!tmp->saddr || !tmp->daddr)
+			tmp->status = ERROR;
+		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
+			tmp->status = DOWN;
+		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
+			tmp->status = ERROR;
+		push_ports(&tmp, curr_range.start, curr_range.end);
+		push_ip(&g_data.ips, tmp);
+	}
+}
+
 /*
  **	Parse all the options
  */
@@ -165,7 +189,6 @@ int	parse_nmap_args(int ac, char **av)
 		{0,			0,					0,	0 }
 	};
 	t_range	curr_range;
-	struct s_ip *tmp;
 
 	init_data(&curr_range);
 
@@ -243,8 +266,8 @@ int	parse_nmap_args(int ac, char **av)
 		count++;
 	}
 
+	/* Get ephemeral port range for TCP source */
 	assign_ports(&g_data.port_min, &g_data.port_max);
-
 	if (g_data.port_min > g_data.port_max) {
 		fprintf(stderr, "%s: Source ports configuration error\n",
 			av[0]);
@@ -253,24 +276,8 @@ int	parse_nmap_args(int ac, char **av)
 
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
-			tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
-			if (tmp) {
-				ft_memset(tmp, 0, sizeof(struct s_ip));
-				tmp->destination = av[i];
-				/* Default status */
-				tmp->status = UP;
-				/* Prepare addr structs */
-				tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-				tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-				if (!tmp->saddr || !tmp->daddr)
-					tmp->status = ERROR;
-				if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
-					tmp->status = DOWN;
-				if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
-					tmp->status = ERROR;
-				push_ports(&tmp, curr_range.start, curr_range.end);
-				push_ip(&g_data.ips, tmp);
-			}
+			/* Pushing ip in the IP list to scan */
+			add_ip(av[i], curr_range);
 		}
 	}
 	return 0;
