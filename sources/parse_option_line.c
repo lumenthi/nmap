@@ -364,12 +364,12 @@ int	parse_nmap_args(int ac, char **av)
 					set.max = MAX_PORT;
 					parse_positive_range(&set, optarg);
 					set_positive_range(&set, optarg);
-					for (size_t k = 0; k < set.nb_ranges; k++)
+					/*for (size_t k = 0; k < set.nb_ranges; k++)
 						printf("Range %ld: [%d - %d]\n", k + 1,
 							set.ranges[k].start, set.ranges[k].end);
 					for (size_t k = 0; k < set.nb_single_values; k++)
 						printf("Value %ld = %d\n", k + 1,
-							set.single_values[k]);
+							set.single_values[k]);*/
 					break;
 				}
 			case '?':
