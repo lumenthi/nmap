@@ -78,6 +78,7 @@ int			set_positive_range(t_set *set, char *arg)
 	/* TODO: remove commented prints  */
 	/* TODO: remove commented prints of libft/is_arg_an_opt */
 	/* TODO: Error if multiple -p */
+	/* TODO: handle errors (ex: only accept digits and ',' '-' */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
 		perror("ft_nmap: ranges alloc");
