@@ -15,6 +15,14 @@ void	init_data()
 
 	g_data.port_counter = 0;
 
+	/* Default range */
+	g_data.set.nb_ranges = 1;
+	g_data.set.ranges = ft_memalloc(sizeof(t_range));
+	if (!g_data.set.ranges)
+		free_and_exit(EXIT_FAILURE);
+	g_data.set.ranges[0].start = DEFAULT_START_PORT;
+	g_data.set.ranges[0].end = DEFAULT_END_PORT;
+
 	/* TODO: init default settings */
 }
 

@@ -37,11 +37,17 @@ static int		parse_positive_range(t_set *set, char *arg)
 				is_range = 1;
 				set->nb_ranges++;
 				j++;
-				while (arg[j] >= '0' && arg[j] <= '9')
+				while ((arg[j] >= '0' && arg[j] <= '9') || arg[j] == ',') {
+					if (arg[j] == ',') {
+						j++;
+						break;
+					}
 					j++;
+				}
 				i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				set->nb_single_values++;
@@ -49,6 +55,7 @@ static int		parse_positive_range(t_set *set, char *arg)
 					i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			j++;
 		}
@@ -68,15 +75,20 @@ int			set_positive_range(t_set *set, char *arg)
 	printf("%ld ranges\n", set->nb_ranges);
 	printf("%ld single values\n", set->nb_single_values);*/
 	/* TODO: free set */
+	/* TODO: remove commented prints  */
+	/* TODO: remove commented prints of libft/is_arg_an_opt */
+	/* TODO: Error if multiple -p */
+	/* TODO: handle errors (ex: only accept digits and ',' '-' */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
-		set->nb_ranges = 0;
 		perror("ft_nmap: ranges alloc");
+		return -1;
 	}
 	set->single_values = ft_memalloc(sizeof(int) * set->nb_single_values);
 	if (!set->single_values) {
 		set->nb_single_values = 0;
 		perror("ft_nmap: single values alloc");
+		return -1;
 	}
 	i = 0;
 	while (arg[i]) {
@@ -118,6 +130,7 @@ int			set_positive_range(t_set *set, char *arg)
 				//printf("Remaining string = |%s|\n", arg + i);
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				/*char *str = strdup(arg + i);
@@ -132,6 +145,7 @@ int			set_positive_range(t_set *set, char *arg)
 					i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			j++;
 		}
@@ -261,7 +275,7 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1;
 	char		*optarg = NULL;
-	const char	*optstring = "-hvVp:i:f:t:s:";
+	const char	*optstring = "hv::Vp:i:f:t:s:";
 	static struct option long_options[] = {
 		{"help",	0,					0, 'h'},
 		{"version",	0,					0, 'V'},
@@ -273,16 +287,9 @@ int	parse_nmap_args(int ac, char **av)
 		{"scan",	required_argument,	0, 's'},
 		{0,			0,					0,	0 }
 	};
-	t_set	set;
 
 	init_data();
 
-	/* TODO: tmp, do proper init */
-	ft_bzero(&set, sizeof(set));
-	set.nb_ranges = 1;
-	set.ranges = ft_memalloc(sizeof(t_range));
-	set.ranges[0].start = DEFAULT_START_PORT;
-	set.ranges[0].end = DEFAULT_END_PORT;
 	/* Get ephemeral port range for TCP source */
 	assign_ports(&g_data.port_min, &g_data.port_max);
 	if (g_data.port_min > g_data.port_max) {
@@ -348,18 +355,20 @@ int	parse_nmap_args(int ac, char **av)
 			case 'p':
 				{
 					/* TODO: parse ranges of ports */
-					free(set.ranges);
-					ft_bzero(&set, sizeof(set));
-					set.min = 1;
-					set.max = MAX_PORT;
-					parse_positive_range(&set, optarg);
-					set_positive_range(&set, optarg);
-					/*for (size_t k = 0; k < set.nb_ranges; k++)
+					if (g_data.set.ranges)
+						free(g_data.set.ranges);
+					if (g_data.set.single_values)
+						free(g_data.set.single_values);
+					ft_bzero(&g_data.set, sizeof(g_data.set));
+					parse_positive_range(&g_data.set, optarg);
+					if (set_positive_range(&g_data.set, optarg))
+						return -1;
+					/*for (size_t k = 0; k < g_data.set.nb_ranges; k++)
 						printf("Range %ld: [%d - %d]\n", k + 1,
-							set.ranges[k].start, set.ranges[k].end);
-					for (size_t k = 0; k < set.nb_single_values; k++)
+							g_data.set.ranges[k].start, g_data.set.ranges[k].end);
+					for (size_t k = 0; k < g_data.set.nb_single_values; k++)
 						printf("Value %ld = %d\n", k + 1,
-							set.single_values[k]);*/
+							g_data.set.single_values[k]);*/
 					break;
 				}
 			case '?':
@@ -379,7 +388,7 @@ int	parse_nmap_args(int ac, char **av)
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
 			/* Pushing ip in the IP list to scan */
-			add_ip(av[i], &set);
+			add_ip(av[i], &g_data.set);
 		}
 	}
 	return 0;

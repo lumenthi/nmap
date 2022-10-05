@@ -116,6 +116,7 @@ struct s_ip {
 };
 
 typedef struct	s_data {
+	t_set				set;
 	unsigned long long	opt;
 	struct s_ip			*ips;
 	uint8_t				nb_threads;
