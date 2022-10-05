@@ -88,12 +88,15 @@ static int send_syn(int sockfd,
 	/* Sending handcrafted packet */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Ready to send SYN packet...\n");
-	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
+	/* if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0)
+		return 1; */
+	if (write(sockfd, packet, sizeof(packet)) < 0)
 		return 1;
 
 	/* Make the cursor ready to receive */
-	update_cursor(sockfd, sizeof(packet), tcp->source, ip);
+	(void)update_cursor;
+	/* update_cursor(sockfd, sizeof(packet), tcp->source, ip); */
 
 	/* Verbose prints */
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -128,12 +131,13 @@ static int read_syn_ack(int sockfd, struct sockaddr_in *saddr)
 	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
 
-	/* printf("[*] Waiting for: %d, got: %d\n", ntohs(saddr->sin_port),
-		ntohs(packet->tcp.dest)); */
-
-	// static int toto = 0;
 	if (saddr->sin_port != packet->tcp.dest) {
-		// printf("Discarded %d\n", ++toto);
+		/* TODO: Remove after, debugging threads */
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+			static int toto = 0;
+			printf("[*] [%d] Waiting for: %d, got: %d\n",
+				++toto, ntohs(saddr->sin_port), ntohs(packet->tcp.dest));
+		}
 		return INVALID;
 	}
 
@@ -204,16 +208,15 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
-	struct sockaddr_in bindaddr;
+	/* struct sockaddr_in bindaddr;
 	ft_memcpy(&bindaddr, scan->saddr, sizeof(struct sockaddr_in));
-	bindaddr.sin_port = scan->daddr->sin_port;
 	if (bind(sockfd, (struct sockaddr *)&bindaddr, sizeof(bindaddr)) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[*] Failed to bind port: %d\n", bindaddr.sin_port);
 		scan->status = ERROR;
 		close(sockfd);
 		return 1;
-	}
+	} */
 
 	if ((connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr)) != 0)) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -239,11 +242,13 @@ int syn_scan(struct s_scan *scan)
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 		ret = ERROR;
 	else {
-		ret = read_syn_ack(sockfd, scan->saddr);
+		/* ret = read_syn_ack(sockfd, scan->saddr); */
+		while ((ret = read_syn_ack(sockfd, scan->saddr)) == INVALID);
 		if (ret == TIMEOUT) {
 			if (send_syn(sockfd, scan->saddr, scan->saddr) != 0)
 				ret = ERROR;
 			else {
+				/* ret = read_syn_ack(sockfd, scan->saddr); */
 				while ((ret = read_syn_ack(sockfd, scan->saddr)) == INVALID);
 				if (ret == TIMEOUT)
 					ret = FILTERED;

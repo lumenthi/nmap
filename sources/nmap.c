@@ -4,13 +4,15 @@
 static int run_scan(struct s_scan *scan)
 {
 	/* printf("[*] Scanning: %d\n", scan->dport); */
-	/* syn_scan(scan); */
-	if (scan->scantype == OPT_SCAN_SYN)
+	syn_scan(scan);
+
+	/* TODO: Restore, temporary doing syn scans until more scans are implemented */
+	/* if (scan->scantype == OPT_SCAN_SYN)
 		syn_scan(scan);
 	else {
 		printf("[*] Scan %d not implemented yet\n", scan->scantype);
 		scan->status = ERROR;
-	}
+	}*/
 
 	return 0;
 }

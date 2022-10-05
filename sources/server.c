@@ -182,6 +182,12 @@ static int server_response(int sockfd, uint8_t type, void *received,
 	return 0;
 }
 
+static void print_usage(char *path)
+{
+	printf("Usage: %s {PORT} {MODE}\n"
+	"Modes:\n"
+	"1: OPEN\n2: FILTERED\n3: CLOSED\n", path);
+}
 
 static void iptable(char *sport, uint8_t filter, uint8_t mode)
 {
@@ -193,6 +199,15 @@ static void iptable(char *sport, uint8_t filter, uint8_t mode)
 		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
 		"DROP", NULL};
 
+	char *aiptables_cenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
+		NULL};
+	char *aiptables_cdisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
+		NULL};
+
+	char **selected_mode;
+
 	int status;
 	pid_t pid = fork();
 
@@ -202,19 +217,24 @@ static void iptable(char *sport, uint8_t filter, uint8_t mode)
 		waitpid(pid, &status, 0);
 	else {
 		if (mode == ENABLE) {
-			if (execve("/sbin/iptables", aiptables_enable, NULL) == -1)
-				printf("[!] Failed to set IPTABLE rule, run as sudo\n");
+			selected_mode = aiptables_enable;
+			if (filter == CLOSED)
+				selected_mode = aiptables_cenable;
 		}
 		else if (mode == DISABLE) {
-			if (execve("/sbin/iptables", aiptables_disable, NULL) == -1)
-				printf("[!] Failed to unset IPTABLE rule\n");
+			selected_mode = aiptables_disable;
+			if (filter == CLOSED)
+				selected_mode = aiptables_cdisable;
 		}
+
+		if (execve("/sbin/iptables", selected_mode, NULL) == -1)
+			printf("[!] Failed to modify IPTABLE rule, run as sudo\n");
 		_exit(EXIT_FAILURE);   // exec never returns
 	}
 }
 
 /* sport: string port */
-static void server(char *sport, uint16_t port, uint8_t mode)
+static void server(char *path, char *sport, uint16_t port, uint8_t mode)
 {
 	int len = 1024;
 	char buffer[len];
@@ -222,6 +242,11 @@ static void server(char *sport, uint16_t port, uint8_t mode)
 	int one = 1;
 	struct sockaddr_in servaddr;
 	struct tcp_packet *packet;
+
+	if (mode != OPEN && mode != FILTERED && mode != CLOSED) {
+		print_usage(path);
+		return;
+	}
 
 	signal(SIGINT, intHandler);
 
@@ -270,9 +295,7 @@ static void server(char *sport, uint16_t port, uint8_t mode)
 int main(int argc, char **argv)
 {
 	if (argc > 2)
-		server(argv[1], atoi(argv[1]), atoi(argv[2]));
+		server(argv[0], argv[1], atoi(argv[1]), atoi(argv[2]));
 	else
-		printf("Usage: %s {PORT} {MODE}\n"
-		"Modes:\n"
-		"1: OPEN\n2: FILTERED\n3: CLOSED\n", argv[0]);
+		print_usage(argv[0]);
 }
