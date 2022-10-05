@@ -37,11 +37,17 @@ static int		parse_positive_range(t_set *set, char *arg)
 				is_range = 1;
 				set->nb_ranges++;
 				j++;
-				while (arg[j] >= '0' && arg[j] <= '9')
+				while ((arg[j] >= '0' && arg[j] <= '9') || arg[j] == ',') {
+					if (arg[j] == ',') {
+						j++;
+						break;
+					}
 					j++;
+				}
 				i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				set->nb_single_values++;
@@ -49,6 +55,7 @@ static int		parse_positive_range(t_set *set, char *arg)
 					i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			j++;
 		}
@@ -68,6 +75,7 @@ int			set_positive_range(t_set *set, char *arg)
 	printf("%ld ranges\n", set->nb_ranges);
 	printf("%ld single values\n", set->nb_single_values);*/
 	/* TODO: free set */
+	/* TODO: remove commented prints  */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
 		set->nb_ranges = 0;
@@ -118,6 +126,7 @@ int			set_positive_range(t_set *set, char *arg)
 				//printf("Remaining string = |%s|\n", arg + i);
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				/*char *str = strdup(arg + i);
@@ -132,6 +141,7 @@ int			set_positive_range(t_set *set, char *arg)
 					i = j;
 				if (!arg[j])
 					return 0;
+				continue;
 			}
 			j++;
 		}
@@ -354,12 +364,12 @@ int	parse_nmap_args(int ac, char **av)
 					set.max = MAX_PORT;
 					parse_positive_range(&set, optarg);
 					set_positive_range(&set, optarg);
-					/*for (size_t k = 0; k < set.nb_ranges; k++)
+					for (size_t k = 0; k < set.nb_ranges; k++)
 						printf("Range %ld: [%d - %d]\n", k + 1,
 							set.ranges[k].start, set.ranges[k].end);
 					for (size_t k = 0; k < set.nb_single_values; k++)
 						printf("Value %ld = %d\n", k + 1,
-							set.single_values[k]);*/
+							set.single_values[k]);
 					break;
 				}
 			case '?':
