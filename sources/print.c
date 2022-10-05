@@ -45,7 +45,8 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	long long total_usec;
 
 	char *status[] = {"open", "closed", "filtered", "down",
-		"error", "unknown", "timeout", "up", "ready", NULL};
+		"error", "unknown", "timeout", "up", "ready", "printed",
+		"scanning", "invalid", NULL};
 	char *scans[] = {"syn", "null", "fin", "xmas",
 		"ack", "udp", NULL};
 

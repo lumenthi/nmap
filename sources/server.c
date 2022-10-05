@@ -21,11 +21,12 @@
 
 #define SA struct sockaddr
 
-#define ACK			1
-#define GARBAGE		2
-
 #define ENABLE 1
 #define DISABLE 2
+
+#define OPEN 1
+#define FILTERED 2
+#define CLOSED 3
 
 int run = 1;
 
@@ -182,8 +183,9 @@ static int server_response(int sockfd, uint8_t type, void *received,
 }
 
 
-static void iptable(char *sport, uint8_t mode)
+static void iptable(char *sport, uint8_t filter, uint8_t mode)
 {
+	(void)filter;
 	char *aiptables_enable[] = {"/sbin/iptables", "-A", "OUTPUT", "-p", "tcp",
 		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
 		"DROP", NULL};
@@ -212,7 +214,7 @@ static void iptable(char *sport, uint8_t mode)
 }
 
 /* sport: string port */
-static void server(char *sport, uint16_t port)
+static void server(char *sport, uint16_t port, uint8_t mode)
 {
 	int len = 1024;
 	char buffer[len];
@@ -223,7 +225,7 @@ static void server(char *sport, uint16_t port)
 
 	signal(SIGINT, intHandler);
 
-	iptable(sport, ENABLE);
+	iptable(sport, mode, ENABLE);
 
 	sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	if (sockfd == -1) {
@@ -255,17 +257,22 @@ static void server(char *sport, uint16_t port)
 		if (packet->tcp.dest == htons(port)) {
 			printf("[*] Received packet:\n");
 			print_ip4_header((struct ip*)packet);
-			server_response(sockfd, ACK, (void*)packet, port);
+			if (mode != FILTERED)
+				server_response(sockfd, mode, (void*)packet, port);
 		}
 	}
 
 	printf("\n[*] Stopping server...\n");
-	iptable(sport, DISABLE);
+	iptable(sport, mode, DISABLE);
 	close(sockfd);
 }
 
 int main(int argc, char **argv)
 {
-	if (argc > 1)
-		server(argv[1], atoi(argv[1]));
+	if (argc > 2)
+		server(argv[1], atoi(argv[1]), atoi(argv[2]));
+	else
+		printf("Usage: %s {PORT} {MODE}\n"
+		"Modes:\n"
+		"1: OPEN\n2: FILTERED\n3: CLOSED\n", argv[0]);
 }
