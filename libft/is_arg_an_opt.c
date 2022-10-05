@@ -77,7 +77,18 @@ int		is_arg_an_opt(char * const argv[], int argi, const char *optstring,
 			//	it is not an option line
 			if (prev_arg[prev_len - 1] == optstring[i - 1])
 			{
-				//printf("Arg of %s\n", prev_arg);
+				//	The opt has an optional argument. Only take it if it does
+				//	start with an '-'
+				if (optstring[i + 1] == ':')
+				{
+					//printf("%s is the optional arg of %s\n", argv[argi], prev_arg);
+					if (argv[argi][0] == '-')
+					{
+						//printf("%s is a new option\n", argv[argi]);
+						return 1;
+					}
+				}
+				//printf("%s is arg of %s\n", argv[argi], prev_arg);
 				//	Current arg is the arg of the previous opt
 				return 2;
 			}

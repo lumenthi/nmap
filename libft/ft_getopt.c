@@ -127,7 +127,9 @@ static int	check_short_opt(char c, const char *optstring, int *requires_arg)
 		if (optstring[i] != ':' && c == optstring[i])
 		{
 			//	Option that requires an argument
-			if (optstring[i + 1] == ':')
+			if (optstring[i + 1] == ':' && optstring[i + 2] == ':')
+				*requires_arg = 2;
+			else if (optstring[i + 1] == ':')
 				*requires_arg = 1;
 			return c;
 		}
@@ -225,8 +227,9 @@ static int	parse_option_line(char * const argv[], const char *optstring,
 		if (ret == '?')
 			fprintf(stderr, "%s: invalid option -- '%c'\n",
 					argv[0], argv[*optindex][*nextchar]);
-		//	Option that requires an arg
-		else if (requires_arg == 1)
+		//	Option that requires an arg (or optional arg)
+		else if (requires_arg == 1 || (requires_arg == 2
+				&& argv[*optindex + 1] && argv[*optindex + 1][0] != '-'))
 		{
 			if (set_short_optarg(argv, optarg, *optindex, *nextchar))
 				return '?';

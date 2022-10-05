@@ -76,6 +76,7 @@ int			set_positive_range(t_set *set, char *arg)
 	printf("%ld single values\n", set->nb_single_values);*/
 	/* TODO: free set */
 	/* TODO: remove commented prints  */
+	/* TODO: remove commented prints of libft/is_arg_an_opt */
 	/* TODO: Error if multiple -p */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
@@ -272,7 +273,7 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1;
 	char		*optarg = NULL;
-	const char	*optstring = "-hvVp:i:f:t:s:";
+	const char	*optstring = "hv::Vp:i:f:t:s:";
 	static struct option long_options[] = {
 		{"help",	0,					0, 'h'},
 		{"version",	0,					0, 'V'},
@@ -323,7 +324,6 @@ int	parse_nmap_args(int ac, char **av)
 			case 'v':
 				/* TODO: optional argument for short options */
 				g_data.opt |= OPT_VERBOSE_INFO;
-				//printf("optarg = |%s|\n", optarg);
 				if (optarg != NULL) {
 					if (ft_strcmp(optarg, "DEBUG") == 0) {
 						g_data.opt |= OPT_VERBOSE_DEBUG;
@@ -336,11 +336,6 @@ int	parse_nmap_args(int ac, char **av)
 						return 1;
 					}
 				}
-				//printf("Verbose level = ");
-				if (g_data.opt & OPT_VERBOSE_INFO)
-					printf("INFO\n");
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
-					printf("DEBUG\n");
 				break;
 			case 'i':
 				{
