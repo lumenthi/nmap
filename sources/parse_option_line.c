@@ -76,6 +76,7 @@ int			set_positive_range(t_set *set, char *arg)
 	printf("%ld single values\n", set->nb_single_values);*/
 	/* TODO: free set */
 	/* TODO: remove commented prints  */
+	/* TODO: Error if multiple -p */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
 		set->nb_ranges = 0;
@@ -322,6 +323,7 @@ int	parse_nmap_args(int ac, char **av)
 			case 'v':
 				/* TODO: optional argument for short options */
 				g_data.opt |= OPT_VERBOSE_INFO;
+				//printf("optarg = |%s|\n", optarg);
 				if (optarg != NULL) {
 					if (ft_strcmp(optarg, "DEBUG") == 0) {
 						g_data.opt |= OPT_VERBOSE_DEBUG;
@@ -334,6 +336,11 @@ int	parse_nmap_args(int ac, char **av)
 						return 1;
 					}
 				}
+				//printf("Verbose level = ");
+				if (g_data.opt & OPT_VERBOSE_INFO)
+					printf("INFO\n");
+				if (g_data.opt & OPT_VERBOSE_DEBUG)
+					printf("DEBUG\n");
 				break;
 			case 'i':
 				{
