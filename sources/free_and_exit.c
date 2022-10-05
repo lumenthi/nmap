@@ -17,6 +17,10 @@ void	free_all()
 {
 	free_threads();
 	free_ips(&g_data.ips);
+	if (g_data.set.ranges)
+		free(g_data.set.ranges);
+	if (g_data.set.single_values)
+		free(g_data.set.single_values);
 }
 
 void	free_and_exit(int exit_val)
