@@ -41,8 +41,6 @@ static int send_syn(int sockfd,
 	ip->tot_len = htons(sizeof(packet));
 	/* Identification (notes/ip.txt) */
 	ip->id = 0;
-	/* TODO: Set don't fragment flag ! */
-	/* IP Flags + Fragment offset */
 	ip->frag_off = 0;
 	/* TTL */
 	ip->ttl = 64;
@@ -65,7 +63,6 @@ static int send_syn(int sockfd,
 	/* Ack num */
 	tcp->ack_seq = htons(0);
 	/* Sizeof header / 4 */
-	/* TODO: Options handling */
 	tcp->doff = sizeof(struct tcphdr) /  4;
 	/* Flags */
 	tcp->fin = 0;
