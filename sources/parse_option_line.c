@@ -351,6 +351,13 @@ int	parse_nmap_args(int ac, char **av)
 			case 'h':
 				print_usage(stdout);
 				return 1;
+			case 'f':
+				{
+					int file_ret;
+					file_ret = parse_file(optarg, &g_data.ipset);
+					(void)file_ret;
+					break;
+				}
 			case 'p':
 				{
 					if (g_data.set.ranges)
@@ -383,11 +390,13 @@ int	parse_nmap_args(int ac, char **av)
 		count++;
 	}
 
+	/* TODO: Pushing ip from file in the IP list to scan */
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
 			/* Pushing ip in the IP list to scan */
 			add_ip(av[i], &g_data.set);
 		}
 	}
+	/* TODO: Check if no addresses are pushed */
 	return 0;
 }

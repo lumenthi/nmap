@@ -23,6 +23,7 @@ void	init_data()
 	g_data.set.ranges[0].start = DEFAULT_START_PORT;
 	g_data.set.ranges[0].end = DEFAULT_END_PORT;
 
+	g_data.ipset = NULL;
 }
 
 /* TODO: Once finished, remove server related code in makefile/sources */

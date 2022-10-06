@@ -1,4 +1,4 @@
-#ifndef	SET_H
+#ifndef SET_H
 # define SET_H
 
 #include <stdint.h>
@@ -18,5 +18,10 @@ typedef struct s_set {
 	int					*single_values;
 	char				padding[0];
 } t_set;
+
+typedef struct s_ipset {
+	char			*string;
+	struct s_ipset	*next;
+} t_ipset;
 
 #endif

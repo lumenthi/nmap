@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/03 19:08:43 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/06 12:50:15 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -65,7 +65,8 @@ SRCS = main.c \
 		scan_syn.c \
 		checksum.c \
 		addr_config.c \
-		print.c
+		print.c \
+		parse_file.c
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))

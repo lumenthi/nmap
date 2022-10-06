@@ -3,88 +3,122 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lumenthi <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: lnicosia <lnicosia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2017/12/05 11:54:10 by lumenthi          #+#    #+#             */
-/*   Updated: 2018/01/12 11:43:34 by lumenthi         ###   ########.fr       */
+/*   Created: 2018/11/14 11:05:31 by lnicosia          #+#    #+#             */
+/*   Updated: 2022/10/06 12:21:34 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
+#include "libft.h"
+#include <unistd.h>
 
-static int		gnl_strcut(char **line)
+int		lst_contains(t_list *lst, t_read **curr, int fd)
 {
-	char	*cut;
-
-	if (!(cut = ft_strchr(*line, '\n')))
-		return (0);
-	*line = cut + 1;
-	return (1);
-}
-
-static int		gnl_get_line(char **line)
-{
-	char *cut;
-
-	if (*line[0] == '\0')
-		return (0);
-	if ((cut = ft_strchr(*line, '\n')))
-		*cut = '\0';
-	return (1);
-}
-
-static int		gnl_read(int const fd, char **file)
-{
-	char	*buf;
-	int		len;
-	int		ret;
-
-	if (!(buf = ft_strnew(BUFF_SIZE)))
-		return (0);
-	if (!(*file = ft_strnew(0)))
-		return (0);
-	while ((ret = read(fd, buf, BUFF_SIZE)))
+	while (lst != NULL)
 	{
-		if (ret < 0)
-			return (0);
-		buf[ret] = '\0';
-		if (*file[0] == '\0')
-			len = ft_strlen(buf) + 1;
-		else
-			len = ft_strlen(*file) + ft_strlen(buf) + 1;
-		if (!(*file = (char*)ft_realloc(*file, len)))
-			return (0);
-		*file = ft_strcat(*file, buf);
+		*curr = (t_read*)(lst->content);
+		if (*curr != NULL)
+		{
+			if ((*curr)->fd == fd)
+				return (1);
+		}
+		lst = lst->next;
 	}
-	free(buf);
-	return (1);
+	return (0);
 }
 
-int				get_next_line(int const fd, char **line)
+int		contains_zero(char *buf, int size)
 {
-	static char	*file[MAX_FD + 1];
+	int	i;
 
-	if (!(line) || fd < 0 || BUFF_SIZE < 1 || fd > MAX_FD)
-		return (-1);
-	*line = NULL;
-	if (!(file[fd]))
+	i = 0;
+	while (i < size)
 	{
-		if (!(gnl_read(fd, &file[fd])))
+		if (buf[i] == 0)
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int		set_line(t_read *curr, char **line)
+{
+	size_t	i;
+	char	*tmp;
+
+	i = 0;
+	while ((curr->str[i] != NEWLINE) && (curr->str[i]))
+		i++;
+	if (!(*line = ft_strnew(i)))
+		return (-1);
+	ft_strncpy(*line, curr->str, i);
+	*line = (char *)ft_rmchar(*line, '\r');
+	if (i < ft_strlen(curr->str) - 1)
+	{
+		tmp = curr->str;
+		if (!(curr->str = ft_strsub(curr->str, i + 1,
+						ft_strlen(curr->str) - i - 1)))
 			return (-1);
+		ft_strdel(&tmp);
 	}
 	else
 	{
-		if (ft_strcmp(file[fd], "") == 0)
-		{
-			if (!(gnl_read(fd, &file[fd])))
-				return (-1);
-		}
-		else if (!gnl_strcut(&file[fd]))
-			return (0);
+		ft_strdel(&(curr->str));
+		if (!(curr->str = ft_strnew(0)))
+			return (-1);
 	}
-	if (!(*line = ft_strdup(file[fd])))
+	return (0);
+}
+
+int		set_data(t_list **datas, char **line, t_read *curr, int new)
+{
+	if (curr->str[0])
+	{
+		if (set_line(curr, line) == -1)
+			return (-1);
+		if (new == 0)
+		{
+			ft_lstadd(datas, ft_lstnew(curr, sizeof(*curr)));
+			free(curr);
+			curr = NULL;
+		}
+		return (1);
+	}
+	if (new == 0)
+	{
+		ft_lstadd(datas, ft_lstnew(curr, sizeof(*curr)));
+		free(curr);
+		curr = NULL;
+	}
+	return (0);
+}
+
+int		get_next_line(const int fd, char **line)
+{
+	static t_list	*datas = NULL;
+	int				new;
+	t_read			*curr;
+	char			buff[BUFF_SIZE + 1];
+	int				ret;
+
+	if (fd < 0 || line == NULL || BUFF_SIZE == 0 || read(fd, buff, 0) < 0)
 		return (-1);
-	if (!(gnl_get_line(line)))
-		return (0);
-	return (1);
+	if ((new = lst_contains(datas, &curr, fd)) == 0)
+	{
+		if (!(curr = (t_read*)ft_memalloc(sizeof(*curr))))
+			return (-1);
+		if (!(curr->str = ft_strnew(0)))
+			return (-1);
+		curr->fd = fd;
+	}
+	while (!ft_strchr(curr->str, NEWLINE) && (ret = read(fd, buff, BUFF_SIZE))
+		&& !contains_zero(buff, ret))
+	{
+		if (ret < 0 || !(curr->str = (char *)ft_strjoin_free(curr->str, buff)))
+			return (-1);
+		buff[ret] = '\0';
+	}
+	return (set_data(&datas, line, curr, new));
 }

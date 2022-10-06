@@ -116,15 +116,23 @@ struct s_ip {
 };
 
 typedef struct	s_data {
-	t_set				set;
+	/* Options related */
 	unsigned long long	opt;
+	t_set				set;
+	t_ipset				*ipset;
+
+	/* Scan list */
 	struct s_ip			*ips;
+
+	/* Threads related */
+	pthread_t			*threads;
 	uint8_t				nb_threads;
 	int					created_threads;
+
 	/* Ephemeral ports */
 	uint16_t			port_min;
 	uint16_t			port_max;
-	pthread_t			*threads;
+
 	uint8_t				privilegied;
 	int					port_counter;
 }						t_data;
@@ -210,6 +218,9 @@ int		sconfig(char *destination, struct sockaddr_in *saddr);
 /* checksum.c */
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
+
+/* parse_file.c */
+int parse_file(char *path, t_ipset **head);
 
 /* parse_option_line.c */
 void print_usage(FILE* f);
