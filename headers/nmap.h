@@ -220,7 +220,8 @@ unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
 
 /* parse_file.c */
-int parse_file(char *path, t_ipset **head);
+void	free_ipset(t_ipset **ipset);
+int		parse_file(char *path, t_ipset **head);
 
 /* parse_option_line.c */
 void print_usage(FILE* f);

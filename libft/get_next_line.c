@@ -6,7 +6,7 @@
 /*   By: lnicosia <lnicosia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/14 11:05:31 by lnicosia          #+#    #+#             */
-/*   Updated: 2022/10/06 12:21:34 by lumenthi         ###   ########.fr       */
+/*   Updated: 2022/10/06 10:44:11 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,12 +72,34 @@ int		set_line(t_read *curr, char **line)
 	return (0);
 }
 
+void	free_datas(t_list **datas)
+{
+	t_list *tmp = *datas;
+	t_list *next;
+	t_read *content;
+
+	while (tmp) {
+		next = tmp->next;
+		if (tmp->content) {
+			content = (t_read *)tmp->content;
+			if (content->str)
+				free(content->str);
+			free(content);
+		}
+		free(tmp);
+		tmp = next;
+	}
+	*datas = NULL;
+}
+
 int		set_data(t_list **datas, char **line, t_read *curr, int new)
 {
 	if (curr->str[0])
 	{
-		if (set_line(curr, line) == -1)
+		if (set_line(curr, line) == -1) {
+			free_datas(datas);
 			return (-1);
+		}
 		if (new == 0)
 		{
 			ft_lstadd(datas, ft_lstnew(curr, sizeof(*curr)));
@@ -92,6 +114,7 @@ int		set_data(t_list **datas, char **line, t_read *curr, int new)
 		free(curr);
 		curr = NULL;
 	}
+	free_datas(datas);
 	return (0);
 }
 
@@ -103,6 +126,7 @@ int		get_next_line(const int fd, char **line)
 	char			buff[BUFF_SIZE + 1];
 	int				ret;
 
+	ft_bzero(buff, sizeof(buff));
 	if (fd < 0 || line == NULL || BUFF_SIZE == 0 || read(fd, buff, 0) < 0)
 		return (-1);
 	if ((new = lst_contains(datas, &curr, fd)) == 0)

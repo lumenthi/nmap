@@ -355,7 +355,15 @@ int	parse_nmap_args(int ac, char **av)
 				{
 					int file_ret;
 					file_ret = parse_file(optarg, &g_data.ipset);
-					(void)file_ret;
+					if (file_ret == FILE_INVALID) {
+						fprintf(stderr, "Invalid file: %s\n", optarg);
+						return 1;
+					}
+					/* TODO: File extension ? */
+					else if (file_ret == FILE_EXTENSION) {
+						fprintf(stderr, "Invalid file extension: %s\n", optarg);
+						return 1;
+					}
 					break;
 				}
 			case 'p':
@@ -390,12 +398,17 @@ int	parse_nmap_args(int ac, char **av)
 		count++;
 	}
 
-	/* TODO: Pushing ip from file in the IP list to scan */
+	/* Filling scans with ips from files */
+	t_ipset *tmp = g_data.ipset;
+	while (tmp) {
+		add_ip(tmp->string, &g_data.set);
+		tmp = tmp->next;
+	}
+
+	/* Filling scans with ips from arguments */
 	for (int i = 1; i < ac; i++) {
-		if (!is_arg_an_opt(av, i, optstring, long_options)) {
-			/* Pushing ip in the IP list to scan */
+		if (!is_arg_an_opt(av, i, optstring, long_options))
 			add_ip(av[i], &g_data.set);
-		}
 	}
 	/* TODO: Check if no addresses are pushed */
 	return 0;
