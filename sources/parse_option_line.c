@@ -74,7 +74,6 @@ int			set_positive_range(t_set *set, char *arg)
 	/*printf("Parsing range |%s|\n", arg);
 	printf("%ld ranges\n", set->nb_ranges);
 	printf("%ld single values\n", set->nb_single_values);*/
-	/* TODO: free set */
 	/* TODO: remove commented prints  */
 	/* TODO: remove commented prints of libft/is_arg_an_opt */
 	/* TODO: Error if multiple -p */
@@ -317,7 +316,6 @@ int	parse_nmap_args(int ac, char **av)
 					break;
 				}
 			case 'v':
-				/* TODO: optional argument for short options */
 				g_data.opt |= OPT_VERBOSE_INFO;
 				if (optarg != NULL) {
 					if (ft_strcmp(optarg, "DEBUG") == 0) {
@@ -354,7 +352,6 @@ int	parse_nmap_args(int ac, char **av)
 				return 1;
 			case 'p':
 				{
-					/* TODO: parse ranges of ports */
 					if (g_data.set.ranges)
 						free(g_data.set.ranges);
 					if (g_data.set.single_values)

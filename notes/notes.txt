@@ -132,3 +132,6 @@ Don't scan port 4
 
 # sudo ./ft_nmap localhost -p 25-28,10
 Scans last port only if > 9
+
+# print date and hours at launch
+"Starting Nmap 7.60 ( https://nmap.org ) at 2022-10-06 10:24 CEST"
