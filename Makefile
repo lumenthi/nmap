@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/03 15:20:54 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/03 19:08:43 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ NAME = ft_nmap
 SERVER_NAME = ft_server
 
 CC = gcc
-FLAGS = -Wall -Werror -Wextra
+FLAGS = -Wall -Werror -Wextra -g
 LDFLAGS = -lpthread
 
 GREEN = '\033[4;32m'
@@ -46,7 +46,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h options.h
+HEADS = nmap.h options.h set.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################

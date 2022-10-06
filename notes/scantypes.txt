@@ -1,5 +1,17 @@
 ==== SCAN TYPES ====
-Mandatory: SYN, NULL, ACK, FIN, XMAS, UDP
+Mandatory:
+SYN -sS SUDO
+NULL -sN SUDO
+ACK -sA SUDO
+FIN -sF SUDO
+XMAS -sX SUDO
+UDP -sU SUDO
+
+Bonus:
+TCP -sT USER
+
+By default, when non root, nmap is performing TCP scan (-sT)
+when root, nmap is performing a SYN scan (-sS)
 
 == SYN ==
 https://nmap.org/book/synscan.html

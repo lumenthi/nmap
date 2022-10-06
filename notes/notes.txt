@@ -122,3 +122,13 @@ vagrant@stretch:/vagrant$ nmap localhost -p 4242
 
 vagrant@stretch:/vagrant$ sudo nmap localhost -p 4242
 4242/tcp open  vrml-multi-use
+
+# Flags d'opti (remove -g ?)
+
+# Timeout in threads ?
+
+# sudo ./ft_nmap localhost -p 1,20-28,2,3,4
+Don't scan port 4
+
+# sudo ./ft_nmap localhost -p 25-28,10
+Scans last port only if > 9
