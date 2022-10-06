@@ -44,6 +44,9 @@ int		main(int argc, char **argv)
 
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
+	/* TODO: print date and hour */
+	fprintf(stderr, "Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at [TODO:DATE] CEST\n");
 	ft_nmap(argv[0]);
 
 	/* Nmap end time */
