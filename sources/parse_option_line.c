@@ -16,6 +16,7 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
+/* TODO: Infinite loop for `sudo ./ft_nmap -p --2 localhost` */
 static int		parse_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j;
