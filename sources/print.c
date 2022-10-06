@@ -48,7 +48,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 		"error", "unknown", "timeout", "up", "ready", "printed",
 		"scanning", "invalid", NULL};
 	char *scans[] = {"syn", "null", "fin", "xmas",
-		"ack", "udp", NULL};
+		"ack", "udp", "tcp", NULL};
 
 	sec = scan->end_time.tv_sec - scan->start_time.tv_sec;
 	usec = scan->end_time.tv_usec - scan->start_time.tv_usec;

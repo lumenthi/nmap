@@ -1,17 +1,56 @@
 #include "nmap.h"
 #include "options.h"
 
-static void push_scan(struct s_scan **head, struct s_scan *new)
+static void	free_scan(struct s_scan *current)
+{
+	if (current->saddr)
+		free(current->saddr);
+
+	if (current->daddr)
+		free(current->daddr);
+
+	if (current->service)
+		free(current->service);
+
+	free(current);
+}
+
+static void	free_scans(struct s_scan **scan)
+{
+	struct s_scan *current = *scan;
+	struct s_scan *next;
+
+	while (current != NULL) {
+		next = current->next;
+		free_scan(current);
+		current = next;
+	}
+	*scan = NULL;
+}
+
+static int push_scan(struct s_scan **head, struct s_scan *new)
 {
 	struct s_scan *tmp = *head;
 
-	if (*head == NULL)
+	if (*head == NULL || (tmp->dport >= new->dport &&
+		tmp->scantype == new->scantype)) {
+		if (tmp && (tmp->dport == new->dport))
+			return 0;
+		new->next = *head;
 		*head = new;
+	}
 	else {
-		while (tmp->next != NULL)
-			tmp = tmp->next;
+		while (tmp->next != NULL &&
+			new->dport >= tmp->next->dport) {
+				if (tmp->next->dport == new->dport &&
+					tmp->next->scantype == new->scantype)
+					return 0;
+				tmp = tmp->next;
+		}
+		new->next = tmp->next;
 		tmp->next = new;
 	}
+	return 1;
 }
 
 static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
@@ -45,21 +84,29 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 	return tmp;
 }
 
-static void	push_scantype(struct s_ip *ip, struct s_scan **head, uint16_t port)
+static int	push_scantypes(struct s_ip *ip, struct s_scan **head, uint16_t port)
 {
 	int scans[] = {OPT_SCAN_SYN, OPT_SCAN_NULL, OPT_SCAN_FIN,
 		OPT_SCAN_XMAS, OPT_SCAN_ACK, OPT_SCAN_UDP, OPT_SCAN_TCP, 0};
 	int i = 0;
 	struct s_scan *tmp;
+	int ret = 0;
 
 	while (scans[i]) {
 		if (g_data.opt & scans[i]) {
 			tmp = create_scan(ip, port, scans[i]);
-			if (tmp)
-				push_scan(head, tmp);
+			if (tmp && !(push_scan(head, tmp))) {
+				/* printf("[*] Scan %d on port %d already exists, dropping it\n",
+					tmp->scantype, tmp->dport); */
+				ret--;
+				free_scan(tmp);
+			}
+			else
+				ret++;
 		}
 		i++;
 	}
+	return ret;
 }
 
 void	push_ports(struct s_ip **input, t_set *set)
@@ -77,9 +124,10 @@ void	push_ports(struct s_ip **input, t_set *set)
 		{
 			//printf("\tAdding ip %s port %d \n",
 			//	inet_ntoa(ip->daddr->sin_addr), start);
-			push_scantype(*input, &ip->scans, start++);
+			if (push_scantypes(*input, &ip->scans, start++) > 0) {
 			/* I use this to keep a track of the number of ports to scan */
-			g_data.port_counter++;
+				g_data.port_counter++;
+			}
 		}
 		crange++;
 	}
@@ -87,7 +135,8 @@ void	push_ports(struct s_ip **input, t_set *set)
 	while (csingle < set->nb_single_values) {
 		//printf("%ld Adding ip %s port %d \n", csingle,
 		//	inet_ntoa(ip->daddr->sin_addr), set->single_values[csingle]);
-		push_scantype(*input, &ip->scans, set->single_values[csingle]);
+		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0)
+			g_data.port_counter++;
 		csingle++;
 	}
 }
@@ -103,29 +152,6 @@ void	push_ip(struct s_ip **head, struct s_ip *new)
 			tmp = tmp->next;
 		tmp->next = new;
 	}
-}
-
-void	free_scans(struct s_scan **scan)
-{
-	struct s_scan *current = *scan;
-	struct s_scan *next;
-
-	while (current != NULL) {
-		next = current->next;
-
-		if (current->saddr)
-			free(current->saddr);
-
-		if (current->daddr)
-			free(current->daddr);
-
-		if (current->service)
-			free(current->service);
-
-		free(current);
-		current = next;
-	}
-	*scan = NULL;
 }
 
 void	free_ips(struct s_ip **ip)
