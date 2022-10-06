@@ -3,6 +3,7 @@
 
 static int run_scan(struct s_scan *scan)
 {
+	/* TODO: match nmap's options for each scan type (both IP and the next layer) */
 	/* printf("[*] Scanning: %d\n", scan->dport); */
 	syn_scan(scan);
 
