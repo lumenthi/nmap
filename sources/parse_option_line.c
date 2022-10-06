@@ -359,7 +359,6 @@ int	parse_nmap_args(int ac, char **av)
 						fprintf(stderr, "Invalid file: %s\n", optarg);
 						return 1;
 					}
-					/* TODO: File extension ? */
 					else if (file_ret == FILE_EXTENSION) {
 						fprintf(stderr, "Invalid file extension: %s\n", optarg);
 						return 1;
@@ -402,13 +401,22 @@ int	parse_nmap_args(int ac, char **av)
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
 		add_ip(tmp->string, &g_data.set);
+		if (++g_data.ip_counter > MAX_IPS) {
+			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
+			return 1;
+		}
 		tmp = tmp->next;
 	}
 
 	/* Filling scans with ips from arguments */
 	for (int i = 1; i < ac; i++) {
-		if (!is_arg_an_opt(av, i, optstring, long_options))
+		if (!is_arg_an_opt(av, i, optstring, long_options)) {
 			add_ip(av[i], &g_data.set);
+			if (++g_data.ip_counter > MAX_IPS) {
+				fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
+				return 1;
+			}
+		}
 	}
 	/* TODO: Check if no addresses are pushed */
 	return 0;

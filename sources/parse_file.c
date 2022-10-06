@@ -55,13 +55,23 @@ static int is_empty(char *str)
 	return 1;
 }
 
+static int valid_extension(char *string, const char *extension)
+{
+	char *stringext = ft_strrchr(string, '.');
+
+	if (stringext)
+		return ft_strcmp(stringext, extension) == 0 ? 1 : 0;
+	return 0;
+}
+
 int parse_file(char *path, t_ipset **head)
 {
 	int fd;
 	int ret;
 	char *ip = NULL;
 
-	/* TODO: extension check */
+	if (!valid_extension(path, EXTENSION))
+		return FILE_EXTENSION;
 	fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return FILE_INVALID;

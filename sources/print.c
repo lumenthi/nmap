@@ -35,7 +35,8 @@ void print_time(struct timeval start_time, struct timeval end_time)
 	while (ms > 99)
 		ms /= 10;
 
-	printf("\nNmap done in %01lld.%02lld seconds\n", sec, ms);
+	printf("\nNmap scanned %d ips in %01lld.%02lld seconds\n",
+		g_data.ip_counter,sec, ms);
 }
 
 static void print_content(struct s_scan *scan, struct s_pinfo *info)

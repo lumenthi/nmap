@@ -13,6 +13,7 @@ void	init_data()
 	/* Default SCAN */
 	g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 
+	g_data.ip_counter = 0;
 	g_data.port_counter = 0;
 
 	/* Default range */

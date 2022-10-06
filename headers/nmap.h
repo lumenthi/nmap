@@ -38,6 +38,9 @@
 #define SCANNING 10
 #define INVALID 11
 
+/* Max ips to scan in one command */
+#define MAX_IPS 5
+
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
 #define DEFAULT_EPHEMERAL_MAX 60999
@@ -133,7 +136,11 @@ typedef struct	s_data {
 	uint16_t			port_min;
 	uint16_t			port_max;
 
+	/* Is program run as root */
 	uint8_t				privilegied;
+
+	/* Counters */
+	int					ip_counter;
 	int					port_counter;
 }						t_data;
 

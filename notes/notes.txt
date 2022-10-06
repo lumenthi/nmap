@@ -138,3 +138,5 @@ infinite loop
 
 # print date and hours at launch
 "Starting Nmap 7.60 ( https://nmap.org ) at 2022-10-06 10:24 CEST"
+
+# ERROR: [INFINITE LOOP] Change ft_random and increment ephemeral ports from min to max
