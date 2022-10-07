@@ -158,8 +158,8 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	struct s_scan *tmp = scan;
 
 	while (tmp) {
-		LOCK(tmp);
 		if (tmp->saddr->sin_port == to) {
+			LOCK(tmp);
 			if (packet->tcp.rst)
 				tmp->status = CLOSED;
 			else if (packet->tcp.ack && packet->tcp.syn)
@@ -168,8 +168,8 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 				UNLOCK(tmp);
 				return 1;
 			}
+			UNLOCK(tmp);
 		}
-		UNLOCK(tmp);
 		tmp = tmp->next;
 	}
 	return is_complete(scan);
