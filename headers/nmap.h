@@ -39,7 +39,7 @@
 #define INVALID 11
 
 /* Max ips to scan in one command */
-#define MAX_IPS 5
+#define MAX_IPS 15
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768

@@ -53,6 +53,18 @@ static int push_scan(struct s_scan **head, struct s_scan *new)
 	return 1;
 }
 
+static int assign_port(uint16_t min, uint16_t max)
+{
+	static int port = 0;
+
+	if (port < min || port > max)
+		port = min;
+	else
+		port++;
+
+	return port;
+}
+
 static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 {
 	struct s_scan *tmp;
@@ -67,7 +79,7 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		else {
 			ft_memcpy(tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
 			/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
-			tmp->sport = ft_random(g_data.port_min, g_data.port_max);
+			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
 		}
 
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));

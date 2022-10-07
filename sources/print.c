@@ -35,7 +35,7 @@ void print_time(struct timeval start_time, struct timeval end_time)
 	while (ms > 99)
 		ms /= 10;
 
-	printf("\nNmap scanned %d ips in %01lld.%02lld seconds\n",
+	printf("\nNmap scanned %d ip(s) in %01lld.%02lld seconds\n",
 		g_data.ip_counter,sec, ms);
 }
 
@@ -45,6 +45,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	long int usec;
 	long long total_usec;
 
+	/* TODO: Specify protocol in state: `open/tcp` (like real nmap) */
 	char *status[] = {"open", "closed", "filtered", "down",
 		"error", "unknown", "timeout", "up", "ready", "printed",
 		"scanning", "invalid", NULL};
