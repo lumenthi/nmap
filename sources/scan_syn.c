@@ -1,24 +1,6 @@
 #include "nmap.h"
 #include "options.h"
 
-static void update_cursor(int sockfd, unsigned int len, int sport,
-	struct iphdr *ip)
-{
-	if (ip->saddr != ip->daddr)
-		return;
-
-	char buffer[len];
-	struct tcp_packet *packet;
-	int pport = -1;
-
-	while (pport != sport) {
-		if (recv(sockfd, buffer, len, MSG_DONTWAIT) < 0)
-			return;
-		packet = (struct tcp_packet *)buffer;
-		pport = packet->tcp.source;
-	}
-}
-
 static int send_syn(int sockfd,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
 {
@@ -85,15 +67,9 @@ static int send_syn(int sockfd,
 	/* Sending handcrafted packet */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Ready to send SYN packet...\n");
-	/* if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
+	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0)
-		return 1; */
-	if (write(sockfd, packet, sizeof(packet)) < 0)
 		return 1;
-
-	/* Make the cursor ready to receive */
-	(void)update_cursor;
-	/* update_cursor(sockfd, sizeof(packet), tcp->source, ip); */
 
 	/* Verbose prints */
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -104,7 +80,19 @@ static int send_syn(int sockfd,
 	return 0;
 }
 
-static int read_syn_ack(int sockfd, struct sockaddr_in *saddr)
+static int is_complete(struct s_scan *scan)
+{
+	while (scan) {
+		//printf("[*] Scan %d, status: %d\n", scan->dport, scan->status);
+		if (scan->status == READY)
+			return 0;
+		scan = scan->next;
+	}
+
+	return 1;
+}
+
+static int read_syn_ack(int sockfd, struct s_scan *scan)
 {
 	int ret;
 	unsigned int len = sizeof(struct iphdr) + sizeof(struct tcphdr);
@@ -114,42 +102,42 @@ static int read_syn_ack(int sockfd, struct sockaddr_in *saddr)
 	/* Receiving process */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Ready to receive...\n");
-	ret = recv(sockfd, buffer, len, 0);
-	if (ret < 0) {
+	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
+	/* if (ret < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[*] Packet timeout\n");
 		return TIMEOUT;
-	}
+	} */
 
+	(void)ret;
 	/* Invalid packet (packet too small) */
-	if (ret < (int)sizeof(struct tcp_packet))
-		return ERROR;
+	/* if (ret < (int)sizeof(struct tcp_packet))
+		return 0; */
 
 	/* TODO: Packet error checking ? */
 	packet = (struct tcp_packet *)buffer;
 
-	if (saddr->sin_port != packet->tcp.dest) {
-		/* TODO: Remove after, debugging threads */
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
-			static int toto = 0;
-			printf("[*] [%d] Waiting for: %d, got: %d\n",
-				++toto, ntohs(saddr->sin_port), ntohs(packet->tcp.dest));
-		}
-		return INVALID;
-	}
-
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)&packet->ip);
 
-	if (packet->tcp.rst)
-		return CLOSED;
+	uint16_t to = packet->tcp.dest;
+	struct s_scan *tmp = scan;
 
-	if (packet->tcp.ack && packet->tcp.syn)
-		return OPEN;
+	// printf("[*] Received packet to: %d\n", ntohs(to));
 
-	/* TODO: ICMP unreachable error (type 3, code 1, 2, 3, 9, 10, or 13) */
-	/* TODO: return UNKNOWN; */
-	return CLOSED;
+	while (tmp) {
+		if (tmp->saddr->sin_port == to) {
+			// printf("[*] Updating scan: %d\n", tmp->sport);
+			if (packet->tcp.rst)
+				tmp->status = CLOSED;
+			else if (packet->tcp.ack && packet->tcp.syn)
+				tmp->status = OPEN;
+			if (tmp == scan)
+				return 1;
+		}
+		tmp = tmp->next;
+	}
+	return is_complete(scan);
 }
 
 int syn_scan(struct s_scan *scan)
@@ -215,13 +203,13 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	} */
 
-	if ((connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr)) != 0)) {
+	/* if ((connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr)) != 0)) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[*] Failed to connect to host\n");
 		scan->status = ERROR;
 		close(sockfd);
 		return 1;
-	}
+	} */
 
 	/* Service detection */
 	/* Network services database file /etc/services */
@@ -239,21 +227,7 @@ int syn_scan(struct s_scan *scan)
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
 		ret = ERROR;
 	else {
-		/* ret = read_syn_ack(sockfd, scan->saddr); */
-		while ((ret = read_syn_ack(sockfd, scan->saddr)) == INVALID);
-		if (ret == TIMEOUT) {
-			if (send_syn(sockfd, scan->saddr, scan->saddr) != 0)
-				ret = ERROR;
-			else {
-				/* ret = read_syn_ack(sockfd, scan->saddr); */
-				while ((ret = read_syn_ack(sockfd, scan->saddr)) == INVALID);
-				if (ret == TIMEOUT)
-					ret = FILTERED;
-			}
-		}
-		/* TODO: WTF NOT SUPPOSED TO HAPPEN FILTER SHOULD HAPPEN, SHOULD BE FILTERED */
-		if (ret == INVALID)
-			ret = UNKNOWN;
+		while (!(ret = read_syn_ack(sockfd, scan)));
 	}
 
 	/* Scan end time */
@@ -262,7 +236,6 @@ int syn_scan(struct s_scan *scan)
 		scan->end_time.tv_usec = 0;
 	}
 
-	scan->status = ret;
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Port status: %d\n", ret);
 

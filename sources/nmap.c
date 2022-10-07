@@ -31,7 +31,7 @@ static int launch_scan(void *rip)
 			/* Resolve scans for this IP */
 			while (scan) {
 				if (scan->status == READY) {
-					scan->status = SCANNING;
+					// scan->status = SCANNING;
 					run_scan(scan);
 				}
 				scan = scan->next;
