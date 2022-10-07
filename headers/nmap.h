@@ -45,6 +45,9 @@
 #define DEFAULT_EPHEMERAL_MIN 32768
 #define DEFAULT_EPHEMERAL_MAX 60999
 
+#define LOCK(input)		pthread_mutex_lock(&input->lock);
+#define UNLOCK(input)	pthread_mutex_unlock(&input->lock);
+
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
 {
@@ -105,6 +108,9 @@ struct s_scan {
 	uint16_t			dport; /* Destination port */
 	struct timeval		start_time; /* Scan start time */
 	struct timeval		end_time; /* Scan end time */
+
+	pthread_mutex_t		lock; /* Mutex */
+
 	struct s_scan		*next; /* Next scan */
 };
 

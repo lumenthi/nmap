@@ -91,6 +91,10 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		}
 		tmp->dport = port;
 		tmp->scantype = scantype;
+
+		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+			tmp->status = ERROR;
+
 	}
 
 	return tmp;

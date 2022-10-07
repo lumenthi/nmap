@@ -83,10 +83,14 @@ static int send_syn(int sockfd,
 static int is_complete(struct s_scan *scan)
 {
 	while (scan) {
+		LOCK(scan);
 		//printf("[*] Scan %d, status: %d\n", scan->dport, scan->status);
 		if (scan->status == READY || scan->status == TIMEOUT ||
-			scan->status == SCANNING)
+			scan->status == SCANNING) {
+			UNLOCK(scan);
 			return 0;
+		}
+		UNLOCK(scan);
 		scan = scan->next;
 	}
 
@@ -154,14 +158,18 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	struct s_scan *tmp = scan;
 
 	while (tmp) {
+		LOCK(tmp);
 		if (tmp->saddr->sin_port == to) {
 			if (packet->tcp.rst)
 				tmp->status = CLOSED;
 			else if (packet->tcp.ack && packet->tcp.syn)
 				tmp->status = OPEN;
-			if (tmp == scan)
+			if (tmp == scan) {
+				UNLOCK(tmp);
 				return 1;
+			}
 		}
+		UNLOCK(tmp);
 		tmp = tmp->next;
 	}
 	return is_complete(scan);
@@ -178,6 +186,8 @@ int syn_scan(struct s_scan *scan)
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "=========================================\n");
+
+	LOCK(scan);
 
 	/* Prepare ports */
 	scan->saddr->sin_port = htons(scan->sport);
@@ -199,6 +209,7 @@ int syn_scan(struct s_scan *scan)
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[*] Failed to create socket\n");
 		scan->status = ERROR;
+		UNLOCK(scan);
 		return 1;
 	}
 
@@ -208,6 +219,7 @@ int syn_scan(struct s_scan *scan)
 			fprintf(stderr, "[*] Failed to set header option\n");
 		scan->status = ERROR;
 		close(sockfd);
+		UNLOCK(scan);
 		return 1;
 	}
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
@@ -217,6 +229,7 @@ int syn_scan(struct s_scan *scan)
 			fprintf(stderr, "[*] Failed to set timeout option\n");
 		scan->status = ERROR;
 		close(sockfd);
+		UNLOCK(scan);
 		return 1;
 	}
 
@@ -233,9 +246,12 @@ int syn_scan(struct s_scan *scan)
 	}
 
 	/* Scanning process */
-	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0)
+	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
+		UNLOCK(scan);
 		ret = ERROR;
+	}
 	else {
+		UNLOCK(scan);
 		while (!(ret = read_syn_ack(sockfd, scan, timeout)));
 	}
 

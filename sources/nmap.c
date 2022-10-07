@@ -30,11 +30,15 @@ static int launch_scan(void *rip)
 
 			/* Resolve scans for this IP */
 			while (scan) {
+				LOCK(scan);
 				if (scan->status == READY) {
 					/* TODO: Must lock or some scan will return filtered */
 					scan->status = SCANNING;
+					UNLOCK(scan);
 					run_scan(scan);
 				}
+				else
+					UNLOCK(scan);
 				scan = scan->next;
 			}
 		}
