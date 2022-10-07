@@ -1,28 +1,43 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.h                                    :+:      :+:    :+:   */
+/*   ft_rmchar.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lnicosia <lnicosia@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/11/13 18:23:24 by lnicosia          #+#    #+#             */
-/*   Updated: 2022/10/06 12:10:09 by lumenthi         ###   ########.fr       */
+/*   Created: 2021/01/22 13:22:39 by lnicosia          #+#    #+#             */
+/*   Updated: 2022/10/06 12:20:34 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef GET_NEXT_LINE_H
-# define GET_NEXT_LINE_H
-# include <stdlib.h>
-# define BUFF_SIZE 16384
-#  define NEWLINE 10
+#include "libft.h"
 
-typedef struct	s_read
+/*
+**  Remove all occurences of a char in the given string 
+*/
+
+char	*ft_rmchar(char *str, char c)
 {
-	char	*str;
-	int		fd;
-	char	padding[4];
-}				t_read;
+	int 	i;
+	int		size;
+	int 	j;
+	char	*res;
 
-int				get_next_line(const int fd, char **line);
-
-#endif
+	i = 0;
+	j = 0;
+	size = ft_strlen(str);
+	while (i < size)
+	{
+		if (str[i] != c)
+		{
+			str[j] = str[i];
+			j++;
+		}
+		i++;
+	}
+	str[j] = 0;
+	res = ft_strnew(ft_strlen(str));
+	res = ft_strcpy(res, str);
+	ft_strdel(&str);
+	return (res);
+}

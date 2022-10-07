@@ -38,9 +38,15 @@
 #define SCANNING 10
 #define INVALID 11
 
+/* Max ips to scan in one command */
+#define MAX_IPS 15
+
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
 #define DEFAULT_EPHEMERAL_MAX 60999
+
+#define LOCK(input)		pthread_mutex_lock(&input->lock);
+#define UNLOCK(input)	pthread_mutex_unlock(&input->lock);
 
 /* https://man7.org/linux/man-pages/man7/netdevice.7.html */
 /* struct ifaddrs
@@ -102,6 +108,9 @@ struct s_scan {
 	uint16_t			dport; /* Destination port */
 	struct timeval		start_time; /* Scan start time */
 	struct timeval		end_time; /* Scan end time */
+
+	pthread_mutex_t		lock; /* Mutex */
+
 	struct s_scan		*next; /* Next scan */
 };
 
@@ -116,16 +125,28 @@ struct s_ip {
 };
 
 typedef struct	s_data {
-	t_set				set;
+	/* Options related */
 	unsigned long long	opt;
+	t_set				set;
+	t_ipset				*ipset;
+
+	/* Scan list */
 	struct s_ip			*ips;
+
+	/* Threads related */
+	pthread_t			*threads;
 	uint8_t				nb_threads;
 	int					created_threads;
+
 	/* Ephemeral ports */
 	uint16_t			port_min;
 	uint16_t			port_max;
-	pthread_t			*threads;
+
+	/* Is program run as root */
 	uint8_t				privilegied;
+
+	/* Counters */
+	int					ip_counter;
 	int					port_counter;
 }						t_data;
 
@@ -210,6 +231,10 @@ int		sconfig(char *destination, struct sockaddr_in *saddr);
 /* checksum.c */
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
+
+/* parse_file.c */
+void	free_ipset(t_ipset **ipset);
+int		parse_file(char *path, t_ipset **head);
 
 /* parse_option_line.c */
 void print_usage(FILE* f);

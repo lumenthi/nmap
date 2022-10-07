@@ -13,6 +13,7 @@ void	init_data()
 	/* Default SCAN */
 	g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 
+	g_data.ip_counter = 0;
 	g_data.port_counter = 0;
 
 	/* Default range */
@@ -23,6 +24,7 @@ void	init_data()
 	g_data.set.ranges[0].start = DEFAULT_START_PORT;
 	g_data.set.ranges[0].end = DEFAULT_END_PORT;
 
+	g_data.ipset = NULL;
 }
 
 /* TODO: Once finished, remove server related code in makefile/sources */

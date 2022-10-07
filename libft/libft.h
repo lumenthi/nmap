@@ -6,7 +6,7 @@
 /*   By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/11 10:50:56 by lumenthi          #+#    #+#             */
-/*   Updated: 2022/09/30 09:34:36 by lumenthi         ###   ########.fr       */
+/*   Updated: 2022/10/06 12:20:52 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,5 +110,7 @@ int				ft_getopt_long(int argc, char * const argv[],
 					const struct option *longopts, int *longindex);
 double			ft_ceil(double nb);
 int				ft_random(int min, int max);
+char			*ft_strjoin_free(char *s1, const char *s2);
+char			*ft_rmchar(char *str, char c);
 
 #endif

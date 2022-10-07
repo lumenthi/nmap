@@ -33,6 +33,11 @@
 # define SCAN_INVALID 1
 # define SCAN_PRIVILEGES 2
 
+# define FILE_VALID 0
+# define FILE_INVALID 1
+# define FILE_EXTENSION 2
+# define EXTENSION ".ip"
+
 /* main.c */
 void init_data(void);
 
