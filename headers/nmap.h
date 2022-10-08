@@ -23,6 +23,9 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 #include <pthread.h>
+#include <linux/in.h>
+#include <linux/if_packet.h>
+#include <net/ethernet.h>
 
 /* STATUS */
 #define OPEN 0
@@ -153,6 +156,11 @@ typedef struct	s_data {
 struct			tcp_packet {
 	struct iphdr		ip;
 	struct tcphdr		tcp;
+};
+
+struct			icmp_packet {
+	struct iphdr		ip;
+	struct icmphdr		icmp;
 };
 
 /* struct iphdr

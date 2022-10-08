@@ -25,8 +25,9 @@
 #define DISABLE 2
 
 #define OPEN 1
-#define FILTERED 2
-#define CLOSED 3
+#define NO_RESPONSE 2
+#define UNREACHABLE 3
+#define RST 4
 
 int run = 1;
 
@@ -186,12 +187,13 @@ static void print_usage(char *path)
 {
 	printf("Usage: %s {PORT} {MODE}\n"
 	"Modes:\n"
-	"1: OPEN\n2: FILTERED\n3: CLOSED\n", path);
+	"1: OPEN\n2: NO RESPONSE\n3: UNREACHABLE\n4: RST\n", path);
 }
 
 static void iptable(char *sport, uint8_t filter, uint8_t mode)
 {
 	(void)filter;
+	/* OPEN */
 	char *aiptables_enable[] = {"/sbin/iptables", "-A", "OUTPUT", "-p", "tcp",
 		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
 		"DROP", NULL};
@@ -199,11 +201,20 @@ static void iptable(char *sport, uint8_t filter, uint8_t mode)
 		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
 		"DROP", NULL};
 
+	/* RST */
 	char *aiptables_cenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
 		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
 		NULL};
 	char *aiptables_cdisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
 		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
+		NULL};
+
+	/* UNREACHABLE */
+	char *aiptables_uenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
+		NULL};
+	char *aiptables_udisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
 		NULL};
 
 	char **selected_mode;
@@ -218,13 +229,17 @@ static void iptable(char *sport, uint8_t filter, uint8_t mode)
 	else {
 		if (mode == ENABLE) {
 			selected_mode = aiptables_enable;
-			if (filter == CLOSED)
+			if (filter == RST)
 				selected_mode = aiptables_cenable;
+			else if (filter == UNREACHABLE)
+				selected_mode = aiptables_uenable;
 		}
 		else if (mode == DISABLE) {
 			selected_mode = aiptables_disable;
-			if (filter == CLOSED)
+			if (filter == RST)
 				selected_mode = aiptables_cdisable;
+			else if (filter == UNREACHABLE)
+				selected_mode = aiptables_udisable;
 		}
 
 		if (execve("/sbin/iptables", selected_mode, NULL) == -1)
@@ -243,7 +258,7 @@ static void server(char *path, char *sport, uint16_t port, uint8_t mode)
 	struct sockaddr_in servaddr;
 	struct tcp_packet *packet;
 
-	if (mode != OPEN && mode != FILTERED && mode != CLOSED) {
+	if (mode < 1 || mode > 4) {
 		print_usage(path);
 		return;
 	}
@@ -282,7 +297,7 @@ static void server(char *path, char *sport, uint16_t port, uint8_t mode)
 		if (packet->tcp.dest == htons(port)) {
 			printf("[*] Received packet:\n");
 			print_ip4_header((struct ip*)packet);
-			if (mode != FILTERED)
+			if (mode != NO_RESPONSE)
 				server_response(sockfd, mode, (void*)packet, port);
 		}
 	}

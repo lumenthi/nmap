@@ -110,10 +110,13 @@ static int timed_out(struct timeval start, struct timeval timeout, int status)
 static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 {
 	int ret;
+	int status = -1;
 	unsigned int len = sizeof(struct iphdr) + sizeof(struct tcphdr);
 	char buffer[len];
+
+	struct iphdr *ip;
 	struct tcp_packet *packet;
-	int status = -1;
+	struct icmp_packet *epacket;
 
 	/* Receiving process */
 	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
@@ -130,19 +133,28 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	}
 
 	/* Invalid packet (packet too small) */
-	if (ret < (int)sizeof(struct tcp_packet))
+	if (ret < (int)sizeof(struct tcp_packet) &&
+		ret < (int)sizeof(struct icmp_packet))
 		return 0;
 
 	/* TODO: Packet error checking ? */
-	packet = (struct tcp_packet *)buffer;
+	ip = (struct iphdr *)buffer;
+	/* printf("[%d] Protocol received: %d\n", ip->protocol); */
+	if (ip->protocol == IPPROTO_TCP) {
+		packet = (struct tcp_packet *)buffer;
+		if (packet->tcp.rst)
+			status = CLOSED;
+		else if (packet->tcp.ack && packet->tcp.syn)
+			status = OPEN;
+	}
+	else if (ip->protocol == IPPROTO_ICMP) {
+		epacket = (struct icmp_packet *)buffer;
+		if (epacket->icmp.type == ICMP_HOST_UNREACH)
+			status = FILTERED;
+	}
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)&packet->ip);
-
-	if (packet->tcp.rst)
-		status = CLOSED;
-	else if (packet->tcp.ack && packet->tcp.syn)
-		status = OPEN;
 
 	if (status != -1) {
 		if (update_scans(scan, status, packet->tcp.dest))
