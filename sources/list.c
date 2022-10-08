@@ -1,6 +1,42 @@
 #include "nmap.h"
 #include "options.h"
 
+/* Update scan with port `source_port` and return 1 if our target scan `scan`
+ * is updated */
+int update_scans(struct s_scan *scan, int status, uint16_t source_port)
+{
+	struct s_scan *tmp = scan;
+
+	while (tmp) {
+		if (tmp->saddr->sin_port == source_port) {
+			LOCK(tmp);
+			tmp->status = status;
+			if (tmp == scan) {
+				UNLOCK(tmp);
+				return 1;
+			}
+			UNLOCK(tmp);
+		}
+		tmp = tmp->next;
+	}
+	return 0;
+}
+
+int scans_complete(struct s_scan *scan)
+{
+	while (scan) {
+		LOCK(scan);
+		if (scan->status == READY || scan->status == TIMEOUT ||
+			scan->status == SCANNING) {
+			UNLOCK(scan);
+			return 0;
+		}
+		UNLOCK(scan);
+		scan = scan->next;
+	}
+	return 1;
+}
+
 static void	free_scan(struct s_scan *current)
 {
 	if (current->saddr)
