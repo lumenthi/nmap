@@ -31,15 +31,15 @@ static int send_syn(int sockfd,
 	/* Checksum */
 	ip->check = 0; /* Calculated after TCP header */
 	/* Source ip */
-	memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
+	ft_memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
 	/* Dest ip */
-	memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
+	ft_memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
 
 	/* Filling TCP header */
 	/* Source port */
-	memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
+	ft_memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
 	/* Destination port */
-	memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
+	ft_memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
 	/* Seq num */
 	tcp->seq = htons(0);
 	/* Ack num */
@@ -64,46 +64,46 @@ static int send_syn(int sockfd,
 	tcp->check = tcp_checksum(ip, tcp);
 	ip->check = checksum((const char*)packet, sizeof(packet));
 
-	/* Sending handcrafted packet */
+	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Ready to send SYN packet...\n");
-	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
-		sizeof(struct sockaddr)) < 0)
-		return 1;
+		fprintf(stderr, "[*] Sending SYN request to: %s:%d from port %d\n",
+			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+			ntohs(saddr->sin_port));
 
-	/* Verbose prints */
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
 		print_ip4_header((struct ip *)ip);
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sent SYN packet\n");
+
+	/* Sending handcrafted packet */
+	if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
+		sizeof(struct sockaddr)) < 0) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+			fprintf(stderr, "[!] Failed to send SYN packet to: %s:%d from port %d\n",
+			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+			ntohs(saddr->sin_port));
+		return 1;
+	}
 
 	return 0;
 }
 
-static int is_complete(struct s_scan *scan)
+static int timed_out(struct timeval start, struct timeval timeout, int status)
 {
-	while (scan) {
-		LOCK(scan);
-		//printf("[*] Scan %d, status: %d\n", scan->dport, scan->status);
-		if (scan->status == READY || scan->status == TIMEOUT ||
-			scan->status == SCANNING) {
-			UNLOCK(scan);
-			return 0;
-		}
-		UNLOCK(scan);
-		scan = scan->next;
+	struct timeval end;
+	long long start_ms;
+	long long end_ms;
+	long long to_ms;
+
+	/* Request end time */
+	if ((gettimeofday(&end, NULL)) != 0) {
+		end.tv_sec = 0;
+		end.tv_usec = 0;
 	}
 
-	return 1;
-}
+	start_ms = start.tv_sec*1000 + start.tv_usec/1000;
+	end_ms = end.tv_sec*1000 + end.tv_usec/1000;
+	to_ms = timeout.tv_sec*1000 + timeout.tv_usec/1000;
 
-static int timed_out(struct timeval start, struct timeval end,
-	struct timeval timeout, int status)
-{
-	long long start_ms = start.tv_sec*1000 + start.tv_usec/1000;
-	long long end_ms = end.tv_sec*1000 + end.tv_usec/1000;
-	long long to_ms = timeout.tv_sec*1000 + timeout.tv_usec/1000;
-
+	/* If we already timedout, the timer for timeout should be *2 */
 	if (status == TIMEOUT)
 		to_ms *= 2;
 
@@ -116,76 +116,80 @@ static int timed_out(struct timeval start, struct timeval end,
 static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 {
 	int ret;
-	unsigned int len = sizeof(struct iphdr) + sizeof(struct tcphdr);
+	int update_ret;
+	int status = -1;
+	unsigned int len = sizeof(struct icmp_packet);
 	char buffer[len];
+
+	struct iphdr *ip;
 	struct tcp_packet *packet;
-	struct timeval end_time;
+	struct icmp_packet *epacket;
+
+	uint16_t dest;
+
+	/* Check if another thread already updated the scan status */
+	if (scan->status != TIMEOUT && scan->status != SCANNING)
+		return ALREADY_UPDATED;
 
 	/* Receiving process */
 	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
 
-	/* Request end time */
-	if ((gettimeofday(&end_time, NULL)) != 0) {
-		end_time.tv_sec = 0;
-		end_time.tv_usec = 0;
-	}
-
-	if (timed_out(scan->start_time, end_time, timeout, scan->status)) {
-		if (scan->status == TIMEOUT) {
-			scan->status = FILTERED;
-			return 1;
-		}
-		/* Resend packet */
-		scan->status = TIMEOUT;
-		if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
-			scan->status = ERROR;
-			return 1;
-		}
-		return 0;
-	}
+	/* Handling timeout */
+	if (timed_out(scan->start_time, timeout, scan->status))
+			return TIMEOUT;
 
 	/* Invalid packet (packet too small) */
-	if (ret < (int)sizeof(struct tcp_packet))
+	if (ret < (int)sizeof(struct tcp_packet) &&
+		ret < (int)sizeof(struct icmp_packet))
 		return 0;
 
 	/* TODO: Packet error checking ? */
-	packet = (struct tcp_packet *)buffer;
-
-	if (g_data.opt & OPT_VERBOSE_DEBUG)
-		print_ip4_header((struct ip *)&packet->ip);
-
-	uint16_t to = packet->tcp.dest;
-	struct s_scan *tmp = scan;
-
-	while (tmp) {
-		if (tmp->saddr->sin_port == to) {
-			LOCK(tmp);
-			if (packet->tcp.rst)
-				tmp->status = CLOSED;
-			else if (packet->tcp.ack && packet->tcp.syn)
-				tmp->status = OPEN;
-			if (tmp == scan) {
-				UNLOCK(tmp);
-				return 1;
-			}
-			UNLOCK(tmp);
-		}
-		tmp = tmp->next;
+	ip = (struct iphdr *)buffer;
+	if (ip->protocol == IPPROTO_TCP) {
+		packet = (struct tcp_packet *)buffer;
+		dest = packet->tcp.dest;
+		if (packet->tcp.rst)
+			status = CLOSED;
+		else if (packet->tcp.ack && packet->tcp.syn)
+			status = OPEN;
 	}
-	return is_complete(scan);
+	else if (ip->protocol == IPPROTO_ICMP) {
+		epacket = (struct icmp_packet *)buffer;
+		if (epacket->icmp.type == ICMP_DEST_UNREACH)
+			status = FILTERED;
+		packet = &(epacket->data);
+		dest = packet->tcp.source;
+	}
+
+	if (status != -1) {
+		/* Update the corresponding scan if the recv packet is a response to one of our
+		 * requests */
+		if ((update_ret = update_scans(scan, status, dest))) {
+			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
+			{
+				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
+					inet_ntoa(*(struct in_addr*)&ip->saddr),
+					ntohs(packet->tcp.source),
+					status);
+				if (g_data.opt & OPT_VERBOSE_DEBUG)
+					print_ip4_header((struct ip *)&packet->ip);
+			}
+			/* The target scan has been updated */
+			if (update_ret == UPDATE_TARGET)
+				return 1;
+		}
+	}
+
+	return 0;
 }
 
 int syn_scan(struct s_scan *scan)
 {
 	int sockfd;
-	int one = 1;
 	struct timeval timeout = {1, 345678};
-	int ret;
 	struct servent *s_service;
 	char *service = "unknown";
-
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "=========================================\n");
+	int ret = 0;
 
 	LOCK(scan);
 
@@ -193,30 +197,21 @@ int syn_scan(struct s_scan *scan)
 	scan->saddr->sin_port = htons(scan->sport);
 	scan->daddr->sin_port = htons(scan->dport);
 
-	/* Verbose prints */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
-		fprintf(stderr, "[*] Destination: %s (%s) on port: %d\n",
-			scan->dhostname, inet_ntoa(scan->daddr->sin_addr),
-			ntohs(scan->daddr->sin_port));
-	}
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
-		fprintf(stderr, "[*] Source: %s on port: %d\n",
-			inet_ntoa(scan->saddr->sin_addr), ntohs(scan->saddr->sin_port));
-	}
-
 	/* Socket creation */
+	/*if ((sockfd = socket(AF_PACKET, SOCK_RAW, ETH_P_IP)) < 0) {*/
 	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to create socket\n");
+			fprintf(stderr, "[!] Failed to create socket\n");
 		scan->status = ERROR;
 		UNLOCK(scan);
 		return 1;
 	}
 
 	/* Set options */
+	int one = 1;
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set header option\n");
+			fprintf(stderr, "[!] Failed to set header option\n");
 		scan->status = ERROR;
 		close(sockfd);
 		UNLOCK(scan);
@@ -226,7 +221,7 @@ int syn_scan(struct s_scan *scan)
 		sizeof(timeout)) != 0)
 	{
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set timeout option\n");
+			fprintf(stderr, "[!] Failed to set timeout option\n");
 		scan->status = ERROR;
 		close(sockfd);
 		UNLOCK(scan);
@@ -247,12 +242,37 @@ int syn_scan(struct s_scan *scan)
 
 	/* Scanning process */
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
+		scan->status = ERROR;
 		UNLOCK(scan);
-		ret = ERROR;
 	}
 	else {
 		UNLOCK(scan);
 		while (!(ret = read_syn_ack(sockfd, scan, timeout)));
+		/* We timed out, send the packet again */
+		if (ret == TIMEOUT) {
+			LOCK(scan);
+			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+				fprintf(stderr, "[*] SYN request on %s:%d timedout\n",
+				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+			/* Set the scan status to TIMEOUT, to inform we already timedout once */
+			scan->status = TIMEOUT;
+			/* Resend scan */
+			if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
+				scan->status = ERROR;
+				UNLOCK(scan);
+			}
+			else {
+				/* Successful send */
+				UNLOCK(scan);
+				while (!(ret = read_syn_ack(sockfd, scan, timeout)));
+				/* Another timeout, set the status to filtered */
+				if (ret == TIMEOUT) {
+					LOCK(scan);
+					scan->status = FILTERED;
+					UNLOCK(scan);
+				}
+			}
+		}
 	}
 
 	/* Scan end time */
@@ -262,10 +282,9 @@ int syn_scan(struct s_scan *scan)
 	}
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Port status: %d\n", ret);
-
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "=========================================\n");
+		fprintf(stderr, "[*] Updating %s:%d SYN's scan to %d\n",
+		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
+		scan->status);
 
 	close(sockfd);
 	return 0;

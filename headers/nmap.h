@@ -23,6 +23,9 @@
 #include <ifaddrs.h>
 #include <linux/if.h>
 #include <pthread.h>
+#include <linux/in.h>
+#include <linux/if_packet.h>
+#include <net/ethernet.h>
 
 /* STATUS */
 #define OPEN 0
@@ -37,6 +40,10 @@
 #define PRINTED 9
 #define SCANNING 10
 #define INVALID 11
+
+#define UPDATE 1
+#define UPDATE_TARGET 2
+#define ALREADY_UPDATED 3
 
 /* Max ips to scan in one command */
 #define MAX_IPS 15
@@ -155,6 +162,12 @@ struct			tcp_packet {
 	struct tcphdr		tcp;
 };
 
+struct			icmp_packet {
+	struct iphdr		ip;
+	struct icmphdr		icmp;
+	struct tcp_packet	data;
+};
+
 /* struct iphdr
 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -246,6 +259,7 @@ int		ft_nmap(char *path);
 void	free_and_exit(int exit_val);
 
 /* list.c */
+int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
