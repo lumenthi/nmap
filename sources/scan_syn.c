@@ -116,6 +116,7 @@ static int timed_out(struct timeval start, struct timeval timeout, int status)
 static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 {
 	int ret;
+	int update_ret;
 	int status = -1;
 	unsigned int len = sizeof(struct icmp_packet);
 	char buffer[len];
@@ -125,6 +126,10 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	struct icmp_packet *epacket;
 
 	uint16_t dest;
+
+	/* Check if another thread already updated the scan status */
+	if (scan->status != TIMEOUT && scan->status != SCANNING)
+		return ALREADY_UPDATED;
 
 	/* Receiving process */
 	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
@@ -156,15 +161,26 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 		dest = packet->tcp.source;
 	}
 
-	if (g_data.opt & OPT_VERBOSE_DEBUG)
-		print_ip4_header((struct ip *)&packet->ip);
-
 	if (status != -1) {
-		if (update_scans(scan, status, dest))
-			return 1;
+		/* Update the corresponding scan if the recv packet is a response to one of our
+		 * requests */
+		if ((update_ret = update_scans(scan, status, dest))) {
+			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
+			{
+				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
+					inet_ntoa(*(struct in_addr*)&ip->saddr),
+					ntohs(packet->tcp.source),
+					status);
+				if (g_data.opt & OPT_VERBOSE_DEBUG)
+					print_ip4_header((struct ip *)&packet->ip);
+			}
+			/* The target scan has been updated */
+			if (update_ret == UPDATE_TARGET)
+				return 1;
+		}
 	}
 
-	return scans_complete(scan);
+	return 0;
 }
 
 int syn_scan(struct s_scan *scan)
@@ -236,7 +252,7 @@ int syn_scan(struct s_scan *scan)
 		if (ret == TIMEOUT) {
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] SYN scan on %s:%d timedout\n",
+				fprintf(stderr, "[*] SYN request on %s:%d timedout\n",
 				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;

@@ -41,6 +41,10 @@
 #define SCANNING 10
 #define INVALID 11
 
+#define UPDATE 1
+#define UPDATE_TARGET 2
+#define ALREADY_UPDATED 3
+
 /* Max ips to scan in one command */
 #define MAX_IPS 15
 
@@ -256,7 +260,6 @@ void	free_and_exit(int exit_val);
 
 /* list.c */
 int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
-int		scans_complete(struct s_scan *scan);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
