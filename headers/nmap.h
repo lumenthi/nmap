@@ -40,6 +40,7 @@
 #define PRINTED 9
 #define SCANNING 10
 #define INVALID 11
+#define DONE 12
 
 /* Max ips to scan in one command */
 #define MAX_IPS 15
@@ -161,6 +162,7 @@ struct			tcp_packet {
 struct			icmp_packet {
 	struct iphdr		ip;
 	struct icmphdr		icmp;
+	struct tcp_packet	data;
 };
 
 /* struct iphdr
