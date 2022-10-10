@@ -40,7 +40,6 @@
 #define PRINTED 9
 #define SCANNING 10
 #define INVALID 11
-#define DONE 12
 
 /* Max ips to scan in one command */
 #define MAX_IPS 15
