@@ -105,8 +105,10 @@
 }; */
 
 struct s_scan {
-	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct sockaddr_in	*saddr; /* source AF_INET infos */
+	struct sockaddr_ll	*sethe; /* source AF_PACKET infos */
+	struct sockaddr_in	*daddr; /* dest AF_INET infos */
+	struct sockaddr_ll	*dethe; /* dest AF_PACKET infos */
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
@@ -122,12 +124,18 @@ struct s_scan {
 };
 
 struct s_ip {
-	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct sockaddr_in	*saddr; /* source AF_INET infos */
+	struct sockaddr_ll	*sethe; /* source AF_PACKET infos */
+
+	struct sockaddr_in	*daddr; /* dest AF_INET infos */
+	struct sockaddr_ll	*dethe; /* dest AF_PACKET infos */
+
 	char				*dhostname; /* found ip hostnme */
 	char				*destination; /* user input */
+
 	int					status; /* [UP/DOWN/ERROR] */
 	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
+
 	struct s_ip			*next; /* next ip */
 };
 
@@ -239,7 +247,8 @@ int		syn_scan(struct s_scan *to_scan);
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);
-int		sconfig(char *destination, struct sockaddr_in *saddr);
+int		sconfig(char *destination, struct sockaddr_in *saddr,
+	struct sockaddr_ll *sethe);
 
 /* checksum.c */
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);

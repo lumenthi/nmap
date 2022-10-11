@@ -107,6 +107,9 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
 		}
 
+		tmp->sethe = ip->sethe;
+		tmp->dethe = ip->dethe;
+
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->daddr)
 			tmp->status = ERROR;
@@ -206,6 +209,10 @@ void	free_ips(struct s_ip **ip)
 			free(current->saddr);
 		if (current->daddr)
 			free(current->daddr);
+		if (current->sethe)
+			free(current->sethe);
+		if (current->dethe)
+			free(current->dethe);
 		if (current->dhostname)
 			free(current->dhostname);
 		free_scans(&current->scans);
