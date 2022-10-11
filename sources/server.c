@@ -40,7 +40,7 @@ struct			tcp_packet {
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);
 int		sconfig(char *destination, struct sockaddr_in *saddr,
-	struct sockaddr_ll *sethe);
+	struct sockaddr_ll *sethe, struct sockaddr_ll *dethe);
 
 void	print_ip4_header(struct ip *header);
 void	print_icmp_header(struct icmphdr *header);
@@ -93,7 +93,6 @@ static int server_response(int sockfd, uint8_t type, void *received,
 	struct sockaddr_ll sethe;
 	struct sockaddr_in daddr;
 	struct sockaddr_ll dethe;
-	(void)dethe;
 
 	/* For tcp */
 	char packet[sizeof(struct iphdr)+sizeof(struct tcphdr)+len];
@@ -107,7 +106,7 @@ static int server_response(int sockfd, uint8_t type, void *received,
 	/* Filling sockaddr structs */
 	destination = inet_ntoa(*(struct in_addr *)&rip->saddr);
 	dconfig(destination, tcp->source, &daddr, NULL);
-	sconfig(destination, &saddr, &sethe);
+	sconfig(destination, &saddr, &sethe, &dethe);
 	saddr.sin_port = rtcp->dest;
 
 	ft_memset(packet, 0, sizeof(packet));

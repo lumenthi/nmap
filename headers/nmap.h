@@ -248,7 +248,7 @@ int		syn_scan(struct s_scan *to_scan);
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);
 int		sconfig(char *destination, struct sockaddr_in *saddr,
-	struct sockaddr_ll *sethe);
+	struct sockaddr_ll *sethe, struct sockaddr_ll *dethe);
 
 /* checksum.c */
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);

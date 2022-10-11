@@ -266,7 +266,7 @@ static void add_ip(char *ip_string, t_set *set)
 		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr,
-			tmp->sethe) != 0)
+			tmp->sethe, tmp->dethe) != 0)
 		{
 			tmp->status = ERROR;
 		}

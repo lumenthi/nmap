@@ -91,9 +91,77 @@ static int get_ip(char *destination, struct sockaddr_in *saddr, char *iname)
 	return 1;
 }
 
+static void free_split(char **split)
+{
+	char **tmp = split;
+
+	while (*tmp) {
+		free(*tmp);
+		tmp++;
+	}
+	free(split);
+}
+
+static void mac_value(char *str, char *sll_addr)
+{
+	int i = 0;
+
+	while (i < ETHER_ADDR_LEN) {
+		str[2] = '\0';
+		sll_addr[i] = ft_atoi_base(str, "0123456789abcdef");
+		str+=3;
+		i++;
+	}
+}
+
+static size_t split_size(char **split)
+{
+	int i = 0;
+
+	if (!split)
+		return 0;
+
+	while (split[i])
+		i++;
+
+	return i;
+}
+
+static int get_arp(char *iname, struct sockaddr_ll *macaddr)
+{
+	char **split;
+	char *buffer;
+	int i = 0;
+	int found = 1;
+
+	if (!ft_strcmp(iname, "lo")) {
+		ft_bzero(macaddr->sll_addr, sizeof(*macaddr->sll_addr));
+		return 0;
+	}
+
+	int fd = open("/proc/net/arp", O_RDONLY);
+	if (fd == -1)
+		return 1;
+
+	while (get_next_line(fd, &buffer)) {
+		split = ft_strsplit(buffer, ' ');
+		if (split_size(split) > 5 && split[5] && !ft_strcmp(split[5], iname) &&
+			split[3] && ft_strlen(split[3]) == 17)
+		{
+			mac_value(split[3], (char *)macaddr->sll_addr);
+			found = 0;
+		}
+		free_split(split);
+		free(buffer);
+		i++;
+	}
+
+	return found;
+}
+
 /* Fill source sockaddr_in */
 int sconfig(char *destination, struct sockaddr_in *saddr,
-	struct sockaddr_ll *sethe)
+	struct sockaddr_ll *sethe, struct sockaddr_ll *dethe)
 {
 	/* Interface name */
 	char iname[IFNAMSIZ];
@@ -108,14 +176,26 @@ int sconfig(char *destination, struct sockaddr_in *saddr,
 	if (get_mac(iname, sethe) != 0)
 		return 1;
 
-	/*unsigned char *display = (unsigned char *)sethe.sll_addr;
-	printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	display[0],
-	display[1],
-	display[2],
-	display[3],
-	display[4],
-	display[5]);*/
+	if (get_arp(iname, dethe) != 0)
+		return 1;
+
+	/*unsigned char *sdisplay = (unsigned char *)sethe->sll_addr;
+	printf("SETHE: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	sdisplay[0],
+	sdisplay[1],
+	sdisplay[2],
+	sdisplay[3],
+	sdisplay[4],
+	sdisplay[5]);
+
+	unsigned char *ddisplay = (unsigned char *)dethe->sll_addr;
+	printf("DETHE: %02x:%02x:%02x:%02x:%02x:%02x\n",
+	ddisplay[0],
+	ddisplay[1],
+	ddisplay[2],
+	ddisplay[3],
+	ddisplay[4],
+	ddisplay[5]);*/
 
 	return 0;
 }
