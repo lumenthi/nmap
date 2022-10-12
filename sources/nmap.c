@@ -5,15 +5,31 @@ static int run_scan(struct s_scan *scan)
 {
 	/* TODO: match nmap's options for each scan type (both IP and the next layer) */
 	/* printf("[*] Scanning: %d\n", scan->dport); */
-	syn_scan(scan);
-
-	/* TODO: Restore, temporary doing syn scans until more scans are implemented */
-	/* if (scan->scantype == OPT_SCAN_SYN)
-		syn_scan(scan);
-	else {
-		printf("[*] Scan %d not implemented yet\n", scan->scantype);
-		scan->status = ERROR;
-	}*/
+	switch (scan->scantype) {
+		case OPT_SCAN_SYN:
+			syn_scan(scan);
+			break;
+		case OPT_SCAN_TCP:
+			//syn_scan(scan);
+			break;
+		case OPT_SCAN_FIN:
+			//fin_scan(scan);
+			break;
+		case OPT_SCAN_NULL:
+			//null_scan(scan);
+			break;
+		case OPT_SCAN_ACK:
+			//ack_scan(scan);
+			break;
+		case OPT_SCAN_XMAS:
+			//xmas_scan(scan);
+			break;
+		case OPT_SCAN_UDP:
+			//udp_scan(scan);
+			break;
+		default:
+			fprintf(stderr,"Unknown scan type\n");
+	}
 
 	return 0;
 }

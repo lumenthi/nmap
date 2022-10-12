@@ -156,6 +156,12 @@ typedef struct	s_data {
 	int					port_counter;
 }						t_data;
 
+struct			tcp_options {
+};
+
+struct			ip_options {
+};
+
 struct			tcp_packet {
 	struct iphdr		ip;
 	struct tcphdr		tcp;
@@ -262,5 +268,11 @@ int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+
+/* craft_packet.c */
+void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr, uint8_t protocol, struct ip_options *options);
+void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options);
 
 #endif
