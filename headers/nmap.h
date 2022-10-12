@@ -112,7 +112,6 @@ struct s_scan {
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
-	char				*service; /* Found service */
 	uint16_t			sport; /* Source port */
 	uint16_t			dport; /* Destination port */
 	struct timeval		start_time; /* Scan start time */

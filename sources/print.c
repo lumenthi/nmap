@@ -44,6 +44,8 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	long int sec;
 	long int usec;
 	long long total_usec;
+	struct servent *s_service;
+	char *service = "unknown";
 
 	/* TODO: Specify protocol in state: `open/tcp` (like real nmap) */
 	char *status[] = {"open", "closed", "filtered", "down",
@@ -56,6 +58,12 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	usec = scan->end_time.tv_usec - scan->start_time.tv_usec;
 	total_usec = sec*1000000+usec;
 
+
+	/* Service detection */
+	/* Network services database file /etc/services */
+	if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
+		service = s_service->s_name;
+
 	if (!(info->menu)) {
 		printf("PORT   SCAN    STATE    TIME        SERVICE\n");
 		info->menu = 1;
@@ -66,7 +74,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 
 	printf("%-7s %-8s %04lld.%03lldms  %s\n",
 		scans[scan_index(scan->scantype)], status[scan->status],
-		total_usec/1000, total_usec %1000, scan->service);
+		total_usec/1000, total_usec %1000, service);
 }
 
 static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
