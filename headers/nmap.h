@@ -162,12 +162,14 @@ struct			tcp_options {
 struct			ip_options {
 };
 
-struct			tcp_packet {
+struct __attribute__((packed))	tcp_packet {
+	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
 
-struct			icmp_packet {
+struct __attribute__((packed))	icmp_packet {
+	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct icmphdr		icmp;
 	struct tcp_packet	data;
@@ -234,6 +236,8 @@ extern t_data	g_data;
 
 /* print.c */
 void	print_ip4_header(struct ip *header);
+void	print_tcp_header(struct tcphdr *header);
+void	print_icmp_header(struct icmphdr *header);
 void	print_time(struct timeval start_time,
 	struct timeval end_time);
 void	print_scans(struct s_ip *ips);

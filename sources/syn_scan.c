@@ -66,7 +66,7 @@ static int timed_out(struct timeval start, struct timeval timeout, int status)
 
 static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 {
-	int ret;
+	ssize_t ret;
 	int update_ret;
 	int status = -1;
 	unsigned int len = sizeof(struct icmp_packet);
@@ -83,20 +83,25 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 		return ALREADY_UPDATED;
 
 	/* Receiving process */
-	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
+	ret = recv(sockfd, buffer, len, 0);
 
+	//printf("received %ld\n", ret);
 	/* Handling timeout */
 	if (timed_out(scan->start_time, timeout, scan->status))
 			return TIMEOUT;
 
 	/* Invalid packet (packet too small) */
-	if (ret < (int)sizeof(struct tcp_packet) &&
-		ret < (int)sizeof(struct icmp_packet))
+	if (ret < (ssize_t)sizeof(struct tcp_packet) &&
+		ret < (ssize_t)sizeof(struct icmp_packet))
+	{
+		//printf("Ret too small\n");
 		return 0;
+	}
 
 	/* TODO: Packet error checking ? */
-	ip = (struct iphdr *)buffer;
+	ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
 	if (ip->protocol == IPPROTO_TCP) {
+		//printf("TCP\n");
 		packet = (struct tcp_packet *)buffer;
 		dest = packet->tcp.dest;
 		if (packet->tcp.rst)
@@ -105,13 +110,25 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 			status = OPEN;
 	}
 	else if (ip->protocol == IPPROTO_ICMP) {
+		printf("ICMP!!!\n");
 		epacket = (struct icmp_packet *)buffer;
+		//print_ip4_header((struct ip*)ip);
+		print_icmp_header(&epacket->icmp);
 		if (epacket->icmp.type == ICMP_DEST_UNREACH)
+		{
+			printf("Filtered!\n");
 			status = FILTERED;
+		}
 		packet = &(epacket->data);
+		//print_tcp_header(&packet->tcp);
+		print_tcp_header((struct tcphdr*)(buffer + sizeof(struct ethhdr) + sizeof(struct ip) + sizeof(struct icmp) + sizeof(struct ip)));
+		//print_ip4_header((struct ip*)&packet->ip);
 		dest = packet->tcp.source;
 	}
 
+	//printf("Status = %d\n", status);
+	//printf("OPEN = %d\n", OPEN);
+	//printf("CLOSED = %d\n", CLOSED);
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
@@ -136,7 +153,7 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 
 int syn_scan(struct s_scan *scan)
 {
-	int sockfd;
+	int sockfd, recvfd;
 	struct timeval timeout = {1, 345678};
 	int ret = 0;
 
@@ -156,6 +173,31 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
+	if ((recvfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+			fprintf(stderr, "[!] Failed to create socket\n");
+		scan->status = ERROR;
+		UNLOCK(scan);
+		return 1;
+	}
+
+	/*struct sock_filter BPF_code[] = {
+		{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 0, 1, 0x00000800 },
+		{ 0x6, 0, 0, 0x00040000 },
+		{ 0x6, 0, 0, 0x00000000 }
+	};    
+	struct sock_fprog Filter;
+	// error prone code, .len field should be consistent with the real length of the filter code array
+	Filter.len = sizeof(BPF_code)/sizeof(BPF_code[0]); 
+	Filter.filter = BPF_code;
+
+	if (setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &Filter, sizeof(Filter)) < 0) {
+		perror("setsockopt attach filter");
+		close(sock);
+			exit(1);
+	}*/
+
 	/* Set options */
 	int one = 1;
 	if ((setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
@@ -163,6 +205,7 @@ int syn_scan(struct s_scan *scan)
 			fprintf(stderr, "[!] Failed to set header option\n");
 		scan->status = ERROR;
 		close(sockfd);
+		close(recvfd);
 		UNLOCK(scan);
 		return 1;
 	}
@@ -173,6 +216,7 @@ int syn_scan(struct s_scan *scan)
 			fprintf(stderr, "[!] Failed to set timeout option\n");
 		scan->status = ERROR;
 		close(sockfd);
+		close(recvfd);
 		UNLOCK(scan);
 		return 1;
 	}
@@ -190,7 +234,7 @@ int syn_scan(struct s_scan *scan)
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_syn_ack(sockfd, scan, timeout)));
+		while (!(ret = read_syn_ack(recvfd, scan, timeout)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
@@ -207,7 +251,7 @@ int syn_scan(struct s_scan *scan)
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_syn_ack(sockfd, scan, timeout)));
+				while (!(ret = read_syn_ack(recvfd, scan, timeout)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);
@@ -230,5 +274,6 @@ int syn_scan(struct s_scan *scan)
 		scan->status);
 
 	close(sockfd);
+	close(recvfd);
 	return 0;
 }
