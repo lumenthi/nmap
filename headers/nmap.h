@@ -26,6 +26,7 @@
 #include <linux/in.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
+#include <linux/filter.h>
 
 /* STATUS */
 #define OPEN 0
@@ -167,13 +168,11 @@ typedef struct	s_data {
 }						t_data;
 
 struct __attribute__((__packed__)) tcp_packet {
-	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
 
 struct			icmp_packet {
-	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct icmphdr		icmp;
 	struct tcp_packet	data;
