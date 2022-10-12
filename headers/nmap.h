@@ -163,13 +163,11 @@ struct			ip_options {
 };
 
 struct __attribute__((packed))	tcp_packet {
-	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
 
 struct __attribute__((packed))	icmp_packet {
-	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct icmphdr		icmp;
 	struct tcp_packet	data;

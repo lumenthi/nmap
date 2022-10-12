@@ -83,9 +83,8 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 		return ALREADY_UPDATED;
 
 	/* Receiving process */
-	ret = recv(sockfd, buffer, len, 0);
+	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
 
-	//printf("received %ld\n", ret);
 	/* Handling timeout */
 	if (timed_out(scan->start_time, timeout, scan->status))
 			return TIMEOUT;
@@ -94,15 +93,13 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	if (ret < (ssize_t)sizeof(struct tcp_packet) &&
 		ret < (ssize_t)sizeof(struct icmp_packet))
 	{
-		//printf("Ret too small\n");
 		return 0;
 	}
 
 	/* TODO: Packet error checking ? */
 	ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
 	if (ip->protocol == IPPROTO_TCP) {
-		//printf("TCP\n");
-		packet = (struct tcp_packet *)buffer;
+		packet = (struct tcp_packet *)ip;
 		dest = packet->tcp.dest;
 		if (packet->tcp.rst)
 			status = CLOSED;
@@ -110,25 +107,13 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 			status = OPEN;
 	}
 	else if (ip->protocol == IPPROTO_ICMP) {
-		printf("ICMP!!!\n");
-		epacket = (struct icmp_packet *)buffer;
-		//print_ip4_header((struct ip*)ip);
-		print_icmp_header(&epacket->icmp);
+		epacket = (struct icmp_packet *)ip;
 		if (epacket->icmp.type == ICMP_DEST_UNREACH)
-		{
-			printf("Filtered!\n");
 			status = FILTERED;
-		}
 		packet = &(epacket->data);
-		//print_tcp_header(&packet->tcp);
-		print_tcp_header((struct tcphdr*)(buffer + sizeof(struct ethhdr) + sizeof(struct ip) + sizeof(struct icmp) + sizeof(struct ip)));
-		//print_ip4_header((struct ip*)&packet->ip);
 		dest = packet->tcp.source;
 	}
 
-	//printf("Status = %d\n", status);
-	//printf("OPEN = %d\n", OPEN);
-	//printf("CLOSED = %d\n", CLOSED);
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
