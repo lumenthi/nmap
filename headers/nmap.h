@@ -107,8 +107,10 @@
 struct s_scan {
 	struct sockaddr_in	*saddr; /* source AF_INET infos */
 	struct sockaddr_ll	*sethe; /* source AF_PACKET infos */
+
 	struct sockaddr_in	*daddr; /* dest AF_INET infos */
 	struct sockaddr_ll	*dethe; /* dest AF_PACKET infos */
+
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
@@ -164,12 +166,14 @@ typedef struct	s_data {
 	int					port_counter;
 }						t_data;
 
-struct			tcp_packet {
+struct __attribute__((__packed__)) tcp_packet {
+	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct tcphdr		tcp;
 };
 
 struct			icmp_packet {
+	struct ethhdr		eth;
 	struct iphdr		ip;
 	struct icmphdr		icmp;
 	struct tcp_packet	data;

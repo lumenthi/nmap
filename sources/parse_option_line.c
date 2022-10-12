@@ -263,6 +263,10 @@ static void add_ip(char *ip_string, t_set *set)
 		tmp->dethe = (struct sockaddr_ll *)malloc(sizeof(struct sockaddr_ll));
 		if (!tmp->saddr || !tmp->daddr || !tmp->sethe || !tmp->dethe)
 			tmp->status = ERROR;
+
+		ft_bzero(tmp->sethe, sizeof(struct sockaddr_ll));
+		ft_bzero(tmp->dethe, sizeof(struct sockaddr_ll));
+
 		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr,

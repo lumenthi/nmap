@@ -45,7 +45,8 @@ static int get_mac(char *iname, struct sockaddr_ll *macaddr)
 	return 1;
 }
 
-static int get_ip(char *destination, struct sockaddr_in *saddr, char *iname)
+static int get_ip(char *destination, struct sockaddr_in *saddr, char *iname,
+	int *index)
 {
 	struct ifaddrs *addrs;
 	struct ifaddrs *tmp;
@@ -83,6 +84,7 @@ static int get_ip(char *destination, struct sockaddr_in *saddr, char *iname)
 						return 0;
 					}
 				}
+				(*index)++;
 			}
 			tmp = tmp->ifa_next;
 		}
@@ -165,13 +167,14 @@ int sconfig(char *destination, struct sockaddr_in *saddr,
 {
 	/* Interface name */
 	char iname[IFNAMSIZ];
+	int index = 1;
 
 	ft_bzero(iname, sizeof(iname));
 
-	if (get_ip(destination, saddr, iname) != 0)
+	if (get_ip(destination, saddr, iname, &index) != 0)
 		return 1;
 
-	/*printf("iname: %s\n", iname);*/
+	printf("[*] iname [%s] with index [%d]\n", iname, index);
 
 	if (get_mac(iname, sethe) != 0)
 		return 1;
@@ -179,7 +182,17 @@ int sconfig(char *destination, struct sockaddr_in *saddr,
 	if (get_arp(iname, dethe) != 0)
 		return 1;
 
-	/*unsigned char *sdisplay = (unsigned char *)sethe->sll_addr;
+	dethe->sll_protocol = htons(ETH_P_IP);
+	dethe->sll_family = AF_PACKET;
+	dethe->sll_halen = ETH_ALEN;
+	dethe->sll_ifindex = index;
+
+	sethe->sll_protocol = htons(ETH_P_IP);
+	sethe->sll_family = AF_PACKET;
+	sethe->sll_halen = ETH_ALEN;
+	sethe->sll_ifindex = index;
+
+	unsigned char *sdisplay = (unsigned char *)sethe->sll_addr;
 	printf("SETHE: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	sdisplay[0],
 	sdisplay[1],
@@ -195,7 +208,7 @@ int sconfig(char *destination, struct sockaddr_in *saddr,
 	ddisplay[2],
 	ddisplay[3],
 	ddisplay[4],
-	ddisplay[5]);*/
+	ddisplay[5]);
 
 	return 0;
 }
