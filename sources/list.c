@@ -34,9 +34,6 @@ static void	free_scan(struct s_scan *current)
 	if (current->daddr)
 		free(current->daddr);
 
-	if (current->service)
-		free(current->service);
-
 	free(current);
 }
 
