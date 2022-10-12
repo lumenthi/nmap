@@ -187,8 +187,6 @@ int syn_scan(struct s_scan *scan)
 {
 	int sockfd;
 	struct timeval timeout = {1, 345678};
-	struct servent *s_service;
-	char *service = "unknown";
 	int ret = 0;
 
 	LOCK(scan);
@@ -227,12 +225,6 @@ int syn_scan(struct s_scan *scan)
 		UNLOCK(scan);
 		return 1;
 	}
-
-	/* Service detection */
-	/* Network services database file /etc/services */
-	if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
-		service = s_service->s_name;
-	scan->service = ft_strdup(service);
 
 	/* Scan start time */
 	if ((gettimeofday(&scan->start_time, NULL)) != 0) {
