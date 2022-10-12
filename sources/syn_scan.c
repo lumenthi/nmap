@@ -1,5 +1,6 @@
 #include "nmap.h"
 #include "options.h"
+#include <linux/filter.h>
 
 static int send_syn(int sockfd,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
@@ -85,6 +86,11 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	/* Receiving process */
 	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
 
+	if (ret < 42)
+		return 0;
+	ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
+	if (ip->protocol != IPPROTO_TCP && ip->protocol != IPPROTO_ICMP)
+		printf("PROTOCOL = %d\n", ip->protocol);
 	/* Handling timeout */
 	if (timed_out(scan->start_time, timeout, scan->status))
 			return TIMEOUT;
@@ -97,7 +103,6 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	}
 
 	/* TODO: Packet error checking ? */
-	ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
 	if (ip->protocol == IPPROTO_TCP) {
 		packet = (struct tcp_packet *)ip;
 		dest = packet->tcp.dest;
@@ -107,6 +112,7 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 			status = OPEN;
 	}
 	else if (ip->protocol == IPPROTO_ICMP) {
+		printf("ICMP\n");
 		epacket = (struct icmp_packet *)ip;
 		if (epacket->icmp.type == ICMP_DEST_UNREACH)
 			status = FILTERED;
@@ -166,22 +172,47 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
-	/*struct sock_filter BPF_code[] = {
-		{ 0x28, 0, 0, 0x0000000c },
-		{ 0x15, 0, 1, 0x00000800 },
+	struct sock_filter BPF_code[] = {
+		/*	TCP and IP */
+		/*{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 4, 0, 0x000086dd },
+		{ 0x15, 0, 3, 0x00000800 },
+		{ 0x30, 0, 0, 0x00000017 },
+		{ 0x15, 0, 1, 0x00000006 },
 		{ 0x6, 0, 0, 0x00040000 },
-		{ 0x6, 0, 0, 0x00000000 }
-	};    
-	struct sock_fprog Filter;
-	// error prone code, .len field should be consistent with the real length of the filter code array
-	Filter.len = sizeof(BPF_code)/sizeof(BPF_code[0]); 
-	Filter.filter = BPF_code;
+		{ 0x6, 0, 0, 0x00000000 },*/
 
-	if (setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &Filter, sizeof(Filter)) < 0) {
+		/*	TCP */
+		{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 0, 5, 0x000086dd },
+		{ 0x30, 0, 0, 0x00000014 },
+		{ 0x15, 6, 0, 0x00000006 },
+		{ 0x15, 0, 6, 0x0000002c },
+		{ 0x30, 0, 0, 0x00000036 },
+		{ 0x15, 3, 4, 0x00000006 },
+		{ 0x15, 0, 3, 0x00000800 },
+		{ 0x30, 0, 0, 0x00000017 },
+		{ 0x15, 0, 1, 0x00000006 },
+		{ 0x6, 0, 0, 0x00040000 },
+		{ 0x6, 0, 0, 0x00000000 },
+
+		/*	ICMP */
+		/*{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 0, 3, 0x00000800 },
+		{ 0x30, 0, 0, 0x00000017 },
+		{ 0x15, 0, 1, 0x00000001 },
+		{ 0x6, 0, 0, 0x00040000 },
+		{ 0x6, 0, 0, 0x00000000 },*/
+	}; 
+	struct sock_fprog filter;
+	filter.len = sizeof(BPF_code) / sizeof(BPF_code[0]);
+	filter.filter = BPF_code;
+
+	if (setsockopt(recvfd, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter)) != 0) {
 		perror("setsockopt attach filter");
-		close(sock);
-			exit(1);
-	}*/
+		close(sockfd);
+		close(recvfd);
+	}
 
 	/* Set options */
 	int one = 1;
@@ -216,9 +247,11 @@ int syn_scan(struct s_scan *scan)
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
+		close(sockfd);
 	}
 	else {
 		UNLOCK(scan);
+		close(sockfd);
 		while (!(ret = read_syn_ack(recvfd, scan, timeout)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
@@ -258,7 +291,6 @@ int syn_scan(struct s_scan *scan)
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
 		scan->status);
 
-	close(sockfd);
 	close(recvfd);
 	return 0;
 }
