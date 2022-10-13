@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/01/04 10:37:11 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/06 11:16:32 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/11 11:10:04 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,6 +30,7 @@ NPROC = $(shell nproc)
 INCLUDES = libft.h
 
 SRCS = ft_atoi.c \
+		ft_atoi_base.c \
 		ft_bzero.c \
 		ft_isalnum.c \
 		ft_isalpha.c \

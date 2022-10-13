@@ -6,7 +6,7 @@
 /*   By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/11 10:50:56 by lumenthi          #+#    #+#             */
-/*   Updated: 2022/10/06 12:20:52 by lumenthi         ###   ########.fr       */
+/*   Updated: 2022/10/11 11:10:36 by lumenthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ int				ft_isalpha(int c);
 int				ft_isdigit(int c);
 int				ft_isalnum(int c);
 int				ft_isascii(int c);
+int				ft_atoi_base(char *str, char *base);
 int				ft_isprint(int c);
 int				ft_toupper(int c);
 int				ft_tolower(int c);
