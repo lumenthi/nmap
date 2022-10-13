@@ -69,6 +69,12 @@ int tcp_scan(struct s_scan *scan)
 			scan->status = CLOSED;
 			break ;
 		}
+		else if (err) {
+			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+				fprintf(stderr, "[*] Received TCP [FILTERED] response from %s:%d\n",
+					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+			break ;
+		}
 		/* A socket is ready, our port is open */
 		else if (select(sockfd+1, &rfds, &lfds, &efds, &timeout)) {
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
