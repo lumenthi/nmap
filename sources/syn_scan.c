@@ -8,61 +8,10 @@ static int send_syn(int sockfd,
 
 	char packet[sizeof(struct iphdr)+sizeof(struct tcphdr)+len];
 	struct iphdr *ip = (struct iphdr *)packet;
-	struct tcphdr *tcp = (struct tcphdr *)(packet+sizeof(struct iphdr));
 
 	ft_memset(packet, 0, sizeof(packet));
-
-	/* Filling IP header */
-	/* Version */
-	ip->version = 4;
-	/* Internet Header Length (how many 32-bit words are present in the header) */
-	ip->ihl = sizeof(struct iphdr) / sizeof(uint32_t);
-	/* Type of service */
-	ip->tos = 0;
-	/* Total length */
-	ip->tot_len = htons(sizeof(packet));
-	/* Identification (notes/ip.txt) */
-	ip->id = 0;
-	ip->frag_off = 0;
-	/* TTL */
-	ip->ttl = 64;
-	/* Protocol (TCP) */
-	ip->protocol = IPPROTO_TCP;
-	/* Checksum */
-	ip->check = 0; /* Calculated after TCP header */
-	/* Source ip */
-	ft_memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
-	/* Dest ip */
-	ft_memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
-
-	/* Filling TCP header */
-	/* Source port */
-	ft_memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
-	/* Destination port */
-	ft_memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
-	/* Seq num */
-	tcp->seq = htons(0);
-	/* Ack num */
-	tcp->ack_seq = htons(0);
-	/* Sizeof header / 4 */
-	tcp->doff = sizeof(struct tcphdr) /  4;
-	/* Flags */
-	tcp->fin = 0;
-	tcp->syn = 1;
-	tcp->rst = 0;
-	tcp->psh = 0;
-	tcp->ack = 0;
-	tcp->urg = 0;
-	/* WTF is this */
-	tcp->window = htons(64240);
-	/* Checksum */
-	tcp->check = 0; /* Calculated after headers */
-	/* Indicates the urgent data, only if URG flag set */
-	tcp->urg_ptr = 0;
-
-	/* Checksums */
-	tcp->check = tcp_checksum(ip, tcp);
-	ip->check = checksum((const char*)packet, sizeof(packet));
+	craft_ip_packet(packet, saddr, daddr, IPPROTO_TCP, NULL);
+	craft_tcp_packet(packet, saddr, daddr, TH_SYN, NULL);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -148,7 +97,7 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout,
 		return 0;
 
 	/* TODO: Packet error checking ? */
-	if (ret) {
+	if (ret >= (int)sizeof(struct tcp_packet)) {
 		ip = (struct iphdr *)buffer;
 		if (ip->protocol == IPPROTO_TCP) {
 			packet = (struct tcp_packet *)buffer;
@@ -159,7 +108,7 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout,
 				status = OPEN;
 		}
 	}
-	if (icmpret) {
+	if (icmpret >= (int)sizeof(struct icmp_packet)) {
 		ip = (struct iphdr *)icmpbuffer;
 		if (ip->protocol == IPPROTO_ICMP) {
 			epacket = (struct icmp_packet *)icmpbuffer;
