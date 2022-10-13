@@ -309,11 +309,9 @@ int syn_scan(struct s_scan *scan)
 	if (send_syn(sockfd, scan->saddr, scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
-		close(sockfd);
 	}
 	else {
 		UNLOCK(scan);
-		close(sockfd);
 		while (!(ret = read_syn_ack(recvfd, scan, timeout)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
@@ -353,6 +351,7 @@ int syn_scan(struct s_scan *scan)
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
 		scan->status);
 
+	close(sockfd);
 	close(recvfd);
 	return 0;
 }
