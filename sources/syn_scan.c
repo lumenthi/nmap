@@ -170,6 +170,7 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
+	/*	TCP socket */
 	if ((recvfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[!] Failed to create socket\n");
@@ -178,6 +179,7 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
+	/*	Ethernet socket */
 	/*if ((recvfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[!] Failed to create socket\n");
@@ -186,6 +188,7 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}*/
 
+	/*	Flushing the new socket with an empty filter */
 	/*struct sock_filter zero_bytecode = BPF_STMT(BPF_RET | BPF_K, 0);
 	struct sock_fprog zero_program = { 1, &zero_bytecode};
 
@@ -266,6 +269,7 @@ int syn_scan(struct s_scan *scan)
 	filter.filter = BPF_code;
 
 	(void)filter;
+	/*	Setting the filter */
 	/*if (setsockopt(recvfd, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter)) != 0) {
 		perror("setsockopt attach filter");
 		close(sockfd);

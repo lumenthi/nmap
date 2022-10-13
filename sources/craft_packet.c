@@ -7,6 +7,7 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct iphdr *ip = (struct iphdr *)packet;
 	struct tcphdr *tcp = (struct tcphdr *)(packet+sizeof(struct iphdr));
 
+	ft_memset(tcp, 0, sizeof(struct tcphdr));
 	/* TODO: at the moment no scan needs to set options */
 	(void)options;
 
@@ -50,7 +51,7 @@ void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
 {
 	struct iphdr *ip = (struct iphdr *)packet;
 
-	ft_memset(packet, 0, sizeof(packet));
+	ft_memset(packet, 0, sizeof(struct iphdr));
 
 	/* TODO: at the moment no scan needs to set options */
 	(void)options;
