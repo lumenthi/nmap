@@ -9,7 +9,7 @@ static int run_scan(struct s_scan *scan)
 			syn_scan(scan);
 			break;
 		case OPT_SCAN_TCP:
-			//syn_scan(scan);
+			tcp_scan(scan);
 			break;
 		case OPT_SCAN_FIN:
 			//fin_scan(scan);

@@ -135,6 +135,9 @@ void	print_scans(struct s_ip *ips);
 /* syn_scan.c */
 int		syn_scan(struct s_scan *to_scan);
 
+/* tcp_scan.c */
+int		tcp_scan(struct s_scan *to_scan);
+
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);

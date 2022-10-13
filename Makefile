@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/13 09:57:15 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/13 10:55:52 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -63,6 +63,7 @@ SRCS = main.c \
 		free_and_exit.c \
 		list.c \
 		syn_scan.c \
+		tcp_scan.c \
 		checksum.c \
 		addr_config.c \
 		print.c \
