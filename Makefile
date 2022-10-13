@@ -81,6 +81,13 @@ OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))
 
 #####################
 
+###### DEPENDENCIES ######
+
+SERVER_DEP = $(SERVER_OBJS:.o=.d)
+DEP = $(OBJS:.o=.d)
+
+#####################
+
 TODOS=$(shell grep -nr "TODO" $(SRCDIR) $(HEADDIR) | wc -l)
 
 SHOULD_COUNT=1
@@ -114,12 +121,18 @@ $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
 
+-include $(DEP)
+
 I = 1
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@ mkdir -p $(OBJDIR)
 	@ printf "[$(I)/$(FILES_TO_COMPILE)] "
-	$(CC) -c $(FLAGS) -I$(HEADDIR) -I$(LIBDIR) -o $@ $<
+	$(CC) -c -MMD -MF $(patsubst %.o,%.d,$@) $(FLAGS) -I$(HEADDIR) -I$(LIBDIR) -o $@ $<
 	$(eval I=$(shell echo $$(($(I) + 1))))
+
+$(DEPDIR)/%.d: $(SRCDIR)/%.c
+	@ mkdir -p $(DEPDIR)
+	$(CC) -c -MMD $(FLAGS) -I$(HEADDIR) -I$(LIBDIR) -o $@ $<
 
 clean:
 	@ $(MAKE) -s -C $(LIBDIR) clean
