@@ -1,6 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 #include <linux/filter.h>
+#include <errno.h>
 
 static int send_syn(int sockfd,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
@@ -86,11 +87,10 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	/* Receiving process */
 	ret = recv(sockfd, buffer, len, MSG_DONTWAIT);
 
-	if (ret < 42)
-		return 0;
-	ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
-	if (ip->protocol != IPPROTO_TCP && ip->protocol != IPPROTO_ICMP)
-		printf("PROTOCOL = %d\n", ip->protocol);
+	//if (ret != 54)
+	//	printf("recv %ld\n", ret);
+	//if (ret < (ssize_t)sizeof(struct ip))
+	//	return 0;
 	/* Handling timeout */
 	if (timed_out(scan->start_time, timeout, scan->status))
 			return TIMEOUT;
@@ -101,6 +101,12 @@ static int read_syn_ack(int sockfd, struct s_scan *scan, struct timeval timeout)
 	{
 		return 0;
 	}
+
+	//ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
+	ip = (struct iphdr *)(buffer);
+	//print_ip4_header((struct ip*)ip);
+	if (ip->protocol != IPPROTO_TCP && ip->protocol != IPPROTO_ICMP)
+		printf("PROTOCOL = %d\n", ip->protocol);
 
 	/* TODO: Packet error checking ? */
 	if (ip->protocol == IPPROTO_TCP) {
@@ -164,7 +170,7 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
-	if ((recvfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
+	if ((recvfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[!] Failed to create socket\n");
 		scan->status = ERROR;
@@ -172,18 +178,43 @@ int syn_scan(struct s_scan *scan)
 		return 1;
 	}
 
+	/*if ((recvfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+			fprintf(stderr, "[!] Failed to create socket\n");
+		scan->status = ERROR;
+		UNLOCK(scan);
+		return 1;
+	}*/
+
+	/*struct sock_filter zero_bytecode = BPF_STMT(BPF_RET | BPF_K, 0);
+	struct sock_fprog zero_program = { 1, &zero_bytecode};
+
+	if (setsockopt(recvfd, SOL_SOCKET, SO_ATTACH_FILTER, &zero_program, sizeof(zero_program)) < 0) {
+		fprintf(stderr, "error attaching zero bpf: %d\n", errno);
+		return 1;
+	}
+
+	char drain[1];
+	while (1) {
+		int bytes = recv(recvfd, drain, sizeof(drain), MSG_DONTWAIT);
+		if (bytes == -1) {
+			// we assume the error here means there is nothing left to read from the socket which is exactly what we want
+			break;
+		}
+	}*/
+
 	struct sock_filter BPF_code[] = {
 		/*	TCP and IP */
-		/*{ 0x28, 0, 0, 0x0000000c },
+		{ 0x28, 0, 0, 0x0000000c },
 		{ 0x15, 4, 0, 0x000086dd },
 		{ 0x15, 0, 3, 0x00000800 },
 		{ 0x30, 0, 0, 0x00000017 },
 		{ 0x15, 0, 1, 0x00000006 },
 		{ 0x6, 0, 0, 0x00040000 },
-		{ 0x6, 0, 0, 0x00000000 },*/
+		{ 0x6, 0, 0, 0x00000000 },
 
 		/*	TCP */
-		{ 0x28, 0, 0, 0x0000000c },
+		/*{ 0x28, 0, 0, 0x0000000c },
 		{ 0x15, 0, 5, 0x000086dd },
 		{ 0x30, 0, 0, 0x00000014 },
 		{ 0x15, 6, 0, 0x00000006 },
@@ -194,7 +225,7 @@ int syn_scan(struct s_scan *scan)
 		{ 0x30, 0, 0, 0x00000017 },
 		{ 0x15, 0, 1, 0x00000006 },
 		{ 0x6, 0, 0, 0x00040000 },
-		{ 0x6, 0, 0, 0x00000000 },
+		{ 0x6, 0, 0, 0x00000000 },*/
 
 		/*	ICMP */
 		/*{ 0x28, 0, 0, 0x0000000c },
@@ -203,16 +234,43 @@ int syn_scan(struct s_scan *scan)
 		{ 0x15, 0, 1, 0x00000001 },
 		{ 0x6, 0, 0, 0x00040000 },
 		{ 0x6, 0, 0, 0x00000000 },*/
-	}; 
+
+		/*	TCP or ICMP */
+		/*{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 0, 5, 0x000086dd },
+		{ 0x30, 0, 0, 0x00000014 },
+		{ 0x15, 7, 0, 0x00000006 },
+		{ 0x15, 0, 7, 0x0000002c },
+		{ 0x30, 0, 0, 0x00000036 },
+		{ 0x15, 4, 5, 0x00000006 },
+		{ 0x15, 0, 4, 0x00000800 },
+		{ 0x30, 0, 0, 0x00000017 },
+		{ 0x15, 1, 0, 0x00000006 },
+		{ 0x15, 0, 1, 0x00000001 },
+		{ 0x6, 0, 0, 0x00040000 },
+		{ 0x6, 0, 0, 0x00000000 },*/
+
+		/* IP and (TCP or ICMP) */
+		/*{ 0x28, 0, 0, 0x0000000c },
+		{ 0x15, 0, 4, 0x00000800 },
+		{ 0x30, 0, 0, 0x00000017 },
+		{ 0x15, 1, 0, 0x00000006 },
+		{ 0x15, 0, 1, 0x00000001 },
+		{ 0x6, 0, 0, 0x00040000 },
+		{ 0x6, 0, 0, 0x00000000 },*/
+
+	};
+
 	struct sock_fprog filter;
 	filter.len = sizeof(BPF_code) / sizeof(BPF_code[0]);
 	filter.filter = BPF_code;
 
-	if (setsockopt(recvfd, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter)) != 0) {
+	(void)filter;
+	/*if (setsockopt(recvfd, SOL_SOCKET, SO_ATTACH_FILTER, &filter, sizeof(filter)) != 0) {
 		perror("setsockopt attach filter");
 		close(sockfd);
 		close(recvfd);
-	}
+	}*/
 
 	/* Set options */
 	int one = 1;
