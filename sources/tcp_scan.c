@@ -1,15 +1,14 @@
 #include "nmap.h"
 #include "options.h"
 
+/* TODO: Do not assign source ports to TCP scans, its useless */
 int tcp_scan(struct s_scan *scan)
 {
 	int sockfd;
 	int err;
 	int len = sizeof(err);
 	int i = 0;
-	struct timeval timeout = {0, 99000};
-
-	LOCK(scan);
+	struct timeval timeout;
 
 	/* Prepare ports */
 	scan->saddr->sin_port = htons(scan->sport);
@@ -20,7 +19,6 @@ int tcp_scan(struct s_scan *scan)
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[!] Failed to create socket\n");
 		scan->status = ERROR;
-		UNLOCK(scan);
 		return 1;
 	}
 
@@ -30,7 +28,6 @@ int tcp_scan(struct s_scan *scan)
 			fprintf(stderr, "[!] Failed to set fcntl option\n");
 		scan->status = ERROR;
 		close(sockfd);
-		UNLOCK(scan);
 		return 1;
 	}
 
@@ -43,21 +40,23 @@ int tcp_scan(struct s_scan *scan)
 	/* Setting read fds for select */
 	fd_set rfds;
 	FD_ZERO(&rfds);
-	FD_SET(sockfd, &rfds);
 
 	/* Setting listen fds for select */
 	fd_set lfds;
 	FD_ZERO(&lfds);
-	FD_SET(sockfd, &lfds);
 
 	/* Setting exception fds for select */
 	fd_set efds;
 	FD_ZERO(&efds);
-	FD_SET(sockfd, &efds);
 
 	/* Default status */
 	scan->status = FILTERED;
 	while (i < 2) {
+		timeout.tv_sec = 1;
+		timeout.tv_usec = 345678;
+		FD_SET(sockfd, &rfds);
+		FD_SET(sockfd, &lfds);
+		FD_SET(sockfd, &efds);
 		connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr));
 		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&err, (socklen_t *)&len);
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -94,8 +93,6 @@ int tcp_scan(struct s_scan *scan)
 		scan->end_time.tv_sec = 0;
 		scan->end_time.tv_usec = 0;
 	}
-
-	UNLOCK(scan);
 
 	close(sockfd);
 	return 0;
