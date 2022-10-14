@@ -118,6 +118,11 @@ struct			tcp_packet {
 	struct tcphdr		tcp;
 };
 
+struct			udp_packet {
+	struct iphdr		ip;
+	struct udphdr		tcp;
+};
+
 struct			icmp_packet {
 	struct iphdr		ip;
 	struct icmphdr		icmp;
@@ -134,6 +139,8 @@ void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
 int		syn_scan(struct s_scan *to_scan);
+/* udp_scan.c */
+int		udp_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
@@ -162,11 +169,16 @@ void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t protocol, struct ip_options *options);
 void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options);
+void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr);
 
 /* list.c */
 int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+
+/* timedout.c */
+int timed_out(struct timeval start, struct timeval timeout, int status);
 
 #endif
