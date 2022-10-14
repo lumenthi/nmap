@@ -43,12 +43,14 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	int update_ret;
 	int status = -1;
 	unsigned int len = sizeof(struct icmp_packet);
+	unsigned int icmp_len = sizeof(struct ip) + sizeof(struct icmphdr)
+		+ sizeof(struct tcp_packet);
 	char buffer[len];
 	char icmpbuffer[len];
 
 	struct iphdr *ip;
-	struct tcp_packet *packet;
-	struct icmp_packet *epacket;
+	struct tcp_packet *tcp_packet;
+	struct icmp_packet *icmp_packet;
 
 	uint16_t dest;
 
@@ -65,30 +67,30 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 			return TIMEOUT;
 
 	/* Invalid packet (packet too small) */
-	if (ret < (int)sizeof(struct tcp_packet) &&
-		icmpret < (int)sizeof(struct icmp_packet))
+	if (ret < (ssize_t)sizeof(struct tcp_packet) &&
+		icmpret < (ssize_t)icmp_len)
 		return 0;
 
 	/* TODO: Packet error checking ? */
-	if (ret >= (int)sizeof(struct tcp_packet)) {
+	if (ret >= (ssize_t)sizeof(struct tcp_packet)) {
 		ip = (struct iphdr *)buffer;
 		if (ip->protocol == IPPROTO_TCP) {
-			packet = (struct tcp_packet *)buffer;
-			dest = packet->tcp.dest;
-			if (packet->tcp.rst)
+			tcp_packet = (struct tcp_packet *)buffer;
+			dest = tcp_packet->tcp.dest;
+			if (tcp_packet->tcp.rst)
 				status = CLOSED;
-			else if (packet->tcp.ack && packet->tcp.syn)
+			else if (tcp_packet->tcp.ack && tcp_packet->tcp.syn)
 				status = OPEN;
 		}
 	}
-	if (icmpret >= (int)sizeof(struct icmp_packet)) {
+	if (icmpret >= (ssize_t)icmp_len) {
 		ip = (struct iphdr *)icmpbuffer;
 		if (ip->protocol == IPPROTO_ICMP) {
-			epacket = (struct icmp_packet *)icmpbuffer;
-			if (epacket->icmp.type == ICMP_DEST_UNREACH)
+			icmp_packet = (struct icmp_packet *)icmpbuffer;
+			if (icmp_packet->icmp.type == ICMP_DEST_UNREACH)
 				status = FILTERED;
-			packet = &(epacket->data);
-			dest = packet->tcp.source;
+			tcp_packet = (struct tcp_packet*)&(icmp_packet->tcp);
+			dest = tcp_packet->tcp.source;
 		}
 	}
 
@@ -100,10 +102,10 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 			{
 				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
 					inet_ntoa(*(struct in_addr*)&ip->saddr),
-					ntohs(packet->tcp.source),
+					ntohs(tcp_packet->tcp.source),
 					status);
 				if (g_data.opt & OPT_VERBOSE_DEBUG)
-					print_ip4_header((struct ip *)&packet->ip);
+					print_ip4_header((struct ip *)&tcp_packet->ip);
 			}
 			/* The target scan has been updated */
 			if (update_ret == UPDATE_TARGET)
