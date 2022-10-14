@@ -48,7 +48,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	char *service = "unknown";
 
 	/* TODO: Specify protocol in state: `open/tcp` (like real nmap) */
-	char *status[] = {"open", "closed", "filtered", "down",
+	char *status[] = {"open", "closed", "filtered", "open|filtered", "down",
 		"error", "unknown", "timeout", "up", "ready", "printed",
 		"scanning", "invalid", NULL};
 	char *scans[] = {"syn", "null", "fin", "xmas",
@@ -86,7 +86,9 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
-			if ((scan->status == OPEN || scan->status == FILTERED) ||
+			/* TODO: be way more precise here, match every case */
+			if ((scan->status == OPEN || scan->status == FILTERED
+				|| scan->status == OPEN_FILTERED) ||
 				g_data.port_counter < 27)
 			{
 				print_content(scan, info);
@@ -108,7 +110,7 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 
 void print_scans(struct s_ip *ips)
 {
-	char *status[] = {"OPEN", "CLOSED", "FILTERED", "DOWN",
+	char *status[] = {"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "DOWN",
 		"ERROR", "UNKNOWN", "TIMEOUT", "UP", "READY", NULL};
 
 	struct s_ip *ip = ips;
@@ -130,7 +132,7 @@ void print_scans(struct s_ip *ips)
 						info.cclose++;
 					else if (pstatus == OPEN)
 						info.copen++;
-					else if (pstatus == FILTERED)
+					else if (pstatus == FILTERED || pstatus == OPEN_FILTERED)
 						info.cfilter++;
 					info.ctotal++;
 				}

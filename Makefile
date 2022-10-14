@@ -62,12 +62,14 @@ SRCS = main.c \
 		parse_option_line.c \
 		free_and_exit.c \
 		list.c \
-		syn_scan.c \
 		checksum.c \
 		addr_config.c \
 		print.c \
 		parse_file.c \
-		craft_packet.c
+		craft_packet.c \
+		timedout.c \
+		udp_scan.c \
+		syn_scan.c
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))

@@ -1,11 +1,43 @@
 #include "nmap.h"
 #include "options.h"
 
+void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr, uint8_t protocol, struct ip_options *options)
+{
+	struct iphdr *ip = (struct iphdr *)packet;
+
+	/* TODO: at the moment no scan needs to set options */
+	(void)options;
+
+	/* Filling IP header */
+	/* Version */
+	ip->version = 4;
+	/* Internet Header Length (how many 32-bit words are present in the header) */
+	ip->ihl = sizeof(struct iphdr) / sizeof(uint32_t);
+	/* Type of service */
+	ip->tos = 0;
+	/* Total length */
+	ip->tot_len = htons(sizeof(packet));
+	/* Identification (notes/ip.txt) */
+	ip->id = 0;
+	ip->frag_off = 0;
+	/* TTL */
+	ip->ttl = 64;
+	/* Protocol (TCP) */
+	ip->protocol = protocol;
+	/* Checksum */
+	ip->check = 0; /* Calculated by kernel */
+	/* Source ip */
+	ft_memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
+	/* Dest ip */
+	ft_memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
+}
+
 void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options)
 {
 	struct iphdr *ip = (struct iphdr *)packet;
-	struct tcphdr *tcp = (struct tcphdr *)(packet+sizeof(struct iphdr));
+	struct tcphdr *tcp = (struct tcphdr *)(packet + sizeof(struct iphdr));
 
 	/* TODO: at the moment no scan needs to set options */
 	(void)options;
@@ -45,34 +77,22 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	tcp->check = tcp_checksum(ip, tcp);
 }
 
-void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
-	struct sockaddr_in *daddr, uint8_t protocol, struct ip_options *options)
+void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr, char *payload, uint16_t payload_len)
 {
-	struct iphdr *ip = (struct iphdr *)packet;
+	//struct iphdr *ip = (struct iphdr *)packet;
+	struct udphdr *udp = (struct udphdr *)(packet + sizeof(struct iphdr));
 
-	/* TODO: at the moment no scan needs to set options */
-	(void)options;
+	/* Source port */
+	ft_memcpy(&udp->uh_sport, &saddr->sin_port, sizeof(udp->uh_sport));
+	/* Destination port */
+	ft_memcpy(&udp->uh_dport, &daddr->sin_port, sizeof(udp->uh_dport));
 
-	/* Filling IP header */
-	/* Version */
-	ip->version = 4;
-	/* Internet Header Length (how many 32-bit words are present in the header) */
-	ip->ihl = sizeof(struct iphdr) / sizeof(uint32_t);
-	/* Type of service */
-	ip->tos = 0;
-	/* Total length */
-	ip->tot_len = htons(sizeof(packet));
-	/* Identification (notes/ip.txt) */
-	ip->id = 0;
-	ip->frag_off = 0;
-	/* TTL */
-	ip->ttl = 64;
-	/* Protocol (TCP) */
-	ip->protocol = protocol;
-	/* Checksum */
-	ip->check = 0; /* Calculated by kernel */
-	/* Source ip */
-	ft_memcpy(&ip->saddr, &saddr->sin_addr.s_addr, sizeof(ip->saddr));
-	/* Dest ip */
-	ft_memcpy(&ip->daddr, &daddr->sin_addr.s_addr, sizeof(ip->daddr));
+	udp->uh_sport = saddr->sin_port;
+	udp->uh_dport = daddr->sin_port;
+
+	udp->uh_ulen = htons(sizeof(struct udphdr) + payload_len);
+
+	if (payload && payload_len > 0)
+		ft_memcpy(udp + 1, payload, payload_len);
 }

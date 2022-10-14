@@ -31,15 +31,16 @@
 #define OPEN 0
 #define CLOSED 1
 #define FILTERED 2
-#define DOWN 3
-#define ERROR 4
-#define UNKNOWN 5
-#define TIMEOUT 6
-#define UP 7
-#define READY 8
-#define PRINTED 9
-#define SCANNING 10
-#define INVALID 11
+#define OPEN_FILTERED 3
+#define DOWN 4
+#define ERROR 5
+#define UNKNOWN 6
+#define TIMEOUT 7
+#define UP 8
+#define READY 9
+#define PRINTED 10
+#define SCANNING 11
+#define INVALID 12
 
 #define UPDATE 1
 #define UPDATE_TARGET 2
@@ -120,19 +121,23 @@ struct			tcp_packet {
 
 struct			udp_packet {
 	struct iphdr		ip;
-	struct udphdr		tcp;
+	struct udphdr		udp;
 };
 
 struct			icmp_packet {
 	struct iphdr		ip;
 	struct icmphdr		icmp;
-	struct tcp_packet	data;
+	union {
+		struct tcp_packet	tcp;
+		struct udp_packet	udp;
+	};
 };
 
 extern t_data	g_data;
 
 /* print.c */
 void	print_ip4_header(struct ip *header);
+void	print_udp_header(struct udphdr *header);
 void	print_time(struct timeval start_time,
 	struct timeval end_time);
 void	print_scans(struct s_ip *ips);
@@ -170,7 +175,7 @@ void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
 void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options);
 void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
-	struct sockaddr_in *daddr);
+	struct sockaddr_in *daddr, char *payload, uint16_t payload_len);
 
 /* list.c */
 int		update_scans(struct s_scan *scan, int status, uint16_t source_port);

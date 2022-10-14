@@ -24,7 +24,7 @@ static int run_scan(struct s_scan *scan)
 			//xmas_scan(scan);
 			break;
 		case OPT_SCAN_UDP:
-			//udp_scan(scan);
+			udp_scan(scan);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
