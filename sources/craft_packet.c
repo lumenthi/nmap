@@ -43,10 +43,11 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	(void)options;
 
 	/* Filling TCP header */
+
 	/* Source port */
-	ft_memcpy(&tcp->source, &saddr->sin_port, sizeof(tcp->source));
+	tcp->source = saddr->sin_port;
 	/* Destination port */
-	ft_memcpy(&tcp->dest, &daddr->sin_port, sizeof(tcp->dest));
+	tcp->dest = daddr->sin_port;
 	/* Seq num */
 	tcp->seq = htons(0);
 	/* Ack num */
@@ -84,11 +85,8 @@ void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
 	struct udphdr *udp = (struct udphdr *)(packet + sizeof(struct iphdr));
 
 	/* Source port */
-	ft_memcpy(&udp->uh_sport, &saddr->sin_port, sizeof(udp->uh_sport));
-	/* Destination port */
-	ft_memcpy(&udp->uh_dport, &daddr->sin_port, sizeof(udp->uh_dport));
-
 	udp->uh_sport = saddr->sin_port;
+	/* Destination port */
 	udp->uh_dport = daddr->sin_port;
 
 	udp->uh_ulen = htons(sizeof(struct udphdr) + payload_len);
