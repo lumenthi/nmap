@@ -35,8 +35,8 @@ static int send_syn(int tcpsockfd,
 	return 0;
 }
 
-static int read_syn_ack(int tcpsockfd, struct s_scan *scan, struct timeval timeout,
-	int icmpsockfd)
+static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
+	struct timeval timeout)
 {
 	int ret;
 	int icmpret;
@@ -118,8 +118,8 @@ int syn_scan(struct s_scan *scan)
 {
 	int tcpsockfd;
 	int icmpsockfd;
+	int ret;
 	struct timeval timeout = {1, 345678};
-	int ret = 0;
 
 	LOCK(scan);
 
@@ -174,13 +174,14 @@ int syn_scan(struct s_scan *scan)
 	}
 
 	/* Scanning process */
+	ret = 0;
 	if (send_syn(tcpsockfd, scan->saddr, scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_syn_ack(tcpsockfd, scan, timeout, icmpsockfd)));
+		while (!(ret = read_syn_ack(tcpsockfd, icmpsockfd, scan, timeout)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
@@ -197,7 +198,7 @@ int syn_scan(struct s_scan *scan)
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_syn_ack(tcpsockfd, scan, timeout, icmpsockfd)));
+				while (!(ret = read_syn_ack(tcpsockfd, icmpsockfd, scan, timeout)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);
