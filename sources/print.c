@@ -1,11 +1,14 @@
 #include "nmap.h"
 #include "options.h"
+#include "colors.h"
 
 /* Contains infos for our printing function */
 struct s_pinfo {
 	size_t ctotal; /* Scanned port counter */
 	size_t copen; /* Open counter */
-	size_t cfilter; /* Filtered counter */
+	size_t cfiltered; /* Filtered counter */
+	size_t copen_filtered; /* open|filtered counter */
+	size_t cunfiltered; /* Unfiltered counter */
 	size_t cclose; /* Close counter */
 	size_t cerror; /* Error counter */
 	uint8_t menu; /* 0 or 1, to set if the menu bar is diplayed */
@@ -65,45 +68,101 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 		service = s_service->s_name;
 
 	if (!(info->menu)) {
-		printf("PORT   SCAN    STATE    TIME        SERVICE\n");
+		printf("PORT   SCAN    STATE         TIME        SERVICE\n");
 		info->menu = 1;
 	}
 	if (!info->tick)
 		printf("%d\n", scan->dport);
 	printf("|      ");
 
-	printf("%-7s %-8s %04lld.%03lldms  %s\n",
+	printf("%-7s %-13s %04lld.%03lldms  %s\n",
 		scans[scan_index(scan->scantype)], status[scan->status],
 		total_usec/1000, total_usec %1000, service);
 }
 
-static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
+static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 {
 	struct s_scan *scan = ip.scans;
+	struct s_scan *tmp = ip.scans;
 	int pstatus = -1; /* Final port status */
 
 	info->tick = 0;
 
+	while (tmp) {
+		if (tmp->dport == port) {
+			/* TODO: not done */
+			switch (tmp->status) {
+				case OPEN:
+					pstatus = OPEN;
+					break;
+				case FILTERED:
+					if (pstatus != OPEN)
+						pstatus = FILTERED;
+					break;
+				case UNFILTERED:
+					if (pstatus == OPEN_FILTERED)
+						pstatus = OPEN;
+					else if (pstatus == -1)
+						pstatus = UNFILTERED;
+					break;
+				case OPEN_FILTERED:
+					if (pstatus != OPEN)
+						pstatus = FILTERED;
+					else
+						pstatus = OPEN_FILTERED;
+					break;
+				case CLOSED:
+					if (pstatus != OPEN && pstatus != FILTERED)
+						pstatus = CLOSED;
+					break;
+			}
+		}
+		tmp = tmp->next;
+	}
+
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
-			/* TODO: be way more precise here, match every case */
-			if (scan->status == OPEN ||
-				g_data.port_counter - g_data.open_ports_counter <= 25)
+			if (pstatus == OPEN
+				|| g_data.port_counter - g_data.open_ports_counter <= 25)
 			{
 				print_content(scan, info);
-				pstatus = scan->status;
 				info->tick = 1;
-			}
-			else {
-				if (pstatus != OPEN && pstatus != FILTERED)
-					pstatus = scan->status;
 			}
 			scan->status = PRINTED;
 		}
 		scan = scan->next;
 	}
-	if (info->tick)
+	if (info->tick) {
+		if (g_data.scan_types_counter > 1) {
+			printf("Conclusion:    ");
+			switch (pstatus) {
+				case OPEN:
+					printf(NMAP_COLOR_GREEN"open\n"NMAP_COLOR_RESET);
+					info->copen++;
+					break;
+				case CLOSED:
+					printf(NMAP_COLOR_YELLOW"closed\n"NMAP_COLOR_RESET);
+					info->cclose++;
+					break;
+				case FILTERED:
+					printf(NMAP_COLOR_RED"filtered\n"NMAP_COLOR_RESET);
+					info->cfiltered++;
+					break;
+				case OPEN_FILTERED:
+					printf(NMAP_COLOR_YELLOW"open|filtered\n"NMAP_COLOR_RESET);
+					info->copen_filtered++;
+					break;
+				case UNFILTERED:
+					printf(NMAP_COLOR_YELLOW"unfiltered\n"NMAP_COLOR_RESET);
+					info->cunfiltered++;
+					break;
+				default:
+					printf("?????\n");
+					break;
+			}
+		}
 		printf("+------------------------------------------\n");
+	}
 	return pstatus;
 }
 
@@ -116,7 +175,6 @@ void print_scans(struct s_ip *ips)
 	struct s_ip *ip = ips;
 	struct s_scan *scan;
 	struct s_pinfo info;
-	int pstatus = 0;
 
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
@@ -127,20 +185,14 @@ void print_scans(struct s_ip *ips)
 				if (scan->status == ERROR)
 					info.cerror++;
 				else if (scan->status != PRINTED) {
-					pstatus = print_ports(*ip, scan->dport, &info);
-					if (pstatus == CLOSED)
-						info.cclose++;
-					else if (pstatus == OPEN)
-						info.copen++;
-					else if (pstatus == FILTERED || pstatus == OPEN_FILTERED)
-						info.cfilter++;
+					print_port(*ip, scan->dport, &info);
 					info.ctotal++;
 				}
 				scan = scan->next;
 			}
 		}
 		printf("Scanned %ld port(s), %ld error(s), %ld open, %ld filtered, %ld closed\n",
-			info.ctotal, info.cerror, info.copen, info.cfilter, info.cclose);
+			info.ctotal, info.cerror, info.copen, info.cfiltered, info.cclose);
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;

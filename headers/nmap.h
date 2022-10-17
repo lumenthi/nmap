@@ -109,6 +109,8 @@ typedef struct	s_data {
 	int					ip_counter;
 	int					port_counter;
 	int					open_ports_counter;
+	int					scan_types_counter;
+	int					total_scan_counter;
 }						t_data;
 
 struct			tcp_options {

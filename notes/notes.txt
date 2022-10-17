@@ -157,3 +157,7 @@ Don't print if total printed > 26?
 
 # Services
 May use /usr/bin/../share/nmap/nmap-services instead for a better service recognition
+
+# /!\ Progress bar /!\
+
+# Do we really need to lock when writing scan results?

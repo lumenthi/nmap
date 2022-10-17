@@ -15,7 +15,7 @@ static int send_xmas(int tcpsockfd,
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sending SYN request to: %s:%d from port %d\n",
+		fprintf(stderr, "[*] Sending XMAS request to: %s:%d from port %d\n",
 			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 
@@ -26,7 +26,7 @@ static int send_xmas(int tcpsockfd,
 	if (sendto(tcpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to send SYN packet to: %s:%d from port %d\n",
+			fprintf(stderr, "[!] Failed to send XMAS packet to: %s:%d from port %d\n",
 			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 		return 1;
@@ -186,7 +186,7 @@ int xmas_scan(struct s_scan *scan)
 		if (ret == TIMEOUT) {
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] SYN request on %s:%d timedout\n",
+				fprintf(stderr, "[*] XMAS request on %s:%d timedout\n",
 				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
@@ -215,10 +215,14 @@ int xmas_scan(struct s_scan *scan)
 		scan->end_time.tv_usec = 0;
 	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Updating %s:%d SYN's scan to %d\n",
+	char *status[] = {
+		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
+	};
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		fprintf(stderr, "[*] Updating %s:%d XMAS scan to %s\n",
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
-		scan->status);
+		status[scan->status]);
+	}
 
 	close(icmpsockfd);
 	close(tcpsockfd);
