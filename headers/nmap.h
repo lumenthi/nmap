@@ -32,15 +32,16 @@
 #define CLOSED 1
 #define FILTERED 2
 #define OPEN_FILTERED 3
-#define DOWN 4
-#define ERROR 5
-#define UNKNOWN 6
-#define TIMEOUT 7
-#define UP 8
-#define READY 9
-#define PRINTED 10
-#define SCANNING 11
-#define INVALID 12
+#define UNFILTERED 4
+#define DOWN 5
+#define ERROR 6
+#define UNKNOWN 7
+#define TIMEOUT 8
+#define UP 9
+#define READY 10
+#define PRINTED 11
+#define SCANNING 12
+#define INVALID 13
 
 #define UPDATE 1
 #define UPDATE_TARGET 2
@@ -146,6 +147,14 @@ void	print_scans(struct s_ip *ips);
 int		syn_scan(struct s_scan *to_scan);
 /* udp_scan.c */
 int		udp_scan(struct s_scan *to_scan);
+/* fin_scan.c */
+int		fin_scan(struct s_scan *to_scan);
+/* null_scan.c */
+int		null_scan(struct s_scan *to_scan);
+/* xmas_scan.c */
+int		xmas_scan(struct s_scan *to_scan);
+/* xmas_scan.c */
+int		ack_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,

@@ -69,7 +69,11 @@ SRCS = main.c \
 		craft_packet.c \
 		timedout.c \
 		udp_scan.c \
-		syn_scan.c
+		syn_scan.c \
+		null_scan.c \
+		xmas_scan.c \
+		fin_scan.c \
+		ack_scan.c 
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
