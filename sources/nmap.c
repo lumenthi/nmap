@@ -39,14 +39,10 @@ static int launch_scan(void *rip)
 	struct s_ip *ip = (struct s_ip *)rip;
 	struct s_scan *scan;
 
-	/* Getting service list */
-	get_services();
-
 	while (ip) {
 		//printf("[*] Looking for ip: %s\n", ip->destination);
 		if (ip->status == UP) {
 			scan = ip->scans;
-
 			/* Resolve scans for this IP */
 			while (scan) {
 				LOCK(scan);
@@ -96,8 +92,11 @@ int ft_nmap(char *path)
 		fprintf(stderr, "%s: Failed to create threads\n", path);
 		return 1;
 	}
-	else
+	else {
+		/* Getting service list */
+		get_services();
 		launch_scan(g_data.ips);
+	}
 
 	print_scans(g_data.ips);
 	return 0;
