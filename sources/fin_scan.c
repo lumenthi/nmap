@@ -1,7 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 
-static int send_syn(int tcpsockfd,
+static int send_fin(int tcpsockfd,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr)
 {
 	unsigned int len = 0;
@@ -11,7 +11,7 @@ static int send_syn(int tcpsockfd,
 
 	ft_memset(packet, 0, sizeof(packet));
 	craft_ip_packet(packet, saddr, daddr, IPPROTO_TCP, NULL);
-	craft_tcp_packet(packet, saddr, daddr, TH_SYN, NULL);
+	craft_tcp_packet(packet, saddr, daddr, TH_FIN, NULL);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -35,7 +35,7 @@ static int send_syn(int tcpsockfd,
 	return 0;
 }
 
-static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
+static int read_fin_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	struct timeval timeout)
 {
 	int ret;
@@ -79,7 +79,7 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 			dest = tcp_packet->tcp.dest;
 			if (tcp_packet->tcp.rst)
 				status = CLOSED;
-			else if (tcp_packet->tcp.ack && tcp_packet->tcp.syn)
+			else if (tcp_packet->tcp.ack && tcp_packet->tcp.fin)
 				status = OPEN;
 		}
 	}
@@ -116,7 +116,7 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int syn_scan(struct s_scan *scan)
+int fin_scan(struct s_scan *scan)
 {
 	int tcpsockfd;
 	int icmpsockfd;
@@ -177,13 +177,13 @@ int syn_scan(struct s_scan *scan)
 
 	/* Scanning process */
 	ret = 0;
-	if (send_syn(tcpsockfd, scan->saddr, scan->daddr) != 0) {
+	if (send_fin(tcpsockfd, scan->saddr, scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_syn_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+		while (!(ret = read_fin_ack(tcpsockfd, icmpsockfd, scan, timeout)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
@@ -193,18 +193,18 @@ int syn_scan(struct s_scan *scan)
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
-			if (send_syn(tcpsockfd, scan->saddr, scan->daddr) != 0) {
+			if (send_fin(tcpsockfd, scan->saddr, scan->daddr) != 0) {
 				scan->status = ERROR;
 				UNLOCK(scan);
 			}
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_syn_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+				while (!(ret = read_fin_ack(tcpsockfd, icmpsockfd, scan, timeout)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);
-					scan->status = FILTERED;
+					scan->status = OPEN_FILTERED;
 					UNLOCK(scan);
 				}
 			}

@@ -301,13 +301,13 @@ void	print_ip4_header(struct ip *header)
 		return;
 	switch (header->ip_p) {
 		case 1:
-			print_icmp_header((struct icmphdr*)header + 1);
+			print_icmp_header((struct icmphdr*)(header + 1));
 			break;
 		case 6:
-			print_tcp_header((struct tcphdr*)header + 1);
+			print_tcp_header((struct tcphdr*)(header + 1));
 			break;
 		case 17:
-			print_udp_header((struct udphdr*)header + 1);
+			print_udp_header((struct udphdr*)(header + 1));
 			break;
 		default:
 			break;
