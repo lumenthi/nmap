@@ -1,6 +1,5 @@
 #include "nmap.h"
 #include "options.h"
-#include "services.h"
 
 static int run_scan(struct s_scan *scan)
 {
@@ -13,19 +12,19 @@ static int run_scan(struct s_scan *scan)
 			tcp_scan(scan);
 			break;
 		case OPT_SCAN_FIN:
-			//fin_scan(scan);
+			fin_scan(scan);
 			break;
 		case OPT_SCAN_NULL:
-			//null_scan(scan);
+			null_scan(scan);
 			break;
 		case OPT_SCAN_ACK:
-			//ack_scan(scan);
+			ack_scan(scan);
 			break;
 		case OPT_SCAN_XMAS:
-			//xmas_scan(scan);
+			xmas_scan(scan);
 			break;
 		case OPT_SCAN_UDP:
-			//udp_scan(scan);
+			udp_scan(scan);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -92,11 +91,8 @@ int ft_nmap(char *path)
 		fprintf(stderr, "%s: Failed to create threads\n", path);
 		return 1;
 	}
-	else {
-		/* Getting service list */
-		get_services();
+	else
 		launch_scan(g_data.ips);
-	}
 
 	print_scans(g_data.ips);
 	return 0;

@@ -3,6 +3,7 @@
 
 #include "libft.h"
 #include "set.h"
+#include "services.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,15 +36,17 @@
 #define OPEN 0
 #define CLOSED 1
 #define FILTERED 2
-#define DOWN 3
-#define ERROR 4
-#define UNKNOWN 5
-#define TIMEOUT 6
-#define UP 7
-#define READY 8
-#define PRINTED 9
-#define SCANNING 10
-#define INVALID 11
+#define OPEN_FILTERED 3
+#define UNFILTERED 4
+#define DOWN 5
+#define ERROR 6
+#define UNKNOWN 7
+#define TIMEOUT 8
+#define UP 9
+#define READY 10
+#define PRINTED 11
+#define SCANNING 12
+#define INVALID 13
 
 #define UPDATE 1
 #define UPDATE_TARGET 2
@@ -106,6 +109,10 @@ typedef struct	s_data {
 	/* Is program run as root */
 	uint8_t				privilegied;
 
+	/* Service detection database */
+	struct service		*tcp_services;
+	struct service		*udp_services;
+
 	/* Counters */
 	int					ip_counter;
 	int					port_counter;
@@ -122,22 +129,41 @@ struct			tcp_packet {
 	struct tcphdr		tcp;
 };
 
+struct			udp_packet {
+	struct iphdr		ip;
+	struct udphdr		udp;
+};
+
 struct			icmp_packet {
 	struct iphdr		ip;
 	struct icmphdr		icmp;
-	struct tcp_packet	data;
+	union {
+		struct tcp_packet	tcp;
+		struct udp_packet	udp;
+	};
 };
 
 extern t_data	g_data;
 
 /* print.c */
 void	print_ip4_header(struct ip *header);
+void	print_udp_header(struct udphdr *header);
 void	print_time(struct timeval start_time,
 	struct timeval end_time);
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
 int		syn_scan(struct s_scan *to_scan);
+/* udp_scan.c */
+int		udp_scan(struct s_scan *to_scan);
+/* fin_scan.c */
+int		fin_scan(struct s_scan *to_scan);
+/* null_scan.c */
+int		null_scan(struct s_scan *to_scan);
+/* xmas_scan.c */
+int		xmas_scan(struct s_scan *to_scan);
+/* xmas_scan.c */
+int		ack_scan(struct s_scan *to_scan);
 
 /* tcp_scan.c */
 int		tcp_scan(struct s_scan *to_scan);
@@ -156,7 +182,7 @@ void	free_ipset(t_ipset **ipset);
 int		parse_file(char *path, t_ipset **head);
 
 /* parse_option_line.c */
-void print_usage(FILE* f);
+void	print_usage(FILE* f);
 
 /* nmap.c */
 int		ft_nmap(char *path);
@@ -169,11 +195,17 @@ void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t protocol, struct ip_options *options);
 void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options);
+void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
+	struct sockaddr_in *daddr, char *payload, uint16_t payload_len);
 
 /* list.c */
-int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
+int		update_scans(struct s_scan *scan, int status, uint16_t source_port,
+	int scantype);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+
+/* timedout.c */
+int timed_out(struct timeval start, struct timeval timeout, int status);
 
 #endif

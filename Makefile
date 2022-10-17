@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/15 12:44:47 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/17 05:58:09 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -62,14 +62,20 @@ SRCS = main.c \
 		parse_option_line.c \
 		free_and_exit.c \
 		list.c \
-		syn_scan.c \
-		tcp_scan.c \
 		checksum.c \
 		addr_config.c \
 		print.c \
 		parse_file.c \
 		craft_packet.c \
-		services.c
+		services.c \
+		timedout.c \
+		udp_scan.c \
+		syn_scan.c \
+		null_scan.c \
+		xmas_scan.c \
+		fin_scan.c \
+		ack_scan.c \
+		tcp_scan.c
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
