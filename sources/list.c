@@ -4,13 +4,15 @@
 /* Update scan with port `source_port`
  * returns UPDATE_TARGET if our target scan `scan` is updated
  * returns UPDATE if we update another scan than target scan `scan` */
-int update_scans(struct s_scan *scan, int status, uint16_t source_port)
+int update_scans(struct s_scan *scan, int status, uint16_t source_port,
+	int scantype)
 {
 	struct s_scan *tmp = scan;
 
 	while (tmp) {
 		if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
-			tmp->saddr->sin_port == source_port)
+			tmp->saddr->sin_port == source_port &&
+			tmp->scantype == scantype)
 		{
 			LOCK(tmp);
 			tmp->status = status;

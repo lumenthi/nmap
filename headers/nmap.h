@@ -3,6 +3,7 @@
 
 #include "libft.h"
 #include "set.h"
+#include "services.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,6 +28,9 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <errno.h>
+
+/* DATABASE */
+#define DB_PATH "/usr/share/ft_nmap/"
 
 /* STATUS */
 #define OPEN 0
@@ -105,6 +109,10 @@ typedef struct	s_data {
 	/* Is program run as root */
 	uint8_t				privilegied;
 
+	/* Service detection database */
+	struct service		*tcp_services;
+	struct service		*udp_services;
+
 	/* Counters */
 	int					ip_counter;
 	int					port_counter;
@@ -177,7 +185,7 @@ void	free_ipset(t_ipset **ipset);
 int		parse_file(char *path, t_ipset **head);
 
 /* parse_option_line.c */
-void print_usage(FILE* f);
+void	print_usage(FILE* f);
 
 /* nmap.c */
 int		ft_nmap(char *path);
@@ -194,7 +202,8 @@ void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, char *payload, uint16_t payload_len);
 
 /* list.c */
-int		update_scans(struct s_scan *scan, int status, uint16_t source_port);
+int		update_scans(struct s_scan *scan, int status, uint16_t source_port,
+	int scantype);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);

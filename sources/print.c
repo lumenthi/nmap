@@ -96,23 +96,23 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 					pstatus = OPEN;
 					break;
 				case FILTERED:
-					if (pstatus != OPEN)
+					if (pstatus != OPEN && pstatus != -1)
 						pstatus = FILTERED;
 					break;
 				case UNFILTERED:
 					if (pstatus == OPEN_FILTERED)
 						pstatus = OPEN;
-					else if (pstatus == -1)
+					else if (pstatus == FILTERED || pstatus == -1)
 						pstatus = UNFILTERED;
 					break;
 				case OPEN_FILTERED:
-					if (pstatus != OPEN)
-						pstatus = FILTERED;
-					else
+					if (pstatus == UNFILTERED)
+						pstatus = OPEN;
+					if (pstatus == CLOSED || pstatus == -1)
 						pstatus = OPEN_FILTERED;
 					break;
 				case CLOSED:
-					if (pstatus != OPEN && pstatus != FILTERED)
+					if (pstatus == UNFILTERED || pstatus == -1)
 						pstatus = CLOSED;
 					break;
 			}
@@ -134,26 +134,26 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 	}
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
-			printf("Conclusion:    ");
+			printf("Conclusion:    "NMAP_COLOR_BOLD);
 			switch (pstatus) {
 				case OPEN:
-					printf(NMAP_COLOR_GREEN"open\n"NMAP_COLOR_RESET);
+					printf(NMAP_COLOR_BLINK NMAP_COLOR_GREEN"open\n");
 					info->copen++;
 					break;
 				case CLOSED:
-					printf(NMAP_COLOR_YELLOW"closed\n"NMAP_COLOR_RESET);
+					printf(NMAP_COLOR_RED"closed\n");
 					info->cclose++;
 					break;
 				case FILTERED:
-					printf(NMAP_COLOR_RED"filtered\n"NMAP_COLOR_RESET);
+					printf(NMAP_COLOR_YELLOW"filtered\n");
 					info->cfiltered++;
 					break;
 				case OPEN_FILTERED:
-					printf(NMAP_COLOR_YELLOW"open|filtered\n"NMAP_COLOR_RESET);
+					printf(NMAP_COLOR_YELLOW"open|filtered\n");
 					info->copen_filtered++;
 					break;
 				case UNFILTERED:
-					printf(NMAP_COLOR_YELLOW"unfiltered\n"NMAP_COLOR_RESET);
+					printf(NMAP_COLOR_YELLOW"unfiltered\n");
 					info->cunfiltered++;
 					break;
 				default:
@@ -161,7 +161,7 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 					break;
 			}
 		}
-		printf("+------------------------------------------\n");
+		printf(NMAP_COLOR_RESET"+------------------------------------------\n");
 	}
 	return pstatus;
 }

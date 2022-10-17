@@ -161,3 +161,13 @@ May use /usr/bin/../share/nmap/nmap-services instead for a better service recogn
 # /!\ Progress bar /!\
 
 # Do we really need to lock when writing scan results?
+
+# Print service only once (for multiple scans)?
+23
+|      syn     closed        0000.007ms  telnet
+|      null    closed        0000.005ms  telnet
+|      fin     closed        0000.006ms  telnet
+|      xmas    closed        0000.006ms  telnet
+|      ack     unfiltered    0000.007ms  telnet
+|      udp     closed        0000.005ms  telnet
+

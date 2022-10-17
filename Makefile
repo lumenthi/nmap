@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/17 05:32:14 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/17 05:58:09 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -46,7 +46,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h options.h set.h colors.h
+HEADS = nmap.h options.h set.h services.h colors.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################
@@ -67,6 +67,7 @@ SRCS = main.c \
 		print.c \
 		parse_file.c \
 		craft_packet.c \
+		services.c \
 		timedout.c \
 		udp_scan.c \
 		syn_scan.c \

@@ -1,5 +1,7 @@
 #include "nmap.h"
 #include "options.h"
+#include "services.h"
+
 
 t_data	g_data;
 
@@ -80,6 +82,11 @@ int		main(int argc, char **argv)
 		free_and_exit(EXIT_FAILURE);
 
 	print_start();
+
+	/* Getting service list */
+	if (get_services() != 0)
+		free_and_exit(EXIT_FAILURE);
+
 	ft_nmap(argv[0]);
 
 	/* Nmap end time */

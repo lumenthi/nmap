@@ -42,7 +42,6 @@ static int launch_scan(void *rip)
 		//printf("[*] Looking for ip: %s\n", ip->destination);
 		if (ip->status == UP) {
 			scan = ip->scans;
-
 			/* Resolve scans for this IP */
 			while (scan) {
 				LOCK(scan);

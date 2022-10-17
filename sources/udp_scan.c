@@ -104,7 +104,7 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest))) {
+		if ((update_ret = update_scans(scan, status, dest, OPT_SCAN_UDP))) {
 			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
 				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
