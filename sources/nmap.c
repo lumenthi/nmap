@@ -1,5 +1,6 @@
 #include "nmap.h"
 #include "options.h"
+#include "services.h"
 
 static int run_scan(struct s_scan *scan)
 {
@@ -37,6 +38,9 @@ static int launch_scan(void *rip)
 {
 	struct s_ip *ip = (struct s_ip *)rip;
 	struct s_scan *scan;
+
+	/* Getting service list */
+	get_services();
 
 	while (ip) {
 		//printf("[*] Looking for ip: %s\n", ip->destination);

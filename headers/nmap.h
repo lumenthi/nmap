@@ -28,6 +28,9 @@
 #include <net/ethernet.h>
 #include <errno.h>
 
+/* DATABASE */
+#define DB_PATH "/usr/share/ft_nmap/"
+
 /* STATUS */
 #define OPEN 0
 #define CLOSED 1
