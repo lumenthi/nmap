@@ -87,9 +87,8 @@ static int print_ports(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
 			/* TODO: be way more precise here, match every case */
-			if ((scan->status == OPEN || scan->status == FILTERED
-				|| scan->status == OPEN_FILTERED) ||
-				g_data.port_counter < 27)
+			if (scan->status == OPEN ||
+				g_data.port_counter - g_data.open_ports_counter <= 25)
 			{
 				print_content(scan, info);
 				pstatus = scan->status;

@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/13 09:57:15 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/17 05:32:14 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -73,7 +73,8 @@ SRCS = main.c \
 		null_scan.c \
 		xmas_scan.c \
 		fin_scan.c \
-		ack_scan.c 
+		ack_scan.c \
+		tcp_scan.c
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))

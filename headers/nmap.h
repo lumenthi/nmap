@@ -26,6 +26,7 @@
 #include <linux/in.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
+#include <errno.h>
 
 /* STATUS */
 #define OPEN 0
@@ -107,6 +108,7 @@ typedef struct	s_data {
 	/* Counters */
 	int					ip_counter;
 	int					port_counter;
+	int					open_ports_counter;
 }						t_data;
 
 struct			tcp_options {
@@ -155,6 +157,9 @@ int		null_scan(struct s_scan *to_scan);
 int		xmas_scan(struct s_scan *to_scan);
 /* xmas_scan.c */
 int		ack_scan(struct s_scan *to_scan);
+
+/* tcp_scan.c */
+int		tcp_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
