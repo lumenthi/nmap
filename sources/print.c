@@ -135,6 +135,7 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
 			printf("Conclusion:    "NMAP_COLOR_BOLD);
+			/* TODO: Replace with an array and do it for single scans too */
 			switch (pstatus) {
 				case OPEN:
 					printf(NMAP_COLOR_BLINK NMAP_COLOR_GREEN"open\n");
