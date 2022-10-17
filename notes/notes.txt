@@ -150,3 +150,9 @@ search themselves?
 Receiving in the threads is slow but it is necessary to receive soon enough after sending
 otherwise we may lose the answers
 #######
+
+# Service detection is incomplete. port 1000 is unknown for us.
+It's cadlock with SYN scan or ock for UDP scan according to nmap
+
+# Services
+May use /usr/bin/../share/nmap/nmap-services instead for a better service recognition

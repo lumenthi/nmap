@@ -9,22 +9,22 @@ static int run_scan(struct s_scan *scan)
 			syn_scan(scan);
 			break;
 		case OPT_SCAN_TCP:
-			//syn_scan(scan);
+			tcp_scan(scan);
 			break;
 		case OPT_SCAN_FIN:
-			//fin_scan(scan);
+			fin_scan(scan);
 			break;
 		case OPT_SCAN_NULL:
-			//null_scan(scan);
+			null_scan(scan);
 			break;
 		case OPT_SCAN_ACK:
-			//ack_scan(scan);
+			ack_scan(scan);
 			break;
 		case OPT_SCAN_XMAS:
-			//xmas_scan(scan);
+			xmas_scan(scan);
 			break;
 		case OPT_SCAN_UDP:
-			//udp_scan(scan);
+			udp_scan(scan);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
