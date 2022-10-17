@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/17 05:58:09 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/17 11:45:31 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -35,6 +35,16 @@ LIBDIR = libft
 SRCDIR = sources
 HEADDIR = headers
 OBJDIR = objs
+
+#####################
+
+###### DATABASE #####
+
+SRC_DB = database
+SRC_SERVICES = $(SRC_DB)/services
+
+DST_DB = /tmp/ft_nmap
+DST_SERVICES = $(DST_DB)/services
 
 #####################
 
@@ -80,7 +90,6 @@ SRCS = main.c \
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
 
-
 #####################
 
 ###### OBJECTS ######
@@ -111,7 +120,7 @@ all:
 
 ###### BINARY COMPILATION ######
 
-$(NAME): $(LIBFT) $(OBJS) ${HEADERS}
+$(NAME): $(LIBFT) $(OBJS) ${HEADERS} $(DST_SERVICES)
 	@ printf "[Linking] "
 	$(CC) $(OBJS) -o $(NAME) $(LIBFT) $(LDFLAGS)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(NAME) $(BLANK)
@@ -126,6 +135,11 @@ $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
 	@ printf "[Linking] "
 	$(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
+
+$(DST_SERVICES):
+	@ printf "Creating database...\n"
+	@ cp -r $(SRC_DB) $(DST_DB)
+	@ printf "Done creating database !\n"
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
@@ -153,6 +167,12 @@ clean:
 	printf "No %bobjects%b folders\n" $(YELLOW) $(BLANK))
 
 fclean: clean
+	@ test -d $(DST_DB) && \
+	rm -rf $(DST_DB) && \
+	printf " %b | " $(TICK) && \
+	printf "Removed %bdatabase%b folder\n" $(YELLOW) $(BLANK) \
+	|| (printf " %b | " $(CROSS) && \
+	printf "No %bdatabase%b folder\n" $(YELLOW) $(BLANK))
 	@ test -f $(LIBFT) && \
 	rm -rf $(LIBFT) && \
 	printf " %b | " $(TICK) && \

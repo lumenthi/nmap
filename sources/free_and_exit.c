@@ -16,6 +16,7 @@ void free_threads()
 void	free_all()
 {
 	free_threads();
+	free_services();
 	free_ips(&g_data.ips);
 	if (g_data.set.ranges)
 		free(g_data.set.ranges);
@@ -23,10 +24,6 @@ void	free_all()
 		free(g_data.set.single_values);
 	if (g_data.ipset)
 		free_ipset(&g_data.ipset);
-	if (g_data.tcp_services)
-		free(g_data.tcp_services);
-	if (g_data.udp_services)
-		free(g_data.udp_services);
 }
 
 void	free_and_exit(int exit_val)

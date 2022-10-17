@@ -30,7 +30,7 @@
 #include <errno.h>
 
 /* DATABASE */
-#define DB_PATH "/usr/share/ft_nmap/"
+#define DB_PATH "/tmp/ft_nmap/"
 
 /* STATUS */
 #define OPEN 0

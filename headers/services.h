@@ -6,10 +6,11 @@
 
 struct service {
 	char *name;
-	char *description;
+	char *desc;
 };
 
 /* services.c */
 int		get_services(void);
+void	free_services(void);
 
 #endif

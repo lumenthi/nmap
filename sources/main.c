@@ -48,12 +48,13 @@ int		main(int argc, char **argv)
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
 
+	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at [TODO:DATE] CEST\n");
+
 	/* Getting service list */
 	if (get_services() != 0)
 		free_and_exit(EXIT_FAILURE);
 
-	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
 	ft_nmap(argv[0]);
 
 	/* Nmap end time */
