@@ -153,3 +153,9 @@ otherwise we may lose the answers
 
 # Service detection is incomplete. port 1000 is unknown for us.
 It's cadlock with SYN scan or ock for UDP scan according to nmap
+
+# Service detection is incomplete. port 1000 is unknown for us.
+It's cadlock with SYN scan or ock for UDP scan according to nmap
+
+# Print count for unfiltered and open|filtered
+Don't print if total printed > 26?
