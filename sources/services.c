@@ -1,5 +1,6 @@
 #include "services.h"
 #include "nmap.h"
+#include "options.h"
 
 static void free_split(char **split)
 {
@@ -52,6 +53,17 @@ static int get_infos(char *str, int *port, int *protocol)
 	return 1;
 }
 
+static void get_desc(char *str, char **desc)
+{
+	int i = 0;
+
+	while (str[i] == '#' || str[i] == ' ')
+		i++;
+
+	if (str[i])
+		*desc = ft_strdup(str+i);
+}
+
 static int read_services(int fd, struct service *tcp, struct service *udp)
 {
 	char *buffer;
@@ -67,12 +79,18 @@ static int read_services(int fd, struct service *tcp, struct service *udp)
 			if (get_infos(split[1], &port, &protocol)) {
 				/* TODO: Description ?? */
 				if (protocol == IPPROTO_UDP) {
-					if (!udp[port].name)
+					if (!udp[port].name) {
 						udp[port].name = ft_strdup(split[0]);
+						if (!udp[port].desc && split[3])
+							get_desc(split[3], &udp[port].desc);
+					}
 				}
 				else if (protocol == IPPROTO_TCP) {
-					if (!tcp[port].name)
+					if (!tcp[port].name) {
 						tcp[port].name = ft_strdup(split[0]);
+						if (!tcp[port].desc && split[3])
+							get_desc(split[3], &tcp[port].desc);
+					}
 				}
 			}
 		}
@@ -85,6 +103,10 @@ static int read_services(int fd, struct service *tcp, struct service *udp)
 int get_services()
 {
 	int fd;
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Parsing services database %s\n", DB_SERVICES);
 
 	/* Structures allocation */
 	g_data.tcp_services = malloc(sizeof(struct service) * (USHRT_MAX+1));
@@ -106,16 +128,23 @@ int get_services()
 	read_services(fd, g_data.tcp_services, g_data.udp_services);
 
 	/* Debug print */
-	/*int i = 0;
+	/* int i = 0;
 	while (i <= USHRT_MAX) {
 		if (g_data.tcp_services[i].name)
-			printf("[*] Port %d (tcp) has service: %s\n", i, g_data.tcp_services[i].name);
+			printf("[*] Port %d (tcp) has service [%s] with desc [%s]\n", i,
+				g_data.tcp_services[i].name, g_data.tcp_services[i].desc);
 		if (g_data.udp_services[i].name)
-			printf("[*] Port %d (udp) has service: %s\n", i, g_data.udp_services[i].name);
+			printf("[*] Port %d (udp) has service [%s] with desc [%s]\n", i,
+				g_data.udp_services[i].name, g_data.udp_services[i].desc);
 		i++;
-	}*/
+	} */
 
 	close(fd);
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Parsed services database sucessfully\n");
+
 	return 0;
 }
 
@@ -123,24 +152,27 @@ void free_services(void)
 {
 	int i = 0;
 
-	if (!g_data.tcp_services || !g_data.udp_services)
-		return;
-
 	while (i <= USHRT_MAX) {
 		/* TCP services */
-		if (g_data.tcp_services[i].name)
-			free(g_data.tcp_services[i].name);
-		if (g_data.tcp_services[i].desc)
-			free(g_data.tcp_services[i].desc);
+		if (g_data.tcp_services) {
+			if (g_data.tcp_services[i].name)
+				free(g_data.tcp_services[i].name);
+			if (g_data.tcp_services[i].desc)
+				free(g_data.tcp_services[i].desc);
+		}
 
 		/* UDP services */
-		if (g_data.udp_services[i].name)
-			free(g_data.udp_services[i].name);
-		if (g_data.udp_services[i].desc)
-			free(g_data.udp_services[i].desc);
+		if (g_data.udp_services) {
+			if (g_data.udp_services[i].name)
+				free(g_data.udp_services[i].name);
+			if (g_data.udp_services[i].desc)
+				free(g_data.udp_services[i].desc);
+		}
 		i++;
 	}
 
-	free(g_data.tcp_services);
-	free(g_data.udp_services);
+	if (g_data.tcp_services)
+		free(g_data.tcp_services);
+	if (g_data.udp_services)
+		free(g_data.udp_services);
 }

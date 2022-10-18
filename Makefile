@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/17 11:45:31 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/18 05:07:58 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -137,9 +137,9 @@ $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
 
 $(DST_SERVICES):
-	@ printf "Creating database...\n"
+	@ printf "[Installing] Creating database...\n"
 	@ cp -r $(SRC_DB) $(DST_DB)
-	@ printf "Done creating database !\n"
+	@ printf "[Installing] Done creating database !\n"
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
