@@ -4,7 +4,6 @@
 
 /* Contains infos for our printing function */
 struct s_pinfo {
-	size_t cstatus[5];
 	size_t copen; /* Open counter */
 	size_t cfiltered; /* Filtered counter */
 	size_t copen_filtered; /* open|filtered counter */
@@ -87,13 +86,47 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 }
 
 static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
-	const char **status, const char **colors)
+	const char **status, const char **colors, size_t *cstatus)
 {
 	struct s_scan *scan = ip.scans;
-	struct s_scan *tmp = ip.scans;
 	int pstatus = -1; /* Final port status */
 
 	info->tick = 0;
+
+	while (scan) {
+		if (scan->dport == port && scan->status != ERROR) {
+			/* TODO: Update when needed */
+			if (scan->final_status == OPEN
+				|| g_data.port_counter / g_data.ip_counter <= 25
+				|| (cstatus[FILTERED]+cstatus[OPEN_FILTERED]+cstatus[UNFILTERED]
+					<= 25 && (scan->final_status == FILTERED 
+						   || scan->final_status == OPEN_FILTERED
+						   || scan->final_status == UNFILTERED))
+				|| (cstatus[CLOSED] <= 25 && scan->final_status == CLOSED))
+			{
+				print_content(scan, info, status, colors);
+				pstatus = scan->final_status;
+				info->tick = 1;
+			}
+			scan->status = PRINTED;
+		}
+		scan = scan->next;
+	}
+	if (info->tick) {
+		if (g_data.scan_types_counter > 1) {
+			printf("Conclusion:    %s%s\n"NMAP_COLOR_BOLD, colors[pstatus],
+				status[pstatus]);
+		}
+		printf(NMAP_COLOR_RESET"+------------------------------------------\n");
+	}
+	return pstatus;
+}
+
+static void	count_scan_status(struct s_ip *ip, int ip_counter, uint16_t port,
+	size_t **cstatus)
+{
+	struct s_scan *tmp = ip->scans;
+	int	pstatus = -1;
 
 	while (tmp) {
 		if (tmp->dport == port) {
@@ -130,40 +163,56 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
 		}
 		tmp = tmp->next;
 	}
-
-	while (scan) {
-		if (scan->dport == port && scan->status != ERROR) {
-			/* TODO: handle filtered separately */
-			if (pstatus == OPEN
-				|| g_data.port_counter - g_data.open_ports_counter <= 25)
-			{
-				print_content(scan, info, status, colors);
-				info->tick = 1;
-			}
-			scan->status = PRINTED;
-		}
-		scan = scan->next;
+	tmp = ip->scans;
+	while (tmp) {
+		if (tmp->dport == port)
+			tmp->final_status = pstatus;
+		tmp = tmp->next;
 	}
-	if (info->tick) {
-		if (g_data.scan_types_counter > 1) {
-			printf("Conclusion:    %s%s\n"NMAP_COLOR_BOLD, colors[pstatus],
-				status[pstatus]);
-		}
-		printf(NMAP_COLOR_RESET"+------------------------------------------\n");
-	}
-	return pstatus;
+	cstatus[ip_counter][pstatus]++;
 }
 
-void print_scans(struct s_ip *ips)
+static void	count_status(struct s_ip *ips, size_t **cstatus)
+{
+	struct s_ip *ip = ips;
+	struct s_scan *scan;
+	int	ip_counter = 0;
+
+	while (ip) {
+		if (ip->status == UP) {
+			scan = ip->scans;
+			while (scan) {
+				if (scan->final_status == -1)
+					count_scan_status(ip, ip_counter, scan->dport, cstatus);
+				scan = scan->next;
+			}
+		}
+		ip = ip->next;
+		ip_counter++;
+	}
+}
+
+void	print_scans(struct s_ip *ips)
 {
 	char *hstatus[] = {"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", 
 		"UNFILTERED", "DOWN", "ERROR", "UNKNOWN", "TIMEOUT", "UP", "READY",
 		NULL};
 
+	size_t **cstatus;
 	struct s_ip *ip = ips;
 	struct s_scan *scan;
 	struct s_pinfo info;
+	int	ip_counter = 0;
 
+	cstatus = malloc(sizeof(size_t*) * g_data.ip_counter);
+	if (!cstatus)
+		return ;
+	for (int i = 0; i < g_data.ip_counter; i++) {
+		cstatus[i] = malloc(sizeof(size_t) * 5);
+		if (!cstatus[i])
+			return ;
+		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
+	}
 	static const char *status[] = {
 		"open", "closed", "filtered", "open|filtered", 
 		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
@@ -177,6 +226,8 @@ void print_scans(struct s_ip *ips)
 		NMAP_COLOR_YELLOW, // "unfiltered"
 		NULL
 	};
+
+	count_status(ips, cstatus);
 	
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
@@ -186,31 +237,38 @@ void print_scans(struct s_ip *ips)
 			while (scan) {
 				if (scan->status == ERROR)
 					info.cerror++;
-				else if (scan->status != PRINTED) {
-					int pstatus = print_port(*ip, scan->dport, &info,
-						 status, colors);
-					info.cstatus[pstatus]++;
-				}
+				else if (scan->status != PRINTED)
+					print_port(*ip, scan->dport, &info, status, colors,
+						cstatus[ip_counter]);
 				scan = scan->next;
 			}
 		}
 		if (g_data.port_counter > 1)
-			printf("Scanned %d ports, ", g_data.port_counter);
+			printf("Scanned %d ports, ", g_data.port_counter / g_data.ip_counter);
 		else
-			printf("Scanned %d port, ", g_data.port_counter);
+			printf("Scanned %d port, ", g_data.port_counter / g_data.ip_counter);
 		if (info.cerror > 1)
 			printf("%ld errors", info.cerror);
 		else
 			printf("%ld error", info.cerror);
 		for (uint8_t i = 0; i < 5; i++) {
-			if (info.cstatus[i] > 0) {
+			if (cstatus[ip_counter][i] > 0) {
 				printf(", %s%lu %s",
-				colors[i], info.cstatus[i], status[i]);
+				colors[i], cstatus[ip_counter][i], status[i]);
 			}
 		}
 		printf(NMAP_COLOR_RESET"\n");
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;
+		ip_counter++;
+	}
+
+	if (cstatus) {
+		for (int i = 0; i < g_data.ip_counter; i++) {
+			if (cstatus[i])
+				free(cstatus[i]);
+		}
+		free(cstatus);
 	}
 }

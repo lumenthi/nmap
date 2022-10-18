@@ -68,6 +68,7 @@ struct s_scan {
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
+	int					final_status; /* Final status after combining every scan type's result */
 	char				*service; /* Service running on this port */
 	uint16_t			sport; /* Source port */
 	uint16_t			dport; /* Destination port */
@@ -117,7 +118,6 @@ typedef struct	s_data {
 	/* Counters */
 	int					ip_counter;
 	int					port_counter;
-	int					open_ports_counter;
 	int					scan_types_counter;
 	int					total_scan_counter;
 }						t_data;

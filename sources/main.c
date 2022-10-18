@@ -41,7 +41,8 @@ void	print_start(void)
 		printf("Scanning %d targets\n", g_data.ip_counter);
 	}
 
-	printf("Number of ports to scan : %d\n", g_data.port_counter);
+	printf("Number of ports to scan : %d\n",
+		g_data.port_counter / g_data.ip_counter);
 
 	printf("Scan types to be performed : ");
 	int i = 0;
@@ -55,8 +56,7 @@ void	print_start(void)
 		i++;
 	}
 	printf("\n");
-	g_data.total_scan_counter = g_data.port_counter * g_data.ip_counter
-		* g_data.scan_types_counter;
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
 	printf("Number of threads : %hhu\n", g_data.nb_threads);
 	printf("...........................................\n");
