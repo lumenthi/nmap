@@ -16,8 +16,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 		{
 			LOCK(tmp);
 			tmp->status = status;
-			if (status == OPEN)
-				g_data.open_ports_counter++;
 			if (tmp == scan) {
 				UNLOCK(tmp);
 				return UPDATE_TARGET;
@@ -99,6 +97,7 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_scan));
 		tmp->status = READY;
+		tmp->final_status = -1;
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->saddr)
 			tmp->status = ERROR;
