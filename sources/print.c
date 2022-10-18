@@ -64,8 +64,14 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	if (scan->service)
 		service = scan->service;
 	else {
-		if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
-			service = s_service->s_name;
+		if (scan->scantype == OPT_SCAN_UDP) {
+			if ((s_service = getservbyport(scan->daddr->sin_port, "udp")))
+				service = s_service->s_name;
+		}
+		else {
+			if ((s_service = getservbyport(scan->daddr->sin_port, "tcp")))
+				service = s_service->s_name;
+		}
 	}
 
 	if (!(info->menu)) {
