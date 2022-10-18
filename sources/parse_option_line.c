@@ -178,7 +178,9 @@ static uint8_t enable_scan(char *str, int str_len)
 			/* i+2 since our first scantype starts at 1UL<<2 in options.h */
 			if (g_data.privilegied < pri[i])
 				return SCAN_PRIVILEGES;
-			g_data.opt |= (1UL << (i+2));
+			if (!(g_data.opt & (1UL << (i + 2))))
+				g_data.scan_types_counter++;
+			g_data.opt |= (1UL << (i + 2));
 			return SCAN_VALID;
 		}
 		i++;
@@ -191,9 +193,6 @@ static uint8_t parse_scans(char *optarg)
 	char *current = optarg;
 	int curr_len;
 	uint8_t ret;
-
-	g_data.opt &= g_data.privilegied ?
-		~OPT_SCAN_SYN : ~OPT_SCAN_TCP;
 
 	while ((curr_len = get_next_scan(current))) {
 		/* printf("[*] Current OPT: %s with size: %d\n",
@@ -395,6 +394,13 @@ int	parse_nmap_args(int ac, char **av)
 				}
 		}
 		count++;
+	}
+
+	/* Default SCAN */
+	/* TODO: default must be all scans (counter = 6) according to the subject */
+	if (!g_data.scan_types_counter) {
+		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
+		g_data.scan_types_counter = 1;
 	}
 
 	/* Filling scans with ips from files */

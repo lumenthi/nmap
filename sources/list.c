@@ -16,6 +16,8 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 		{
 			LOCK(tmp);
 			tmp->status = status;
+			if (status == OPEN)
+				g_data.open_ports_counter++;
 			if (tmp == scan) {
 				UNLOCK(tmp);
 				return UPDATE_TARGET;

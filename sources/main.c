@@ -12,9 +12,6 @@ void	init_data()
 	/* Check privilege level, so we adapt scanning method */
 	g_data.privilegied = getuid() == 0 ? 1 : 0;
 
-	/* Default SCAN */
-	g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
-
 	g_data.ip_counter = 0;
 	g_data.port_counter = 0;
 
@@ -27,6 +24,42 @@ void	init_data()
 	g_data.set.ranges[0].end = DEFAULT_END_PORT;
 
 	g_data.ipset = NULL;
+}
+
+void	print_start(void)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+
+	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at [TODO:DATE] CEST\n");
+
+	printf("................. Config ..................\n");
+
+	if (g_data.ip_counter == 1)
+		printf("Target IP : %s\n", g_data.ips->dhostname);
+	else {
+		printf("Scanning %d targets\n", g_data.ip_counter);
+	}
+
+	printf("Number of ports to scan : %d\n", g_data.port_counter);
+
+	printf("Scan types to be performed : ");
+	int i = 0;
+	char *pipe = "";
+	while (scans[i])
+	{
+		if (g_data.opt & (1UL << (i + 2))) {
+			printf("%s%s", pipe, scans[i]);
+			pipe = "|";
+		}
+		i++;
+	}
+	printf("\n");
+	g_data.total_scan_counter = g_data.port_counter * g_data.ip_counter
+		* g_data.scan_types_counter;
+	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
+	printf("Number of threads : %hhu\n", g_data.nb_threads);
+	printf("...........................................\n");
 }
 
 /* TODO: Once finished, remove server related code in makefile/sources */
@@ -48,8 +81,7 @@ int		main(int argc, char **argv)
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
 
-	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
+	print_start();
 
 	/* Getting service list */
 	if (get_services() != 0)

@@ -37,6 +37,9 @@ int tcp_scan(struct s_scan *scan)
 		scan->start_time.tv_usec = 0;
 	}
 
+	/* Service assignation */
+	scan->service = g_data.tcp_services[scan->dport].name;
+
 	/* Setting read fds for select */
 	fd_set rfds;
 	FD_ZERO(&rfds);

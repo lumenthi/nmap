@@ -73,7 +73,7 @@ static int read_services(int fd, struct service *tcp, struct service *udp)
 
 	while (get_next_line(fd, &buffer) != 0) {
 		split = ft_strsplit(buffer, '\t');
-		if (split_size(split) == 4 &&
+		if (split_size(split) >= 3 &&
 			split[0] && split[1] && split[2])
 		{
 			if (get_infos(split[1], &port, &protocol)) {

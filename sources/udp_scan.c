@@ -185,6 +185,9 @@ int		udp_scan(struct s_scan *scan)
 		scan->start_time.tv_usec = 0;
 	}
 
+	/* Service assignation */
+	scan->service = g_data.udp_services[scan->dport].name;
+
 	/* Scanning process */
 	ret = 0;
 	if (send_udp(udpsockfd, scan->saddr, scan->daddr) != 0) {
@@ -227,10 +230,14 @@ int		udp_scan(struct s_scan *scan)
 		scan->end_time.tv_usec = 0;
 	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Updating %s:%d UDP's scan to %d\n",
+	char *status[] = {
+		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
+	};
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		fprintf(stderr, "[*] Updating %s:%d UDP scan to %s\n",
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
-		scan->status);
+		status[scan->status]);
+	}
 
 	close(icmpsockfd);
 	close(udpsockfd);

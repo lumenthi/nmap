@@ -56,7 +56,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h options.h set.h services.h
+HEADS = nmap.h options.h set.h services.h colors.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################

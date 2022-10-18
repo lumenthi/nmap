@@ -149,10 +149,25 @@ So maybe use arrays or feed the threads with what scan they must do so they don'
 search themselves?
 Receiving in the threads is slow but it is necessary to receive soon enough after sending
 otherwise we may lose the answers
-#######
-
 # Service detection is incomplete. port 1000 is unknown for us.
 It's cadlock with SYN scan or ock for UDP scan according to nmap
 
+# Print count for unfiltered and open|filtered
+Don't print if total printed > 26?
+
 # Services
 May use /usr/bin/../share/nmap/nmap-services instead for a better service recognition
+
+# /!\ Progress bar /!\
+
+# Do we really need to lock when writing scan results?
+
+# Print service only once (for multiple scans)?
+23
+|      syn     closed        0000.007ms  telnet
+|      null    closed        0000.005ms  telnet
+|      fin     closed        0000.006ms  telnet
+|      xmas    closed        0000.006ms  telnet
+|      ack     unfiltered    0000.007ms  telnet
+|      udp     closed        0000.005ms  telnet
+
