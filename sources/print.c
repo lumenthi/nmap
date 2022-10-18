@@ -42,7 +42,8 @@ void print_time(struct timeval start_time, struct timeval end_time)
 		g_data.ip_counter,sec, ms);
 }
 
-static void print_content(struct s_scan *scan, struct s_pinfo *info)
+static void print_content(struct s_scan *scan, struct s_pinfo *info,
+	const char **status, const char **colors)
 {
 	long int sec;
 	long int usec;
@@ -50,18 +51,6 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 	struct servent *s_service;
 	char *service = "unknown";
 
-	static const char *status[] = {"open", "closed", "filtered", "open|filtered",
-		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
-		"printed", "scanning", "invalid", NULL};
-	/* TODO: put this in struct info */
-	static const char *colors[] = {
-		NMAP_COLOR_GREEN, // "open"
-		NMAP_COLOR_RED, // "closed"
-		NMAP_COLOR_RED, // "filtered"
-		NMAP_COLOR_YELLOW, // "open|filtered"
-		NMAP_COLOR_YELLOW, // "unfiltered"
-		NULL
-	};
 	char *scans[] = {"syn", "null", "fin", "xmas",
 		"ack", "udp", "tcp", NULL};
 
@@ -97,7 +86,8 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info)
 		total_usec/1000, total_usec %1000, service);
 }
 
-static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
+static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
+	const char **status, const char **colors)
 {
 	struct s_scan *scan = ip.scans;
 	struct s_scan *tmp = ip.scans;
@@ -143,10 +133,11 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
+			/* TODO: handle filtered separately */
 			if (pstatus == OPEN
 				|| g_data.port_counter - g_data.open_ports_counter <= 25)
 			{
-				print_content(scan, info);
+				print_content(scan, info, status, colors);
 				info->tick = 1;
 			}
 			scan->status = PRINTED;
@@ -155,15 +146,8 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 	}
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
-			char *status[] = {
-				NMAP_COLOR_GREEN"open",
-				NMAP_COLOR_RED"closed",
-				NMAP_COLOR_RED"filtered",
-				NMAP_COLOR_YELLOW"open|filtered", 
-				NMAP_COLOR_YELLOW"unfiltered",
-				NULL
-			};
-			printf("Conclusion:    %s\n"NMAP_COLOR_BOLD, status[pstatus]);
+			printf("Conclusion:    %s%s\n"NMAP_COLOR_BOLD, colors[pstatus],
+				status[pstatus]);
 		}
 		printf(NMAP_COLOR_RESET"+------------------------------------------\n");
 	}
@@ -172,7 +156,7 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info)
 
 void print_scans(struct s_ip *ips)
 {
-	char *status[] = {"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", 
+	char *hstatus[] = {"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", 
 		"UNFILTERED", "DOWN", "ERROR", "UNKNOWN", "TIMEOUT", "UP", "READY",
 		NULL};
 
@@ -180,16 +164,31 @@ void print_scans(struct s_ip *ips)
 	struct s_scan *scan;
 	struct s_pinfo info;
 
+	static const char *status[] = {
+		"open", "closed", "filtered", "open|filtered", 
+		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
+		"printed", "scanning", "invalid", NULL
+	};
+	static const char *colors[] = {
+		NMAP_COLOR_GREEN, // "open"
+		NMAP_COLOR_RED, // "closed"
+		NMAP_COLOR_YELLOW, // "filtered"
+		NMAP_COLOR_YELLOW, // "open|filtered"
+		NMAP_COLOR_YELLOW, // "unfiltered"
+		NULL
+	};
+	
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
-		printf("%s is %s\n", ip->destination, status[ip->status]);
+		printf("%s is %s\n", ip->destination, hstatus[ip->status]);
 		if (ip->status == UP) {
 			scan = ip->scans;
 			while (scan) {
 				if (scan->status == ERROR)
 					info.cerror++;
 				else if (scan->status != PRINTED) {
-					int pstatus = print_port(*ip, scan->dport, &info);
+					int pstatus = print_port(*ip, scan->dport, &info,
+						 status, colors);
 					info.cstatus[pstatus]++;
 				}
 				scan = scan->next;
@@ -203,20 +202,10 @@ void print_scans(struct s_ip *ips)
 			printf("%ld errors", info.cerror);
 		else
 			printf("%ld error", info.cerror);
-		static const char *totals[] = {
-			"open", "closed", "filtered", "open|filtered", "unfiltered", NULL
-		};
-		static const char *colors[] = {
-			NMAP_COLOR_GREEN, // "open"
-			NMAP_COLOR_RED, // "closed"
-			NMAP_COLOR_RED, // "filtered"
-			NMAP_COLOR_YELLOW, // "open|filtered"
-			NMAP_COLOR_YELLOW, // "unfiltered"
-			NULL
-		};
 		for (uint8_t i = 0; i < 5; i++) {
 			if (info.cstatus[i] > 0) {
-				printf(", %s%lu %s", colors[i], info.cstatus[i], totals[i]);
+				printf(", %s%lu %s",
+				colors[i], info.cstatus[i], status[i]);
 			}
 		}
 		printf(NMAP_COLOR_RESET"\n");
