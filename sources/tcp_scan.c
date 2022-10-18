@@ -93,6 +93,8 @@ int tcp_scan(struct s_scan *scan)
 						inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
 				scan->status = OPEN;
 			}
+			else
+				scan->status = CLOSED;
 			break ;
 		}
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
