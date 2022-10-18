@@ -55,16 +55,23 @@ int tcp_scan(struct s_scan *scan)
 	/* Default status */
 	scan->status = FILTERED;
 	while (i < 2) {
+		/* Setting data */
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 345678;
 		FD_SET(sockfd, &rfds);
 		FD_SET(sockfd, &lfds);
 		FD_SET(sockfd, &efds);
+
+		/* Connect process */
 		connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr));
 		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&err, (socklen_t *)&len);
+
+		/* Verbose print */
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 			fprintf(stderr, "[*] Sent TCP request to %s:%d\n",
 				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+
+		/* Getsockopt analysis */
 		if (err == ECONNREFUSED) {
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 				fprintf(stderr, "[*] Received TCP [CLOSED] response from %s:%d\n",
@@ -80,10 +87,12 @@ int tcp_scan(struct s_scan *scan)
 		}
 		/* A socket is ready, our port is open */
 		else if (select(sockfd+1, &rfds, &lfds, &efds, &timeout)) {
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] Received TCP [OPEN] response from: %s:%d\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
-			scan->status = OPEN;
+			if (write(sockfd, NULL, 0) != -1) {
+				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+					fprintf(stderr, "[*] Received TCP [OPEN] response from: %s:%d\n",
+						inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				scan->status = OPEN;
+			}
 			break ;
 		}
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {

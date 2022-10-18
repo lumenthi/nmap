@@ -171,3 +171,14 @@ May use /usr/bin/../share/nmap/nmap-services instead for a better service recogn
 |      ack     unfiltered    0000.007ms  telnet
 |      udp     closed        0000.005ms  telnet
 
+# Print scanned 2048 ports for each ips -> should be 1024 in this case
+$ sudo ./ft_nmap localhost scanme.org -t 250
+localhost is UP
+[...]
+Scanned 2048 ports, 0 error, 3 open, 1021 closed
+
+scanme.org is UP
+[...]
+Scanned 2048 ports, 0 error, 2 open, 1022 filtered
+
+Nmap scanned 2 ip(s) in 15.92 seconds
