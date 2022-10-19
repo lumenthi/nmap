@@ -39,14 +39,12 @@ static int launch_scan(void *rip)
 	struct s_scan *scan;
 
 	while (ip) {
-		//printf("[*] Looking for ip: %s\n", ip->destination);
 		if (ip->status == UP) {
 			scan = ip->scans;
 			/* Resolve scans for this IP */
 			while (scan) {
 				LOCK(scan);
 				if (scan->status == READY) {
-					/* TODO: Must lock or some scan will return filtered */
 					scan->status = SCANNING;
 					UNLOCK(scan);
 					run_scan(scan);

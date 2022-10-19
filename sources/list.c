@@ -10,8 +10,8 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 	struct s_scan *tmp = scan;
 
 	while (tmp) {
-		if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
-			tmp->saddr.sin_port == source_port &&
+		if (tmp->saddr.sin_port == source_port &&
+			(tmp->status == SCANNING || tmp->status == TIMEOUT) &&
 			tmp->scantype == scantype)
 		{
 			LOCK(tmp);

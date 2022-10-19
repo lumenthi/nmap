@@ -62,7 +62,6 @@ void	print_start(void)
 	printf("...........................................\n\n");
 }
 
-/* TODO: Once finished, remove server related code in makefile/sources */
 /* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {

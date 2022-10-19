@@ -376,6 +376,7 @@ void	print_tcp_header(struct tcphdr *header)
 	print_line(PACKET_COLOR_MAGENTA);
 
 	fprintf(stderr, "|");
+	/* TODO: Why does this not work */
 	print_data("Sequence number", ntohl(header->th_seq), 32, 'u',
 		PACKET_COLOR_YELLOW, PACKET_COLOR_MAGENTA);
 
