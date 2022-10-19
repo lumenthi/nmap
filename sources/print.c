@@ -96,8 +96,8 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	if (g_data.scan_types_counter == 1)
 		color = colors[scan->status];
 	else
-		color = "";
-	printf("%-7s %s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s\n",
+		color = NMAP_COLOR_RESET;
+	printf("%-7s "NMAP_COLOR_BOLD"%s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s\n",
 		scans[scan_index(scan->scantype)], color, status[scan->status],
 		total_usec/1000, total_usec %1000, service);
 }
@@ -131,7 +131,7 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
 	}
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
-			printf("Conclusion:    %s%s\n"NMAP_COLOR_BOLD, colors[pstatus],
+			printf("Conclusion:    "NMAP_COLOR_BOLD"%s%s\n", colors[pstatus],
 				status[pstatus]);
 		}
 		printf(NMAP_COLOR_RESET"+------------------------------------------\n");
@@ -271,7 +271,7 @@ void	print_scans(struct s_ip *ips)
 				printf("%ld error", info.cerror);
 			for (uint8_t i = 0; i < 5; i++) {
 				if (cstatus[ip_counter][i] > 0) {
-					printf(", %s%lu %s",
+					printf(", "NMAP_COLOR_BOLD"%s%lu %s",
 					colors[i], cstatus[ip_counter][i], status[i]);
 				}
 			}
