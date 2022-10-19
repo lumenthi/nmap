@@ -5,8 +5,9 @@
 #define DB_SERVICES DB_PATH SERVICES_FILENAME
 
 struct service {
-	char *name;
-	char *desc;
+	char	*name;
+	char	*desc;
+	int		status;
 };
 
 /* services.c */

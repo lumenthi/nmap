@@ -15,8 +15,8 @@ static int send_syn(int tcpsockfd,
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sending SYN request to: %s:%d from port %d\n",
-			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+		fprintf(stderr, "[%ld] Sending SYN request to: %s:%d from port %d\n",
+			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -26,8 +26,8 @@ static int send_syn(int tcpsockfd,
 	if (sendto(tcpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to send SYN packet to: %s:%d from port %d\n",
-			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+			fprintf(stderr, "[%ld] Failed to send SYN packet to: %s:%d from port %d\n",
+			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 		return 1;
 	}
@@ -53,6 +53,7 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	struct icmp_packet *icmp_packet;
 
 	uint16_t dest;
+	uint16_t source;
 
 	/* Check if another thread already updated the scan status */
 	if (scan->status != TIMEOUT && scan->status != SCANNING)
@@ -77,6 +78,7 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 		if (ip->protocol == IPPROTO_TCP) {
 			tcp_packet = (struct tcp_packet *)buffer;
 			dest = tcp_packet->tcp.dest;
+			source = tcp_packet->tcp.source;
 			if (tcp_packet->tcp.rst)
 				status = CLOSED;
 			else if (tcp_packet->tcp.ack && tcp_packet->tcp.syn)
@@ -91,17 +93,18 @@ static int read_syn_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 				status = FILTERED;
 			tcp_packet = (struct tcp_packet*)&(icmp_packet->tcp);
 			dest = tcp_packet->tcp.source;
+			source = tcp_packet->tcp.dest;
 		}
 	}
 
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest, OPT_SCAN_SYN))) {
+		if ((update_ret = update_scans(scan, status, dest, source, OPT_SCAN_SYN))) {
 			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
-				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
-					inet_ntoa(*(struct in_addr*)&ip->saddr),
+				fprintf(stderr, "[%ld] Received packet from %s:%d with status: %d\n",
+					pthread_self(), inet_ntoa(*(struct in_addr*)&ip->saddr),
 					ntohs(tcp_packet->tcp.source),
 					status);
 				if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -132,7 +135,7 @@ int syn_scan(struct s_scan *scan)
 	/* Socket creation */
 	if ((tcpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to create socket\n");
+			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
 		scan->status = ERROR;
 		UNLOCK(scan);
 		return 1;
@@ -141,7 +144,7 @@ int syn_scan(struct s_scan *scan)
 	int one = 1;
 	if ((setsockopt(tcpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to set header option\n");
+			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 		scan->status = ERROR;
 		close(tcpsockfd);
 		UNLOCK(scan);
@@ -151,7 +154,7 @@ int syn_scan(struct s_scan *scan)
 	/* ICMP Socket creation */
 	if ((icmpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to create ICMP socket\n");
+			fprintf(stderr, "[%ld] Failed to create ICMP socket\n", pthread_self());
 		scan->status = ERROR;
 		close(tcpsockfd);
 		close(icmpsockfd);
@@ -161,7 +164,7 @@ int syn_scan(struct s_scan *scan)
 	/* Set options */
 	if ((setsockopt(icmpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to set header option\n");
+			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 		scan->status = ERROR;
 		close(tcpsockfd);
 		close(icmpsockfd);
@@ -191,7 +194,7 @@ int syn_scan(struct s_scan *scan)
 		if (ret == TIMEOUT) {
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] SYN request on %s:%d timedout\n",
+				fprintf(stderr, "[%ld] SYN request on %s:%d timedout\n", pthread_self(),
 				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
@@ -224,7 +227,7 @@ int syn_scan(struct s_scan *scan)
 		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
-		fprintf(stderr, "[*] Updating %s:%d SYN scan to %s\n",
+		fprintf(stderr, "[%ld] Updating %s:%d SYN scan to %s\n", pthread_self(),
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
 		status[scan->status]);
 	}

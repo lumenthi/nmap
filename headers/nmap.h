@@ -47,6 +47,8 @@
 #define PRINTED 11
 #define SCANNING 12
 #define INVALID 13
+#define IN_USE 14
+#define FREE 15
 
 #define UPDATE 1
 #define UPDATE_TARGET 2
@@ -203,8 +205,8 @@ void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, char *payload, uint16_t payload_len);
 
 /* list.c */
-int		update_scans(struct s_scan *scan, int status, uint16_t source_port,
-	int scantype);
+int update_scans(struct s_scan *scan, int status, uint16_t source_port,
+	uint16_t dest_port, int scantype);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);

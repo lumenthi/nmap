@@ -182,3 +182,6 @@ scanme.org is UP
 Scanned 2048 ports, 0 error, 2 open, 1022 filtered
 
 Nmap scanned 2 ip(s) in 15.92 seconds
+
+# Scans
+All scans are consistant but UDP and TCP

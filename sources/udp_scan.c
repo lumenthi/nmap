@@ -15,8 +15,8 @@ int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 	
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sending UDP request to: %s:%d from port %d\n",
-			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+		fprintf(stderr, "[%ld] Sending UDP request to: %s:%d from port %d\n",
+			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -26,8 +26,8 @@ int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 	if (sendto(udpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to send UDP packet to: %s:%d from port %d\n",
-			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+			fprintf(stderr, "[%ld] Failed to send UDP packet to: %s:%d from port %d\n",
+			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 		return 1;
 	}
@@ -53,6 +53,7 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	struct icmp_packet *icmp_packet;
 
 	uint16_t dest;
+	uint16_t source;
 
 	/* Check if another thread already updated the scan status */
 	if (scan->status != TIMEOUT && scan->status != SCANNING)
@@ -79,6 +80,7 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 			status = OPEN;
 			udp_packet = (struct udp_packet *)buffer;
 			dest = udp_packet->udp.uh_dport;
+			source = udp_packet->udp.uh_sport;
 		}
 	}
 	if (icmpret >= (ssize_t)icmp_len) {
@@ -104,11 +106,11 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest, OPT_SCAN_UDP))) {
+		if ((update_ret = update_scans(scan, status, dest, source, OPT_SCAN_UDP))) {
 			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
-				fprintf(stderr, "[*] Received packet from %s:%d with status: %d\n",
-					inet_ntoa(*(struct in_addr*)&ip->saddr),
+				fprintf(stderr, "[%ld] Received packet from %s:%d with status: %d\n",
+					pthread_self(), inet_ntoa(*(struct in_addr*)&ip->saddr),
 					ntohs(udp_packet->udp.uh_sport),
 					status);
 				if (g_data.opt & OPT_VERBOSE_DEBUG)
@@ -142,7 +144,7 @@ int		udp_scan(struct s_scan *scan)
 	/* Socket creation */
 	if ((udpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to create socket\n");
+			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
 		scan->status = ERROR;
 		UNLOCK(scan);
 		return 1;
@@ -152,17 +154,17 @@ int		udp_scan(struct s_scan *scan)
 	int one = 1;
 	if ((setsockopt(udpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to set header option\n");
+			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 		scan->status = ERROR;
 		close(udpsockfd);
 		UNLOCK(scan);
 		return 1;
 	}
 
-	/* Socket creation */
+	/* ICMP Socket creation */
 	if ((icmpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to create socket\n");
+			fprintf(stderr, "[%ld] Failed to create ICMP socket\n", pthread_self());
 		scan->status = ERROR;
 		UNLOCK(scan);
 		return 1;
@@ -171,7 +173,7 @@ int		udp_scan(struct s_scan *scan)
 	/* Set options */
 	if ((setsockopt(icmpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to set header option\n");
+			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 		scan->status = ERROR;
 		close(udpsockfd);
 		close(udpsockfd);
@@ -201,7 +203,7 @@ int		udp_scan(struct s_scan *scan)
 		if (ret == TIMEOUT) {
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] UDP request on %s:%d timedout\n",
+				fprintf(stderr, "[%ld] UDP request on %s:%d timedout\n", pthread_self(),
 				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
@@ -234,7 +236,7 @@ int		udp_scan(struct s_scan *scan)
 		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
-		fprintf(stderr, "[*] Updating %s:%d UDP scan to %s\n",
+		fprintf(stderr, "[%ld] Updating %s:%d UDP scan to %s\n", pthread_self(),
 		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
 		status[scan->status]);
 	}
