@@ -11,7 +11,7 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 
 	while (tmp) {
 		if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
-			tmp->saddr->sin_port == source_port &&
+			tmp->saddr.sin_port == source_port &&
 			tmp->scantype == scantype)
 		{
 			LOCK(tmp);
@@ -30,11 +30,11 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 
 static void	free_scan(struct s_scan *current)
 {
-	if (current->saddr)
-		free(current->saddr);
+	//if (current->saddr)
+	//	free(current->saddr);
 
-	if (current->daddr)
-		free(current->daddr);
+	//if (current->daddr)
+	//	free(current->daddr);
 
 	free(current);
 }
@@ -98,24 +98,16 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		ft_memset(tmp, 0, sizeof(struct s_scan));
 		tmp->status = READY;
 		tmp->final_status = -1;
-		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->saddr)
-			tmp->status = ERROR;
-		else {
-			ft_memcpy(tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
-			/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
-			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
-		}
-
-		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->daddr)
-			tmp->status = ERROR;
-		else {
-			ft_memcpy(tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
-			tmp->dhostname = ip->dhostname;
-		}
 		tmp->dport = port;
 		tmp->scantype = scantype;
+		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
+		/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
+		tmp->sport = assign_port(g_data.port_min, g_data.port_max);
+		tmp->saddr.sin_port = htons(tmp->sport);
+
+		ft_memcpy(&tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
+		tmp->dhostname = ip->dhostname;
+		tmp->daddr.sin_port = htons(tmp->dport);
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;

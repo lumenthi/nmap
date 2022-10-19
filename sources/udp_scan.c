@@ -133,11 +133,6 @@ int		udp_scan(struct s_scan *scan)
 
 	LOCK(scan);
 
-	/* Prepare ports */
-	/* TODO: Is this really usefull? + it's redundant in different scans */
-	scan->saddr->sin_port = htons(scan->sport);
-	scan->daddr->sin_port = htons(scan->dport);
-
 	/* Socket creation */
 	if ((udpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -189,7 +184,7 @@ int		udp_scan(struct s_scan *scan)
 
 	/* Scanning process */
 	ret = 0;
-	if (send_udp(udpsockfd, scan->saddr, scan->daddr) != 0) {
+	if (send_udp(udpsockfd, &scan->saddr, &scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
@@ -201,11 +196,11 @@ int		udp_scan(struct s_scan *scan)
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 				fprintf(stderr, "[*] UDP request on %s:%d timedout\n",
-				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
-			if (send_udp(udpsockfd, scan->saddr, scan->daddr) != 0) {
+			if (send_udp(udpsockfd, &scan->saddr, &scan->daddr) != 0) {
 				scan->status = ERROR;
 				UNLOCK(scan);
 			}
@@ -234,7 +229,7 @@ int		udp_scan(struct s_scan *scan)
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[*] Updating %s:%d UDP scan to %s\n",
-		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
+		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
 		status[scan->status]);
 	}
 

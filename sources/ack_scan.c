@@ -122,10 +122,6 @@ int ack_scan(struct s_scan *scan)
 
 	LOCK(scan);
 
-	/* Prepare ports */
-	scan->saddr->sin_port = htons(scan->sport);
-	scan->daddr->sin_port = htons(scan->dport);
-
 	/* Socket creation */
 	if ((tcpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
@@ -177,7 +173,7 @@ int ack_scan(struct s_scan *scan)
 
 	/* Scanning process */
 	ret = 0;
-	if (send_ack(tcpsockfd, scan->saddr, scan->daddr) != 0) {
+	if (send_ack(tcpsockfd, &scan->saddr, &scan->daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
@@ -189,11 +185,11 @@ int ack_scan(struct s_scan *scan)
 			LOCK(scan);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 				fprintf(stderr, "[*] ACK request on %s:%d timedout\n",
-				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
-			if (send_ack(tcpsockfd, scan->saddr, scan->daddr) != 0) {
+			if (send_ack(tcpsockfd, &scan->saddr, &scan->daddr) != 0) {
 				scan->status = ERROR;
 				UNLOCK(scan);
 			}
@@ -222,7 +218,7 @@ int ack_scan(struct s_scan *scan)
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[*] Updating %s:%d ACK scan to %s\n",
-		inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port),
+		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
 		status[scan->status]);
 	}
 

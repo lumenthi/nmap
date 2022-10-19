@@ -80,7 +80,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	if (scan->service)
 		service = scan->service;
 	else {
-		if ((s_service = getservbyport(scan->daddr->sin_port, NULL)))
+		if ((s_service = getservbyport(scan->daddr.sin_port, NULL)))
 			service = s_service->s_name;
 	}
 

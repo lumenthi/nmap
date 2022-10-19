@@ -63,8 +63,8 @@
 #define UNLOCK(input)	pthread_mutex_unlock(&input->lock);
 
 struct s_scan {
-	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
