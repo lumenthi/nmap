@@ -33,7 +33,7 @@ void	print_start(void)
 	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
 		" at [TODO:DATE] CEST\n");
 
-	printf("................. Config ..................\n");
+	printf("\n................. Config ..................\n");
 
 	if (g_data.ip_counter == 1)
 		printf("Target IP : %s\n", g_data.ips->dhostname);
@@ -59,7 +59,7 @@ void	print_start(void)
 	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
 	printf("Number of threads : %hhu\n", g_data.nb_threads);
-	printf("...........................................\n");
+	printf("...........................................\n\n");
 }
 
 /* TODO: Once finished, remove server related code in makefile/sources */

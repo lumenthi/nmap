@@ -71,7 +71,6 @@ static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 		icmpret < (ssize_t)icmp_len)
 		return 0;
 
-	/* TODO: Packet error checking ? */
 	if (ret >= (ssize_t)sizeof(struct tcp_packet)) {
 		ip = (struct iphdr *)buffer;
 		if (ip->protocol == IPPROTO_TCP) {

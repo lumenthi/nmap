@@ -261,7 +261,8 @@ static void add_ip(char *ip_string, t_set *set)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
 			tmp->status = ERROR;
-		push_ports(&tmp, set);
+		if (tmp->status == UP)
+			push_ports(&tmp, set);
 		push_ip(&g_data.ips, tmp);
 	}
 }

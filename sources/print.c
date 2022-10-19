@@ -1,6 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 #include "colors.h"
+//#include <netdb.h>
 
 /* Contains infos for our printing function */
 struct s_pinfo {
@@ -13,6 +14,22 @@ struct s_pinfo {
 	uint8_t menu; /* 0 or 1, to set if the menu bar is diplayed */
 	uint8_t tick; /* Set to one when printed one occurence for a port */
 };
+
+/*
+**	Print IP
+*/
+
+static void	print_ip(struct sockaddr_in *addr)
+{
+	char	host[128];
+		ft_bzero(host, sizeof(host));
+	if (getnameinfo((struct sockaddr*)addr,
+		sizeof(struct sockaddr), host, sizeof(host), NULL, 0, 0))
+		printf("%s ", inet_ntoa(addr->sin_addr));
+	else
+		printf("%s ", host);
+	printf("(%s)", inet_ntoa(addr->sin_addr));
+}
 
 static int scan_index(int scan_code)
 {
@@ -231,8 +248,10 @@ void	print_scans(struct s_ip *ips)
 	
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
-		printf("%s is %s\n", ip->destination, hstatus[ip->status]);
 		if (ip->status == UP) {
+			printf("Nmap scan report for ");
+			print_ip(ip->daddr);
+			printf("\n");
 			scan = ip->scans;
 			while (scan) {
 				if (scan->status == ERROR)
@@ -242,22 +261,24 @@ void	print_scans(struct s_ip *ips)
 						cstatus[ip_counter]);
 				scan = scan->next;
 			}
-		}
-		if (g_data.port_counter > 1)
-			printf("Scanned %d ports, ", g_data.port_counter / g_data.ip_counter);
-		else
-			printf("Scanned %d port, ", g_data.port_counter / g_data.ip_counter);
-		if (info.cerror > 1)
-			printf("%ld errors", info.cerror);
-		else
-			printf("%ld error", info.cerror);
-		for (uint8_t i = 0; i < 5; i++) {
-			if (cstatus[ip_counter][i] > 0) {
-				printf(", %s%lu %s",
-				colors[i], cstatus[ip_counter][i], status[i]);
+			if (g_data.port_counter > 1)
+				printf("Scanned %d ports, ", g_data.port_counter / g_data.ip_counter);
+			else
+				printf("Scanned %d port, ", g_data.port_counter / g_data.ip_counter);
+			if (info.cerror > 1)
+				printf("%ld errors", info.cerror);
+			else
+				printf("%ld error", info.cerror);
+			for (uint8_t i = 0; i < 5; i++) {
+				if (cstatus[ip_counter][i] > 0) {
+					printf(", %s%lu %s",
+					colors[i], cstatus[ip_counter][i], status[i]);
+				}
 			}
+			printf(NMAP_COLOR_RESET"\n");
 		}
-		printf(NMAP_COLOR_RESET"\n");
+		else
+			printf("%s is %s\n", ip->destination, hstatus[ip->status]);
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;

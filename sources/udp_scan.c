@@ -71,7 +71,6 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 		icmpret < (ssize_t)icmp_len)
 		return 0;
 
-	/* TODO: Packet error checking ? */
 	if (ret >= (ssize_t)sizeof(struct udp_packet)) {
 		ip = (struct iphdr *)buffer;
 		//printf("UDP!!\n");
