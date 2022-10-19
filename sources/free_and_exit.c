@@ -29,5 +29,7 @@ void	free_all()
 void	free_and_exit(int exit_val)
 {
 	free_all();
+	if (exit_val == EXIT_FAILURE)
+		fprintf(stderr, "QUITTING!\n");
 	exit(exit_val);
 }

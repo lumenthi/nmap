@@ -22,6 +22,8 @@ void	init_data()
 		free_and_exit(EXIT_FAILURE);
 	g_data.set.ranges[0].start = DEFAULT_START_PORT;
 	g_data.set.ranges[0].end = DEFAULT_END_PORT;
+	g_data.set.min = DEFAULT_START_PORT;
+	g_data.set.max = DEFAULT_END_PORT;
 
 	g_data.ipset = NULL;
 }
@@ -29,9 +31,6 @@ void	init_data()
 void	print_start(void)
 {
 	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
-
-	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
 
 	printf("\n................. Config ..................\n");
 
@@ -70,6 +69,9 @@ int		main(int argc, char **argv)
 
 	if (argc < 2)
 		return 1;
+
+	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at [TODO:DATE] CEST\n");
 
 	/* Nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {

@@ -172,3 +172,5 @@ May use /usr/bin/../share/nmap/nmap-services instead for a better service recogn
 |      udp     closed        0000.005ms  telnet
 
 #Remove useless comments before push
+
+#Allow 1024 ports max
