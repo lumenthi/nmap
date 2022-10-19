@@ -16,32 +16,36 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
+static void		illegal_ports(void)
+{
+	fprintf(stderr, "Error #486: Your port specifications are illegal." \
+			"  Exemple of proper form: \"100,200-1024\"\n");
+	free_and_exit(EXIT_FAILURE);
+}
+
+static void		out_of_range_ports(void)
+{
+	fprintf(stderr, "Ports specified must be between 0 and 65535 inclusive\n");
+	free_and_exit(EXIT_FAILURE);
+}
+
 static int		parse_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j;
 	int		is_range;
 
 	i = 0;
-	if (!(arg[0] >= '0' && arg[0] <= '9') && arg[0] != '-') {
-		fprintf(stderr, "Error #486: Your port specifications are illegal." \
-				"  Exemple of proper form: \"100,200-1024\"\n");
-		free_and_exit(EXIT_FAILURE);
-	}
+	if (!(arg[0] >= '0' && arg[0] <= '9') && arg[0] != '-')
+		illegal_ports();
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
 		while (arg[j]) {
-			if (!(arg[j] >= '0' && arg[j] <= '9') && arg[j] != ',' && arg[j] != '-') {
-					fprintf(stderr, "Error #486: Your port specifications are illegal." \
-							"  Exemple of proper form: \"100,200-1024\"\n");
-					free_and_exit(EXIT_FAILURE);
-			}
+			if (!(arg[j] >= '0' && arg[j] <= '9') && arg[j] != ',' && arg[j] != '-')
+				illegal_ports();
 			if (arg[j] == '-') {
-				if (is_range == 1) {
-					fprintf(stderr, "Error #486: Your port specifications are illegal." \
-							"  Exemple of proper form: \"100,200-1024\"\n");
-					free_and_exit(EXIT_FAILURE);
-				}
+				if (is_range == 1)
+					illegal_ports();
 				is_range = 1;
 				set->nb_ranges++;
 				j++;
@@ -96,19 +100,15 @@ int			set_positive_range(t_set *set, char *arg)
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
 				int nb = ft_atoi(arg + i);
-				if (nb > 65535) {
-						fprintf(stderr, "Ports specified must be between 0 and 65535 inclusive\n");
-						free_and_exit(EXIT_FAILURE);
-				}
+				if (nb > 65535)
+					out_of_range_ports();
 				if (nb < 0)
 					nb = set->min;
 				set->ranges[crange].start = nb;
 				if (arg[j + 1]) {
 					nb = ft_atoi(arg + j + 1);
-					if (nb < 0 || nb > 65535) {
-							fprintf(stderr, "Ports specified must be between 0 and 65535 inclusive\n");
-							free_and_exit(EXIT_FAILURE);
-					}
+					if (nb < 0 || nb > 65535)
+						out_of_range_ports();
 					if (nb < set->ranges[crange].start) {
 							fprintf(stderr, "Your port range %d-%d is backwards. Did you mean %d-%d?\n",
 								set->ranges[crange].start, nb,
@@ -120,7 +120,6 @@ int			set_positive_range(t_set *set, char *arg)
 				else
 				{
 					set->ranges[crange].end = set->max;
-					printf("Hola! %d\n", set->max);
 				}
 				crange++;
 				j++;
@@ -138,6 +137,8 @@ int			set_positive_range(t_set *set, char *arg)
 				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
+				if (arg[j] == ',' && j > 0 && arg[j - 1] == ',')
+					illegal_ports();
 				set->single_values[csingle++] = ft_atoi(arg + i);
 				if (arg[++j])
 					i = j;
