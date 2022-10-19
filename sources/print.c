@@ -49,6 +49,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	long long total_usec;
 	struct servent *s_service;
 	char *service = "unknown";
+	char *service_desc = NULL;
 
 	char *scans[] = {"syn", "null", "fin", "xmas",
 		"ack", "udp", "tcp", NULL};
@@ -60,8 +61,10 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 
 	/* Service detection */
 	/* Network services database file /etc/services */
-	if (scan->service)
+	if (scan->service) {
 		service = scan->service;
+		service_desc = scan->service_desc;
+	}
 	else {
 		if (scan->scantype == OPT_SCAN_UDP) {
 			if ((s_service = getservbyport(scan->daddr->sin_port, "udp")))
@@ -86,9 +89,15 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 		color = colors[scan->status];
 	else
 		color = "";
-	printf("%-7s %s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s\n",
+	printf("%-7s %s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s",
 		scans[scan_index(scan->scantype)], color, status[scan->status],
 		total_usec/1000, total_usec %1000, service);
+
+	/* TODO: Add flag for printing services desc, just edit this condition */
+	if (service_desc)
+		printf(" (%s)", service_desc);
+
+	printf("\n");
 }
 
 static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,

@@ -44,17 +44,14 @@ static int launch_scan(void *rip)
 			/* Resolve scans for this IP */
 			while (scan) {
 				if (scan->sport == g_data.port_max)
-				{
-					while (g_data.tcp_services[scan->sport].status == IN_USE);
-					//printf("status: %d\n", scan->status);
-				}
+					while (g_data.ports[scan->sport].status == IN_USE);
 				LOCK(scan);
 				if (scan->status == READY) {
 					scan->status = SCANNING;
-					g_data.tcp_services[scan->sport].status = IN_USE;
+					g_data.ports[scan->sport].status = IN_USE;
 					UNLOCK(scan);
 					run_scan(scan);
-					g_data.tcp_services[scan->sport].status = FREE;
+					g_data.ports[scan->sport].status = FREE;
 				}
 				else
 					UNLOCK(scan);

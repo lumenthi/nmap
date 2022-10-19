@@ -1,4 +1,3 @@
-#include "services.h"
 #include "nmap.h"
 #include "options.h"
 
@@ -64,7 +63,7 @@ static void get_desc(char *str, char **desc)
 		*desc = ft_strdup(str+i);
 }
 
-static int read_services(int fd, struct service *tcp, struct service *udp)
+static int read_services(int fd, struct port *ports)
 {
 	char *buffer;
 	char **split;
@@ -79,17 +78,17 @@ static int read_services(int fd, struct service *tcp, struct service *udp)
 			if (get_infos(split[1], &port, &protocol)) {
 				/* TODO: Description ?? */
 				if (protocol == IPPROTO_UDP) {
-					if (!udp[port].name) {
-						udp[port].name = ft_strdup(split[0]);
-						if (!udp[port].desc && split[3])
-							get_desc(split[3], &udp[port].desc);
+					if (!ports[port].udp_name) {
+						ports[port].udp_name = ft_strdup(split[0]);
+						if (!ports[port].udp_desc && split[3])
+							get_desc(split[3], &ports[port].udp_desc);
 					}
 				}
 				else if (protocol == IPPROTO_TCP) {
-					if (!tcp[port].name) {
-						tcp[port].name = ft_strdup(split[0]);
-						if (!tcp[port].desc && split[3])
-							get_desc(split[3], &tcp[port].desc);
+					if (!ports[port].tcp_name) {
+						ports[port].tcp_name = ft_strdup(split[0]);
+						if (!ports[port].tcp_desc && split[3])
+							get_desc(split[3], &ports[port].tcp_desc);
 					}
 				}
 			}
@@ -109,14 +108,12 @@ int get_services()
 		fprintf(stderr, "[*] Parsing services database %s\n", DB_SERVICES);
 
 	/* Structures allocation */
-	g_data.tcp_services = malloc(sizeof(struct service) * (USHRT_MAX+1));
-	g_data.udp_services = malloc(sizeof(struct service) * (USHRT_MAX+1));
-	if (!g_data.tcp_services || !g_data.udp_services) {
+	g_data.ports = malloc(sizeof(struct port) * (USHRT_MAX+1));
+	if (!g_data.ports) {
 		fprintf(stderr, "Not enough memory to handle service detection\n");
 		return -1;
 	}
-	ft_bzero(g_data.tcp_services, sizeof(struct service) * (USHRT_MAX+1));
-	ft_bzero(g_data.udp_services, sizeof(struct service) * (USHRT_MAX+1));
+	ft_bzero(g_data.ports, sizeof(struct port) * (USHRT_MAX+1));
 
 	/* Reading process */
 	fd = open(DB_SERVICES, O_RDONLY);
@@ -125,7 +122,7 @@ int get_services()
 		return 0;
 	}
 
-	read_services(fd, g_data.tcp_services, g_data.udp_services);
+	read_services(fd, g_data.ports);
 
 	/* Debug print */
 	/* int i = 0;
@@ -154,25 +151,20 @@ void free_services(void)
 
 	while (i <= USHRT_MAX) {
 		/* TCP services */
-		if (g_data.tcp_services) {
-			if (g_data.tcp_services[i].name)
-				free(g_data.tcp_services[i].name);
-			if (g_data.tcp_services[i].desc)
-				free(g_data.tcp_services[i].desc);
-		}
+		if (g_data.ports) {
+			if (g_data.ports[i].tcp_name)
+				free(g_data.ports[i].tcp_name);
+			if (g_data.ports[i].tcp_desc)
+				free(g_data.ports[i].tcp_desc);
 
-		/* UDP services */
-		if (g_data.udp_services) {
-			if (g_data.udp_services[i].name)
-				free(g_data.udp_services[i].name);
-			if (g_data.udp_services[i].desc)
-				free(g_data.udp_services[i].desc);
+			if (g_data.ports[i].udp_name)
+				free(g_data.ports[i].udp_name);
+			if (g_data.ports[i].udp_desc)
+				free(g_data.ports[i].udp_desc);
 		}
 		i++;
 	}
 
-	if (g_data.tcp_services)
-		free(g_data.tcp_services);
-	if (g_data.udp_services)
-		free(g_data.udp_services);
+	if (g_data.ports)
+		free(g_data.ports);
 }

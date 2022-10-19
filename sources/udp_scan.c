@@ -52,8 +52,8 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	struct udp_packet *udp_packet;
 	struct icmp_packet *icmp_packet;
 
-	uint16_t dest;
-	uint16_t source;
+	uint16_t dest = 0;
+	uint16_t source = 0;
 
 	/* Check if another thread already updated the scan status */
 	if (scan->status != TIMEOUT && scan->status != SCANNING)
@@ -188,7 +188,8 @@ int		udp_scan(struct s_scan *scan)
 	}
 
 	/* Service assignation */
-	scan->service = g_data.udp_services[scan->dport].name;
+	scan->service = g_data.ports[scan->dport].udp_name;
+	scan->service_desc = g_data.ports[scan->dport].udp_desc;
 
 	/* Scanning process */
 	ret = 0;
@@ -233,7 +234,7 @@ int		udp_scan(struct s_scan *scan)
 	}
 
 	char *status[] = {
-		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
+		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[%ld] Updating %s:%d UDP scan to %s\n", pthread_self(),

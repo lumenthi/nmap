@@ -38,7 +38,8 @@ int tcp_scan(struct s_scan *scan)
 	}
 
 	/* Service assignation */
-	scan->service = g_data.tcp_services[scan->dport].name;
+	scan->service = g_data.ports[scan->dport].tcp_name;
+	scan->service_desc = g_data.ports[scan->dport].tcp_desc;
 
 	/* Setting read fds for select */
 	fd_set rfds;

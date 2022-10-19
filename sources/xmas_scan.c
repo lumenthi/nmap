@@ -52,8 +52,8 @@ static int read_xmas_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	struct tcp_packet *tcp_packet;
 	struct icmp_packet *icmp_packet;
 
-	uint16_t dest;
-	uint16_t source;
+	uint16_t dest = 0;
+	uint16_t source = 0;
 
 	/* Check if another thread already updated the scan status */
 	if (scan->status != TIMEOUT && scan->status != SCANNING)
@@ -177,7 +177,8 @@ int xmas_scan(struct s_scan *scan)
 	}
 
 	/* Service assignation */
-	scan->service = g_data.tcp_services[scan->dport].name;
+	scan->service = g_data.ports[scan->dport].tcp_name;
+	scan->service_desc = g_data.ports[scan->dport].tcp_desc;
 
 	/* Scanning process */
 	ret = 0;
@@ -222,7 +223,7 @@ int xmas_scan(struct s_scan *scan)
 	}
 
 	char *status[] = {
-		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL 
+		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
 	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 		fprintf(stderr, "[%ld] Updating %s:%d XMAS scan to %s\n", pthread_self(),
