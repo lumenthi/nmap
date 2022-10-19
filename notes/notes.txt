@@ -1,12 +1,6 @@
 # Host netcat server
 $ nc -l 127.0.0.1 -p 4242 -v -k
 
-# Error
-$ sudo ./ft_nmap scanme.org 4242
-$ sudo nmap -p 4242 scanme.org
---------------------------------
-Should be filtered
-
 # Filter a port
 $ sudo /sbin/iptables -A INPUT -p tcp --destination-port 4241 -j DROP
 
@@ -64,82 +58,14 @@ ip.txt = 127.0.0.1
 
 127.0.0.1 -> www.google.com
 
-1 - 1024
-
-min = 1
-max = 1024
-
-# nmap multiple ports (not range) handling ?
-./ft_nmap localhsot -p 22,4242
-
-# -p is not taken in consideration
-sudo ./ft_nmap scanme.org --scan=SYN,FIN -p 4242
-Same for --verbose=, i believe the arg parser is ignoring
-the fact that optarg are given after the '='
-
-localhost is UP
-PORT   SCAN    STATE    TIME        SERVICE
-22     SYN     OPEN     0000.007ms  ssh
-|      FIN     OPEN     0000.003ms  ssh
-1024   SYN     OPEN     0000.005ms  unknown
-|      FIN     OPEN     0000.004ms  unknown
-Scanned 1024 port(s), 0 error(s), 2 open, 0 filtered, 1022 closed
-
-localhost is UP
-PORT   SCAN    STATE    TIME        SERVICE
-22
-|      SYN     OPEN     0000.007ms  ssh
-|      FIN     OPEN     0000.003ms  ssh
-+------------------------------------------
-
-1024
-|      SYN     OPEN     0000.005ms  unknown
-|      FIN     OPEN     0000.004ms  unknown
-+------------------------------------------
-Scanned 1024 port(s), 0 error(s), 2 open, 0 filtered, 1022 closed
-
-# If number of ports > 26 do not print all status
-sudo nmap -p 1-26,4242 localhost
-PORT   STATE SERVICE
-22/tcp open  ssh
-
-sudo nmap -p 1-26 localhost
-PORT   STATE  SERVICE
-1/tcp  closed tcpmux
-2/tcp  closed compressnet
-3/tcp  closed compressnet
-4/tcp  closed unknown
-5/tcp  closed rje
-6/tcp  closed unknown
-[...]
-
 sudo iptables -A OUTPUT -p tcp --source-port 4242 --tcp-flags RST RST -j DROP
 
 non root scans with DGRAM sockets
 
-vagrant@stretch:/vagrant$ nmap localhost -p 4242
-4242/tcp filtered vrml-multi-use
-
-vagrant@stretch:/vagrant$ sudo nmap localhost -p 4242
-4242/tcp open  vrml-multi-use
-
 # Flags d'opti (remove -g ?)
-
-# Timeout in threads ?
-
-# sudo ./ft_nmap localhost -p 1,20-28,2,3,4
-Don't scan port 4
-
-# sudo ./ft_nmap localhost -p 25-28,10
-Scans last port only if > 9
-
-# ERROR: sudo ./ft_nmap -p --2 localhost
-infinite loop
 
 # print date and hours at launch
 "Starting Nmap 7.60 ( https://nmap.org ) at 2022-10-06 10:24 CEST"
-
-# ERROR: [INFINITE LOOP] Change ft_random and increment ephemeral ports from min to max
 
 #### Opti ####
 Do not identify the services in each thread during runtime but before.
@@ -149,28 +75,11 @@ So maybe use arrays or feed the threads with what scan they must do so they don'
 search themselves?
 Receiving in the threads is slow but it is necessary to receive soon enough after sending
 otherwise we may lose the answers
-# Service detection is incomplete. port 1000 is unknown for us.
-It's cadlock with SYN scan or ock for UDP scan according to nmap
-
-# Print count for unfiltered and open|filtered
-Don't print if total printed > 26?
-
-# Services
-May use /usr/bin/../share/nmap/nmap-services instead for a better service recognition
 
 # /!\ Progress bar /!\
 
 # Do we really need to lock when writing scan results?
 
-# Print service only once (for multiple scans)?
-23
-|      syn     closed        0000.007ms  telnet
-|      null    closed        0000.005ms  telnet
-|      fin     closed        0000.006ms  telnet
-|      xmas    closed        0000.006ms  telnet
-|      ack     unfiltered    0000.007ms  telnet
-|      udp     closed        0000.005ms  telnet
+# Remove useless comments before push
 
-#Remove useless comments before push
-
-#Allow 1024 ports max
+# Allow 1024 ports max

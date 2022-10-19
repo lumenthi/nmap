@@ -40,8 +40,8 @@ void	print_start(void)
 		printf("Scanning %d targets\n", g_data.ip_counter);
 	}
 
-	printf("Number of ports to scan : %d\n",
-		g_data.port_counter / g_data.ip_counter);
+	int nb_ports = g_data.ip_counter > 0 ? g_data.port_counter / g_data.ip_counter : 0;
+	printf("Number of ports to scan : %d\n", nb_ports);
 
 	printf("Scan types to be performed : ");
 	int i = 0;
