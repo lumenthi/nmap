@@ -102,8 +102,10 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		tmp->scantype = scantype;
 		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
 		/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
-		tmp->sport = assign_port(g_data.port_min, g_data.port_max);
-		tmp->saddr.sin_port = htons(tmp->sport);
+		if (scantype != OPT_SCAN_TCP) {
+			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
+			tmp->saddr.sin_port = htons(tmp->sport);
+		}
 
 		ft_memcpy(&tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
 		tmp->dhostname = ip->dhostname;

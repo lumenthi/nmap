@@ -1,7 +1,6 @@
 #include "nmap.h"
 #include "options.h"
 
-/* TODO: Do not assign source ports to TCP scans, its useless */
 int tcp_scan(struct s_scan *scan)
 {
 	int sockfd;
