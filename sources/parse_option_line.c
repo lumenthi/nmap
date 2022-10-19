@@ -427,6 +427,5 @@ int	parse_nmap_args(int ac, char **av)
 			}
 		}
 	}
-	/* TODO: Check if no addresses are pushed */
 	return 0;
 }
