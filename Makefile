@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/18 05:07:58 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/19 11:22:12 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -56,7 +56,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h options.h set.h services.h colors.h
+HEADS = nmap.h options.h set.h colors.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################

@@ -66,6 +66,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	long long total_usec;
 	struct servent *s_service;
 	char *service = "unknown";
+	char *service_desc = NULL;
 
 	char *scans[] = {"syn", "null", "fin", "xmas",
 		"ack", "udp", "tcp", NULL};
@@ -77,11 +78,19 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 
 	/* Service detection */
 	/* Network services database file /etc/services */
-	if (scan->service)
+	if (scan->service) {
 		service = scan->service;
+		service_desc = scan->service_desc;
+	}
 	else {
-		if ((s_service = getservbyport(scan->daddr.sin_port, NULL)))
-			service = s_service->s_name;
+		if (scan->scantype == OPT_SCAN_UDP) {
+			if ((s_service = getservbyport(scan->daddr.sin_port, "udp")))
+				service = s_service->s_name;
+		}
+		else {
+			if ((s_service = getservbyport(scan->daddr.sin_port, "tcp")))
+				service = s_service->s_name;
+		}
 	}
 
 	if (!(info->menu)) {
@@ -97,9 +106,14 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 		color = colors[scan->status];
 	else
 		color = NMAP_COLOR_RESET;
-	printf("%-7s "NMAP_COLOR_BOLD"%s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s\n",
+	printf("%-7s "NMAP_COLOR_BOLD"%s%-13s"NMAP_COLOR_RESET" %04lld.%03lldms  %s",
 		scans[scan_index(scan->scantype)], color, status[scan->status],
 		total_usec/1000, total_usec %1000, service);
+
+	if (g_data.opt & OPT_SERVICE_DESC && service_desc)
+		printf(" (%s)", service_desc);
+
+	printf("\n");
 }
 
 static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,

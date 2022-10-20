@@ -83,3 +83,6 @@ otherwise we may lose the answers
 # Remove useless comments before push
 
 # Allow 1024 ports max
+
+# Scans
+All scans are consistant but UDP and TCP
