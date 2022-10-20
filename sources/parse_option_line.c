@@ -11,9 +11,7 @@ static void	print_version(void)
 
 void		print_usage(FILE* f)
 {
-	fprintf(f, "Usage:\n  ft_nmap [Scan Type(s)] [Options] {target specification}\n");
-	fprintf(f, "TARGET SPECIFICATION\n");
-	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
+	fprintf(f, "Usage:\n  ft_nmap [Target(s)] [Options]\n");
 }
 
 static void		illegal_ports(void)
