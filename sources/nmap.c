@@ -39,18 +39,19 @@ static int launch_scan(void *rip)
 	struct s_scan *scan;
 
 	while (ip) {
-		//printf("[*] Looking for ip: %s\n", ip->destination);
 		if (ip->status == UP) {
 			scan = ip->scans;
-
 			/* Resolve scans for this IP */
 			while (scan) {
+				if (scan->sport == g_data.port_max)
+					while (g_data.ports[scan->sport].status == IN_USE);
 				LOCK(scan);
 				if (scan->status == READY) {
-					/* TODO: Must lock or some scan will return filtered */
 					scan->status = SCANNING;
+					g_data.ports[scan->sport].status = IN_USE;
 					UNLOCK(scan);
 					run_scan(scan);
+					g_data.ports[scan->sport].status = FREE;
 				}
 				else
 					UNLOCK(scan);

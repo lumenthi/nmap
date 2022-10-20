@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/17 05:32:14 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/19 11:22:12 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,6 +38,16 @@ OBJDIR = objs
 
 #####################
 
+###### DATABASE #####
+
+SRC_DB = database
+SRC_SERVICES = $(SRC_DB)/services
+
+DST_DB = /tmp/ft_nmap
+DST_SERVICES = $(DST_DB)/services
+
+#####################
+
 ###### LIBRARY ######
 
 LIBFT = $(LIBDIR)/libft.a
@@ -46,7 +56,7 @@ LIBFT = $(LIBDIR)/libft.a
 
 ###### HEADERS ######
 
-HEADS = nmap.h options.h set.h
+HEADS = nmap.h options.h set.h colors.h
 HEADERS = $(addprefix $(HEADDIR)/, $(HEADS))
 
 #####################
@@ -67,6 +77,7 @@ SRCS = main.c \
 		print.c \
 		parse_file.c \
 		craft_packet.c \
+		services.c \
 		timedout.c \
 		udp_scan.c \
 		syn_scan.c \
@@ -78,7 +89,6 @@ SRCS = main.c \
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))
-
 
 #####################
 
@@ -110,7 +120,7 @@ all:
 
 ###### BINARY COMPILATION ######
 
-$(NAME): $(LIBFT) $(OBJS) ${HEADERS}
+$(NAME): $(LIBFT) $(OBJS) ${HEADERS} $(DST_SERVICES)
 	@ printf "[Linking] "
 	$(CC) $(OBJS) -o $(NAME) $(LIBFT) $(LDFLAGS)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(NAME) $(BLANK)
@@ -125,6 +135,11 @@ $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
 	@ printf "[Linking] "
 	$(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
+
+$(DST_SERVICES):
+	@ printf "[Installing] Creating database...\n"
+	@ cp -r $(SRC_DB) $(DST_DB)
+	@ printf "[Installing] Done creating database !\n"
 
 $(LIBFT):
 	 @ $(MAKE) -s -C $(LIBDIR)
@@ -152,6 +167,12 @@ clean:
 	printf "No %bobjects%b folders\n" $(YELLOW) $(BLANK))
 
 fclean: clean
+	@ test -d $(DST_DB) && \
+	rm -rf $(DST_DB) && \
+	printf " %b | " $(TICK) && \
+	printf "Removed %bdatabase%b folder\n" $(YELLOW) $(BLANK) \
+	|| (printf " %b | " $(CROSS) && \
+	printf "No %bdatabase%b folder\n" $(YELLOW) $(BLANK))
 	@ test -f $(LIBFT) && \
 	rm -rf $(LIBFT) && \
 	printf " %b | " $(TICK) && \

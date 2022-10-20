@@ -10,9 +10,6 @@ void	init_data()
 	/* Check privilege level, so we adapt scanning method */
 	g_data.privilegied = getuid() == 0 ? 1 : 0;
 
-	/* Default SCAN */
-	g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
-
 	g_data.ip_counter = 0;
 	g_data.port_counter = 0;
 
@@ -23,11 +20,45 @@ void	init_data()
 		free_and_exit(EXIT_FAILURE);
 	g_data.set.ranges[0].start = DEFAULT_START_PORT;
 	g_data.set.ranges[0].end = DEFAULT_END_PORT;
+	g_data.set.min = DEFAULT_START_PORT;
+	g_data.set.max = DEFAULT_END_PORT;
 
 	g_data.ipset = NULL;
 }
 
-/* TODO: Once finished, remove server related code in makefile/sources */
+void	print_start(void)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+
+	printf("\n................. Config ..................\n");
+
+	if (g_data.ip_counter == 1)
+		printf("Target IP : %s\n", g_data.ips->dhostname);
+	else {
+		printf("Scanning %d targets\n", g_data.ip_counter);
+	}
+
+	int nb_ports = g_data.ip_counter > 0 ? g_data.port_counter / g_data.ip_counter : 0;
+	printf("Number of ports to scan : %d\n", nb_ports);
+
+	printf("Scan types to be performed : ");
+	int i = 0;
+	char *pipe = "";
+	while (scans[i])
+	{
+		if (g_data.opt & (1UL << (i + 2))) {
+			printf("%s%s", pipe, scans[i]);
+			pipe = "|";
+		}
+		i++;
+	}
+	printf("\n");
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
+	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
+	printf("Number of threads : %hhu\n", g_data.nb_threads);
+	printf("...........................................\n\n");
+}
+
 /* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {
@@ -37,6 +68,9 @@ int		main(int argc, char **argv)
 	if (argc < 2)
 		return 1;
 
+	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at [TODO:DATE] CEST\n");
+
 	/* Nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {
 		start_time.tv_sec = 0;
@@ -45,8 +79,13 @@ int		main(int argc, char **argv)
 
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
-	printf("Starting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
+
+	print_start();
+
+	/* Getting service list */
+	if (get_services() != 0)
+		free_and_exit(EXIT_FAILURE);
+
 	ft_nmap(argv[0]);
 
 	/* Nmap end time */

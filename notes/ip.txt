@@ -1,8 +1,0 @@
-ID Field
-The IP subsystem gives each packet a unique ID. With only a 16-bit field, you can imagine that the numbers get used up quickly. Nevertheless, by the time the IP subsystem reuses an ID, the previous packet of the same value will probably have expired.
-
-The ID helps reassemble fragmented packets. If you elect to manage the header (IP_HDRINCL), you must manage the IDs yourself.
-
-Custom IDs
-
-Keep in mind that your program is not the only one that may send messages if you choose to manipulate the header yourself. The IP subsystem keeps track of the IDs. You must use caution (and extra programming) to reduce the likelihood of selecting an ID that the subsystem recently used or may use.

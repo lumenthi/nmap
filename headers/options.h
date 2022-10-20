@@ -20,6 +20,8 @@
 # define OPT_MODE_IP			(1UL << 9)
 # define OPT_MODE_FILE			(1UL << 10)
 
+# define OPT_SERVICE_DESC		(1UL << 11)
+
 # define FATAL_ERROR 2
 # define PRINT_VERSION 3
 

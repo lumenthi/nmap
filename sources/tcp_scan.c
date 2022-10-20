@@ -1,7 +1,6 @@
 #include "nmap.h"
 #include "options.h"
 
-/* TODO: Do not assign source ports to TCP scans, its useless */
 int tcp_scan(struct s_scan *scan)
 {
 	int sockfd;
@@ -11,13 +10,13 @@ int tcp_scan(struct s_scan *scan)
 	struct timeval timeout;
 
 	/* Prepare ports */
-	scan->saddr->sin_port = htons(scan->sport);
-	scan->daddr->sin_port = htons(scan->dport);
+	scan->saddr.sin_port = htons(scan->sport);
+	scan->daddr.sin_port = htons(scan->dport);
 
 	/* Socket creation */
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to create socket\n");
+			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
 		scan->status = ERROR;
 		return 1;
 	}
@@ -25,7 +24,7 @@ int tcp_scan(struct s_scan *scan)
 	/* Not authorized, remains a bonus */
 	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[!] Failed to set fcntl option\n");
+			fprintf(stderr, "[%ld] Failed to set fcntl option\n", pthread_self());
 		scan->status = ERROR;
 		close(sockfd);
 		return 1;
@@ -36,6 +35,10 @@ int tcp_scan(struct s_scan *scan)
 		scan->start_time.tv_sec = 0;
 		scan->start_time.tv_usec = 0;
 	}
+
+	/* Service assignation */
+	scan->service = g_data.ports[scan->dport].tcp_name;
+	scan->service_desc = g_data.ports[scan->dport].tcp_desc;
 
 	/* Setting read fds for select */
 	fd_set rfds;
@@ -52,44 +55,60 @@ int tcp_scan(struct s_scan *scan)
 	/* Default status */
 	scan->status = FILTERED;
 	while (i < 2) {
+		/* Setting data */
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 345678;
 		FD_SET(sockfd, &rfds);
 		FD_SET(sockfd, &lfds);
 		FD_SET(sockfd, &efds);
-		connect(sockfd, (struct sockaddr *)scan->daddr, sizeof(struct sockaddr));
+
+		/* Connect process */
+		connect(sockfd, (struct sockaddr *)&scan->daddr, sizeof(struct sockaddr));
 		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&err, (socklen_t *)&len);
+
+		/* Verbose print */
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Sent TCP request to %s:%d\n",
-				inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+			fprintf(stderr, "[%ld] Sent TCP request to %s:%d\n", pthread_self(),
+				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+
+		/* Getsockopt analysis */
 		if (err == ECONNREFUSED) {
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] Received TCP [CLOSED] response from %s:%d\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				fprintf(stderr, "[%ld] Received TCP [CLOSED] response from %s:%d\n",
+					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
+					ntohs(scan->daddr.sin_port));
 			scan->status = CLOSED;
 			break ;
 		}
 		else if (err) {
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] Received TCP [FILTERED] response from %s:%d\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				fprintf(stderr, "[%ld] Received TCP [FILTERED] response from %s:%d\n",
+					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
+					ntohs(scan->daddr.sin_port));
 			break ;
 		}
 		/* A socket is ready, our port is open */
 		else if (select(sockfd+1, &rfds, &lfds, &efds, &timeout)) {
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-				fprintf(stderr, "[*] Received TCP [OPEN] response from: %s:%d\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
-			scan->status = OPEN;
+			if (write(sockfd, NULL, 0) != -1) {
+				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+					fprintf(stderr, "[%ld] Received TCP [OPEN] response from: %s:%d\n",
+						pthread_self(), inet_ntoa(scan->daddr.sin_addr),
+						ntohs(scan->daddr.sin_port));
+				scan->status = OPEN;
+			}
+			else
+				scan->status = CLOSED;
 			break ;
 		}
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
 			if (i == 0)
-				fprintf(stderr, "[*] TCP request to %s:%d timedout\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				fprintf(stderr, "[%ld] TCP request to %s:%d timedout\n",
+					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
+					ntohs(scan->daddr.sin_port));
 			else
-				fprintf(stderr, "[*] No response from %s:%d, setting status to [FILTERED]\n",
-					inet_ntoa(scan->daddr->sin_addr), ntohs(scan->daddr->sin_port));
+				fprintf(stderr, "[%ld] No response from %s:%d, setting status to [FILTERED]\n",
+					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
+					ntohs(scan->daddr.sin_port));
 		}
 		i++;
 	}

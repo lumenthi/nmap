@@ -16,25 +16,36 @@ void		print_usage(FILE* f)
 	fprintf(f, "%s%2s%-26s%s", "  ", "", "  ", "\n");
 }
 
-/* TODO: Infinite loop for `sudo ./ft_nmap -p --2 localhost` */
+static void		illegal_ports(void)
+{
+	fprintf(stderr, "Error #486: Your port specifications are illegal." \
+			"  Exemple of proper form: \"100,200-1024\"\n");
+	free_and_exit(EXIT_FAILURE);
+}
+
+static void		out_of_range_ports(void)
+{
+	fprintf(stderr, "Ports specified must be between 0 and 65535 inclusive\n");
+	free_and_exit(EXIT_FAILURE);
+}
+
 static int		parse_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j;
 	int		is_range;
 
 	i = 0;
+	if (!(arg[0] >= '0' && arg[0] <= '9') && arg[0] != '-')
+		illegal_ports();
 	while (arg[i]) {
 		j = i;
 		is_range = 0;
 		while (arg[j]) {
-			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
-			/* Each "," is a new range to parse */
+			if (!(arg[j] >= '0' && arg[j] <= '9') && arg[j] != ',' && arg[j] != '-')
+				illegal_ports();
 			if (arg[j] == '-') {
-				if (is_range == 1) {
-					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
-							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
-					return 1;*/
-				}
+				if (is_range == 1)
+					illegal_ports();
 				is_range = 1;
 				set->nb_ranges++;
 				j++;
@@ -68,17 +79,9 @@ static int		parse_positive_range(t_set *set, char *arg)
 int			set_positive_range(t_set *set, char *arg)
 {
 	size_t	i, j, crange, csingle;
-	int		is_range;
 
 	crange = 0;
 	csingle = 0;
-	/*printf("Parsing range |%s|\n", arg);
-	printf("%ld ranges\n", set->nb_ranges);
-	printf("%ld single values\n", set->nb_single_values);*/
-	/* TODO: remove commented prints  */
-	/* TODO: remove commented prints of libft/is_arg_an_opt */
-	/* TODO: Error if multiple -p */
-	/* TODO: handle errors (ex: only accept digits and ',' '-' */
 	set->ranges = ft_memalloc(sizeof(t_range) * set->nb_ranges);
 	if (!set->ranges) {
 		perror("ft_nmap: ranges alloc");
@@ -93,29 +96,31 @@ int			set_positive_range(t_set *set, char *arg)
 	i = 0;
 	while (arg[i]) {
 		j = i;
-		is_range = 0;
 		while (arg[j]) {
-			//printf("arg[j] = %c(%d)\n", arg[j], arg[j]);
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
-				/*char *str = strdup(arg + i);
-				str[j] = 0;
-				printf("Current range str = |%s|\n", str);
-				free(str);*/
-				if (is_range == 1) {
-					/*fprintf(stderr, "Error #486: Your port specifications are illegal." \
-							"  Exemple of proper form: \"-100,200-1024\"\nQUITTING!\n");
-					return 1;*/
+				int nb = ft_atoi(arg + i);
+				if (nb > 65535)
+					out_of_range_ports();
+				if (nb < 0)
+					nb = set->min;
+				set->ranges[crange].start = nb;
+				if (arg[j + 1]) {
+					nb = ft_atoi(arg + j + 1);
+					if (nb < 0 || nb > 65535)
+						out_of_range_ports();
+					if (nb < set->ranges[crange].start) {
+							fprintf(stderr, "Your port range %d-%d is backwards. Did you mean %d-%d?\n",
+								set->ranges[crange].start, nb,
+								nb, set->ranges[crange].start);
+							free_and_exit(EXIT_FAILURE);
+					}
+					set->ranges[crange].end = nb;
 				}
-				is_range = 1;
-				set->ranges[crange].start = ft_atoi(arg + i);
-				if (arg[j + 1])
-					set->ranges[crange].end = ft_atoi(arg + j + 1);
 				else
+				{
 					set->ranges[crange].end = set->max;
-				/*printf("Current range = [%d - %d]\n",
-					set->ranges[crange].start,
-					set->ranges[crange].end);*/
+				}
 				crange++;
 				j++;
 				/* Skip digits and ',' */
@@ -127,19 +132,13 @@ int			set_positive_range(t_set *set, char *arg)
 					j++;
 				}
 				i = j;
-				//printf("Remaining string = |%s|\n", arg + i);
 				if (!arg[j])
 					return 0;
 				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
-				/*char *str = strdup(arg + i);
-				if (!arg[j + 1])
-					str[j - i + 1] = 0;
-				else
-					str[j - i] = 0;
-				printf("Current port = |%s|\n", str);
-				free(str);*/
+				if (arg[j] == ',' && j > 0 && arg[j - 1] == ',')
+					illegal_ports();
 				set->single_values[csingle++] = ft_atoi(arg + i);
 				if (arg[++j])
 					i = j;
@@ -178,7 +177,9 @@ static uint8_t enable_scan(char *str, int str_len)
 			/* i+2 since our first scantype starts at 1UL<<2 in options.h */
 			if (g_data.privilegied < pri[i])
 				return SCAN_PRIVILEGES;
-			g_data.opt |= (1UL << (i+2));
+			if (!(g_data.opt & (1UL << (i + 2))))
+				g_data.scan_types_counter++;
+			g_data.opt |= (1UL << (i + 2));
 			return SCAN_VALID;
 		}
 		i++;
@@ -192,12 +193,7 @@ static uint8_t parse_scans(char *optarg)
 	int curr_len;
 	uint8_t ret;
 
-	g_data.opt &= g_data.privilegied ?
-		~OPT_SCAN_SYN : ~OPT_SCAN_TCP;
-
 	while ((curr_len = get_next_scan(current))) {
-		/* printf("[*] Current OPT: %s with size: %d\n",
-			current, curr_len); */
 		ret = enable_scan(current, curr_len);
 		if (ret != SCAN_VALID)
 			return ret;
@@ -262,7 +258,8 @@ static void add_ip(char *ip_string, t_set *set)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
 			tmp->status = ERROR;
-		push_ports(&tmp, set);
+		if (tmp->status == UP)
+			push_ports(&tmp, set);
 		push_ip(&g_data.ips, tmp);
 	}
 }
@@ -273,19 +270,20 @@ static void add_ip(char *ip_string, t_set *set)
 
 int	parse_nmap_args(int ac, char **av)
 {
-	int	opt, option_index = 0, count = 1;
+	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:";
+	const char	*optstring = "hv::Vp:i:f:t:s:d";
 	static struct option long_options[] = {
-		{"help",	0,					0, 'h'},
-		{"version",	0,					0, 'V'},
-		{"verbose",	optional_argument,	0, 'v'},
-		{"ports",	required_argument,	0, 'p'},
-		{"threads",	required_argument,	0, 't'},
-		{"ip",		required_argument,	0, 'i'},
-		{"file",	required_argument,	0, 'f'},
-		{"scan",	required_argument,	0, 's'},
-		{0,			0,					0,	0 }
+		{"help",		0,					0, 'h'},
+		{"version",		0,					0, 'V'},
+		{"description",	0				,	0, 'd'},
+		{"verbose",		optional_argument,	0, 'v'},
+		{"ports",		required_argument,	0, 'p'},
+		{"threads",		required_argument,	0, 't'},
+		{"ip",			required_argument,	0, 'i'},
+		{"file",		required_argument,	0, 'f'},
+		{"scan",		required_argument,	0, 's'},
+		{0,				0,					0,	0 }
 	};
 
 	init_data();
@@ -367,11 +365,16 @@ int	parse_nmap_args(int ac, char **av)
 				}
 			case 'p':
 				{
+					if (ports_parsed != 0) {
+						fprintf(stderr, "Only 1 -p option allowed, separate multiple ranges with commas.\n");
+						return 1;
+					}
+					ports_parsed++;
 					if (g_data.set.ranges)
-						free(g_data.set.ranges);
+						ft_memdel((void**)&g_data.set.ranges);
 					if (g_data.set.single_values)
-						free(g_data.set.single_values);
-					ft_bzero(&g_data.set, sizeof(g_data.set));
+						ft_memdel((void**)&g_data.set.single_values);
+					g_data.set.nb_ranges = 0;
 					parse_positive_range(&g_data.set, optarg);
 					if (set_positive_range(&g_data.set, optarg))
 						return -1;
@@ -388,6 +391,9 @@ int	parse_nmap_args(int ac, char **av)
 					free_and_exit(255);
 					break;
 				}
+			case 'd':
+				g_data.opt |= OPT_SERVICE_DESC;
+				break;
 			default:
 				{
 					free_and_exit(255);
@@ -395,6 +401,13 @@ int	parse_nmap_args(int ac, char **av)
 				}
 		}
 		count++;
+	}
+
+	/* Default SCAN */
+	/* TODO: default must be all scans (counter = 6) according to the subject */
+	if (!g_data.scan_types_counter) {
+		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
+		g_data.scan_types_counter = 1;
 	}
 
 	/* Filling scans with ips from files */
@@ -418,6 +431,5 @@ int	parse_nmap_args(int ac, char **av)
 			}
 		}
 	}
-	/* TODO: Check if no addresses are pushed */
 	return 0;
 }

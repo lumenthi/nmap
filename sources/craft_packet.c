@@ -6,7 +6,6 @@ void	craft_ip_packet(void *packet, struct sockaddr_in *saddr,
 {
 	struct iphdr *ip = (struct iphdr *)packet;
 
-	/* TODO: at the moment no scan needs to set options */
 	(void)options;
 
 	/* Filling IP header */
@@ -39,7 +38,6 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct iphdr *ip = (struct iphdr *)packet;
 	struct tcphdr *tcp = (struct tcphdr *)(packet + sizeof(struct iphdr));
 
-	/* TODO: at the moment no scan needs to set options */
 	(void)options;
 
 	/* Filling TCP header */
@@ -68,7 +66,7 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	if (flags & TH_URG)
 		tcp->urg = 1;
 	/* WTF is this */
-	tcp->window = htons(64240);
+	tcp->window = htons(1024);
 	/* Checksum */
 	tcp->check = 0; /* Calculated after headers */
 	/* Indicates the urgent data, only if URG flag set */

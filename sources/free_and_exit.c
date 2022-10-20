@@ -16,6 +16,7 @@ void free_threads()
 void	free_all()
 {
 	free_threads();
+	free_services();
 	free_ips(&g_data.ips);
 	if (g_data.set.ranges)
 		free(g_data.set.ranges);
@@ -28,5 +29,7 @@ void	free_all()
 void	free_and_exit(int exit_val)
 {
 	free_all();
+	if (exit_val == EXIT_FAILURE)
+		fprintf(stderr, "QUITTING!\n");
 	exit(exit_val);
 }
