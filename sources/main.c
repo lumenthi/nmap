@@ -23,6 +23,11 @@ void	init_data()
 	g_data.set.min = DEFAULT_START_PORT;
 	g_data.set.max = DEFAULT_END_PORT;
 
+	if (pthread_mutex_init(&g_data.print_lock, NULL) != 0) {
+		perror("pthread_mutex_init");
+		free_and_exit(EXIT_FAILURE);
+	}
+
 	g_data.ipset = NULL;
 }
 

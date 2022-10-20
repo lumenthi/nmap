@@ -272,11 +272,12 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:d";
+	const char	*optstring = "hv::Vp:i:f:t:s:dq";
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'd'},
+		{"quiet",		0				,	0, 'q'},
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
@@ -393,6 +394,9 @@ int	parse_nmap_args(int ac, char **av)
 				}
 			case 'd':
 				g_data.opt |= OPT_SERVICE_DESC;
+				break;
+			case 'q':
+				g_data.opt |= OPT_NO_PROGRESS;
 				break;
 			default:
 				{
