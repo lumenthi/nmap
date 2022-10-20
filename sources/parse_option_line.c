@@ -2,18 +2,6 @@
 #include "libft.h"
 #include "nmap.h"
 
-static void	print_version(void)
-{
-	printf("lumenthi and lnicosia's ft_nmap version 1.0\n");
-	printf("This program is free software; you may redistribute it\n");
-	printf("This program has absolutely no warranty\n");
-}
-
-void		print_usage(FILE* f)
-{
-	fprintf(f, "Usage:\n  ft_nmap [Target(s)] [Options]\n");
-}
-
 static void		illegal_ports(void)
 {
 	fprintf(stderr, "Error #486: Your port specifications are illegal." \
@@ -345,7 +333,7 @@ int	parse_nmap_args(int ac, char **av)
 				print_version();
 				return 1;
 			case 'h':
-				print_usage(stdout);
+				print_help();
 				return 1;
 			case 'f':
 				{

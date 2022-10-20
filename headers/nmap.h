@@ -35,6 +35,10 @@
 #define SERVICES_FILENAME "services"
 #define DB_SERVICES DB_PATH SERVICES_FILENAME
 
+/* ASCII ART */
+#define ASCII_FILENAME "art.ascii"
+#define DB_ASCII DB_PATH ASCII_FILENAME
+
 /* STATUS */
 #define OPEN 0
 #define CLOSED 1
@@ -163,6 +167,11 @@ struct			icmp_packet {
 };
 
 extern t_data	g_data;
+
+/* help.c */
+void		print_version(void);
+void		print_usage(FILE* f);
+void		print_help();
 
 /* print.c */
 void	print_ip4_header(struct ip *header);
