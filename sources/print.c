@@ -54,7 +54,7 @@ void print_time(struct timeval start_time, struct timeval end_time)
 	while (ms > 99)
 		ms /= 10;
 
-	printf("\nNmap scanned %d ip(s) in %01lld.%02lld seconds\n",
+	printf("\nft_nmap scanned %d ip(s) in %01lld.%02lld seconds\n",
 		g_data.ip_counter,sec, ms);
 }
 
@@ -263,7 +263,7 @@ void	print_scans(struct s_ip *ips)
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
 		if (ip->status == UP) {
-			printf("Nmap scan report for ");
+			printf("ft_nmap scan report for ");
 			print_ip(ip->daddr);
 			printf("\n");
 			scan = ip->scans;

@@ -30,7 +30,7 @@ void	print_start(void)
 {
 	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
 
-	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+	printf("\nStarting ft_nmap 1.0 ( https://github.com/lumenthi/nmap )"\
 		" at [TODO:DATE] CEST\n");
 
 	printf("\n................. Config ..................\n");
@@ -73,7 +73,7 @@ int		main(int argc, char **argv)
 		return 1;
 	}
 
-	/* Nmap start time */
+	/* ft_nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {
 		start_time.tv_sec = 0;
 		start_time.tv_usec = 0;
@@ -95,7 +95,7 @@ int		main(int argc, char **argv)
 
 	ft_nmap(argv[0]);
 
-	/* Nmap end time */
+	/* ft_nmap end time */
 	if ((gettimeofday(&end_time, NULL)) != 0) {
 		end_time.tv_sec = 0;
 		end_time.tv_usec = 0;

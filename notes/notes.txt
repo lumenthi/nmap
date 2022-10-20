@@ -86,3 +86,7 @@ otherwise we may lose the answers
 
 # Scans
 All scans are consistant but UDP and TCP
+
+# Do not forget to put all scantypes by default if none are specified (subject restriction)
+
+# -v DEBUG is broken when multithreading

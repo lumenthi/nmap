@@ -266,7 +266,6 @@ int	parse_nmap_args(int ac, char **av)
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
-		{"ip",			required_argument,	0, 'i'},
 		{"file",		required_argument,	0, 'f'},
 		{"scan",		required_argument,	0, 's'},
 		{0,				0,					0,	0 }
@@ -315,10 +314,6 @@ int	parse_nmap_args(int ac, char **av)
 					}
 				}
 				break;
-			case 'i':
-				{
-					break;
-				}
 			case 't':
 				{
 					int threads = ft_atoi(optarg);
