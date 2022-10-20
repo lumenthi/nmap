@@ -276,13 +276,13 @@ int	parse_nmap_args(int ac, char **av)
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
+		{"description",	0				,	0, 'd'},
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
 		{"ip",			required_argument,	0, 'i'},
 		{"file",		required_argument,	0, 'f'},
 		{"scan",		required_argument,	0, 's'},
-		{"description",	required_argument,	0, 'd'},
 		{0,				0,					0,	0 }
 	};
 
