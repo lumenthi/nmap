@@ -245,7 +245,7 @@ void	print_scans(struct s_ip *ips)
 		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
 	}
 	static const char *status[] = {
-		"open", "closed", "filtered", "open|filtered", 
+		"open", "closed", "filtered", "open|filtered",
 		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
 		"printed", "scanning", "invalid", NULL
 	};
