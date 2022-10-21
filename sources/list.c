@@ -13,44 +13,33 @@ void	print_progress()
 	pthread_mutex_lock(&g_data.print_lock);
 	g_data.finished_scans++;
 	float progress = 100.0f * g_data.finished_scans / (float)g_data.total_scan_counter;
-	printf("\r|");
 
 	/* ASCII */
-	/*for (int_fast32_t i = 0; i < floor(progress / 2); i++)
-		printf("|");
-	for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
-		printf("-");*/
-
-	int start[3] = {0xbd, 0xc3, 0xc7};
-	int end[3] = {0x2c, 0x3e, 0x50};
-	(void)start;
-	(void)end;
-	/* GREEN GRADIANT */
-	/*for (int_fast32_t i = 0; i < floor(progress / 2); i++) {
-		printf("\e[48;2;%d;%d;%dm ",
-			(int)(i / 25.0f * 255),
-			(int)(i / 25.0f * 255) + 64,
-			(int)(i / 25.0f * 255) 
-			);
-	}*/
-	for (int_fast32_t i = 0; i < floor(progress / 2); i++) {
-		printf("\e[48;2;%d;%d;%dm ",
-			(int)(i / 50.0f * (end[R] - start[R])) + start[R],
-			(int)(i / 50.0f * (end[G] - start[G])) + start[G],
-			(int)(i / 50.0f * (end[B] - start[B])) + start[B]
-			);
+	if (g_data.opt & OPT_ASCII_PROGRESS) {
+		printf("\r[");
+		for (int_fast32_t i = 0; i < floor(progress / 2); i++)
+			printf("|");
+		for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
+			printf("-");
+		printf("] %.2f%%", progress);
 	}
-	printf(NMAP_COLOR_RESET);
-	for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
-		printf(" ");
+	else {
+		printf("\r|");
+		int start[3] = {0xbd, 0xc3, 0xc7};
+		int end[3] = {0x2c, 0x3e, 0x50};
+		for (int_fast32_t i = 0; i < floor(progress / 2); i++) {
+			printf("\e[48;2;%d;%d;%dm ",
+				(int)(i / 50.0f * (end[R] - start[R])) + start[R],
+				(int)(i / 50.0f * (end[G] - start[G])) + start[G],
+				(int)(i / 50.0f * (end[B] - start[B])) + start[B]
+				);
+		}
+		printf(NMAP_COLOR_RESET);
+		for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
+			printf(" ");
 
-	/* GREEN GRADIANT 2 */
-	/*for (int_fast32_t i = 0; i < 50; i++) {
-		printf("\e[48;2;%d;%d;%dm ", 0,(int)(progress / 100.0f * 255), 0);
+		printf("| %.2f%%", progress);
 	}
-	printf(NMAP_COLOR_RESET);*/
-
-	printf("| %.2f%%", progress);
 	fflush(stdout);
 	pthread_mutex_unlock(&g_data.print_lock);
 }

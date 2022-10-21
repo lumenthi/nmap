@@ -22,6 +22,7 @@
 
 # define OPT_SERVICE_DESC		(1UL << 11)
 # define OPT_NO_PROGRESS		(1UL << 12)
+# define OPT_ASCII_PROGRESS		(1UL << 13)
 
 # define FATAL_ERROR 2
 # define PRINT_VERSION 3
