@@ -69,12 +69,18 @@ int		main(int argc, char **argv)
 {
 	struct timeval start_time;
 	struct timeval end_time;
+	struct tm *local_time;
+	time_t ctime;
 
 	if (argc < 2)
 		return 1;
 
+	ctime = time(NULL);
+	local_time = localtime(&ctime);
+
 	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
+		" at %d-%d-%d %d:%d CEST\n", 1900 + local_time->tm_year, local_time->tm_mon + 1,
+		local_time->tm_mday, local_time->tm_hour, local_time->tm_min);
 
 	/* Nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {
