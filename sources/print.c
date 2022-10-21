@@ -126,7 +126,6 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
 
 	while (scan) {
 		if (scan->dport == port && scan->status != ERROR) {
-			/* TODO: Update when needed */
 			if (scan->final_status == OPEN
 				|| g_data.port_counter / g_data.ip_counter <= 25
 				|| (cstatus[FILTERED]+cstatus[OPEN_FILTERED]+cstatus[UNFILTERED]

@@ -3,7 +3,6 @@
 
 static int run_scan(struct s_scan *scan)
 {
-	/* TODO: match nmap's options for each scan type (both IP and the next layer) */
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
 			syn_scan(scan);
