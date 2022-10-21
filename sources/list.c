@@ -1,5 +1,48 @@
 #include "nmap.h"
 #include "options.h"
+#include "colors.h"
+#include <math.h>
+
+#define BAR_SIZE 70
+#define R 0
+#define G 1
+#define B 2
+
+void	print_progress()
+{
+	pthread_mutex_lock(&g_data.print_lock);
+	g_data.finished_scans++;
+	float progress = 100.0f * g_data.finished_scans / (float)g_data.total_scan_counter;
+
+	/* ASCII */
+	if (g_data.opt & OPT_ASCII_PROGRESS) {
+		printf("\r[");
+		for (int_fast32_t i = 0; i < floor(progress / 2); i++)
+			printf("|");
+		for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
+			printf("-");
+		printf("] %.2f%%", progress);
+	}
+	else {
+		printf("\r|");
+		int start[3] = {0xbd, 0xc3, 0xc7};
+		int end[3] = {0x2c, 0x3e, 0x50};
+		for (int_fast32_t i = 0; i < floor(progress / 2); i++) {
+			printf("\e[48;2;%d;%d;%dm ",
+				(int)(i / 50.0f * (end[R] - start[R])) + start[R],
+				(int)(i / 50.0f * (end[G] - start[G])) + start[G],
+				(int)(i / 50.0f * (end[B] - start[B])) + start[B]
+				);
+		}
+		printf(NMAP_COLOR_RESET);
+		for (int_fast32_t i = 0; i < 50 - floor(progress / 2); i++)
+			printf(" ");
+
+		printf("| %.2f%%", progress);
+	}
+	fflush(stdout);
+	pthread_mutex_unlock(&g_data.print_lock);
+}
 
 /* Update scan with port `source_port`
  * returns UPDATE_TARGET if our target scan `scan` is updated
@@ -8,7 +51,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 	uint16_t dest_port, int scantype)
 {
 	struct s_scan *tmp = scan;
-
 	while (tmp) {
 		if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
 			tmp->saddr.sin_port == source_port &&
@@ -16,6 +58,8 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 		{
 			LOCK(tmp);
 			tmp->status = status;
+			//if (!(g_data.opt & OPT_NO_PROGRESS))
+			//	print_progress();
 			if (tmp == scan) {
 				UNLOCK(tmp);
 				return UPDATE_TARGET;
@@ -30,12 +74,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 
 static void	free_scan(struct s_scan *current)
 {
-	//if (current->saddr)
-	//	free(current->saddr);
-
-	//if (current->daddr)
-	//	free(current->daddr);
-
 	free(current);
 }
 
@@ -113,7 +151,6 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
-
 	}
 
 	return tmp;
@@ -155,15 +192,28 @@ void	push_ports(struct s_ip **input, t_set *set)
 		start = set->ranges[crange].start;
 		end = set->ranges[crange].end;
 		while (start <= end) {
-			if (push_scantypes(*input, &ip->scans, start++) > 0)
+			if (push_scantypes(*input, &ip->scans, start) > 0) {
+				/* Verbose print */
+				if (g_data.opt & OPT_VERBOSE_DEBUG)
+					fprintf(stderr, "[*] Filling structures for %s:%d\n",
+						ip->dhostname, start);
 				g_data.port_counter++;
+			}
+			if (start == USHRT_MAX)
+				break;
+			start++;
 		}
 		crange++;
 	}
 	csingle = 0;
 	while (csingle < set->nb_single_values) {
-		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0)
+		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0) {
+			/* Verbose print */
+			if (g_data.opt & OPT_VERBOSE_DEBUG)
+				fprintf(stderr, "[*] Filling structures for %s:%d\n",
+					ip->dhostname, set->single_values[csingle]);
 			g_data.port_counter++;
+		}
 		csingle++;
 	}
 }

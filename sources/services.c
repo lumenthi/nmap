@@ -123,18 +123,6 @@ int get_services()
 
 	read_services(fd, g_data.ports);
 
-	/* Debug print */
-	/* int i = 0;
-	while (i <= USHRT_MAX) {
-		if (g_data.tcp_services[i].name)
-			printf("[*] Port %d (tcp) has service [%s] with desc [%s]\n", i,
-				g_data.tcp_services[i].name, g_data.tcp_services[i].desc);
-		if (g_data.udp_services[i].name)
-			printf("[*] Port %d (udp) has service [%s] with desc [%s]\n", i,
-				g_data.udp_services[i].name, g_data.udp_services[i].desc);
-		i++;
-	} */
-
 	close(fd);
 
 	/* Verbose print */
