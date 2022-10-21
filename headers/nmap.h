@@ -134,11 +134,14 @@ typedef struct	s_data {
 	/* Ports services and status */
 	struct port			*ports;
 
+	pthread_mutex_t		print_lock;
+
 	/* Counters */
 	int					ip_counter;
 	int					port_counter;
 	int					scan_types_counter;
 	int					total_scan_counter;
+	int					finished_scans;
 }						t_data;
 
 struct			tcp_options {
@@ -230,6 +233,7 @@ int		get_services(void);
 void	free_services(void);
 
 /* list.c */
+void	print_progress(void);
 int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 	uint16_t dest_port, int scantype);
 void	push_ip(struct s_ip **head, struct s_ip *new);

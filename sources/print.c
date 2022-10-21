@@ -263,6 +263,13 @@ void	print_scans(struct s_ip *ips)
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
 		if (ip->status == UP) {
+			if (!(g_data.opt & OPT_NO_PROGRESS)) {
+				printf("\r");
+				for (int_fast32_t i = 0; i < 80; i++)
+					printf(" ");
+				printf("\r");
+				fflush(stdout);
+			}
 			printf("ft_nmap scan report for ");
 			print_ip(ip->daddr);
 			printf("\n");

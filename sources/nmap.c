@@ -29,6 +29,8 @@ static int run_scan(struct s_scan *scan)
 		default:
 			fprintf(stderr,"Unknown scan type\n");
 	}
+	if (!(g_data.opt & OPT_NO_PROGRESS))
+		print_progress();
 
 	return 0;
 }

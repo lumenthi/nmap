@@ -23,6 +23,11 @@ void	init_data()
 	g_data.set.min = DEFAULT_START_PORT;
 	g_data.set.max = DEFAULT_END_PORT;
 
+	if (pthread_mutex_init(&g_data.print_lock, NULL) != 0) {
+		perror("pthread_mutex_init");
+		free_and_exit(EXIT_FAILURE);
+	}
+
 	g_data.ipset = NULL;
 }
 
@@ -69,6 +74,7 @@ int		main(int argc, char **argv)
 	struct timeval end_time;
 
 	if (argc < 2) {
+		fprintf(stdout, "Use -h for help\n");
 		print_usage(stdout);
 		return 1;
 	}
@@ -83,6 +89,7 @@ int		main(int argc, char **argv)
 		free_and_exit(EXIT_FAILURE);
 
 	if (g_data.ips == NULL) {
+		fprintf(stdout, "Use -h for help\n");
 		print_usage(stdout);
 		free_and_exit(EXIT_FAILURE);
 	}

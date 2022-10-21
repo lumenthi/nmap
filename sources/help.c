@@ -18,8 +18,7 @@ static void		print_art(char *path)
 
 void		print_version(void)
 {
-	printf("VERSION:\n"
-		"lumenthi and lnicosia's ft_nmap version 1.0 (https://github.com/lumenthi/nmap)\n"
+	printf("lumenthi and lnicosia's ft_nmap version 1.0 (https://github.com/lumenthi/nmap)\n"
 		"This program is free software; you may redistribute it\n"
 		"This program has absolutely no warranty\n"
 	);
@@ -27,7 +26,10 @@ void		print_version(void)
 
 void		print_usage(FILE* f)
 {
-	fprintf(f, "Usage:\n  ft_nmap [Target(s)] [Options]\n");
+	fprintf(f,
+		"USAGE:\n"
+		"  ft_nmap [Target(s)] [Options]\n"
+	);
 }
 
 static void		target_specification()
@@ -50,14 +52,14 @@ static void		scan_techniques()
 		"  Note that the program will run all types of scan if none are specified\n"
 		"    Exemple: -s SYN,UDP,FIN; --scan=XMAS,TCP\n"
 		"  TCP SCANS:\n"
-		"    SYN: TCP SYN scan\n"
-		"    NULL: TCP Null scan\n"
-		"    FIN: TCP FIN scan\n"
-		"    XMAS: TCP Xmas scan\n"
-		"    ACK: TCP ACK scan\n"
-		"    TCP: TCP Connect scan\n"
+		"    SYN: SYN scan, requires root privileges\n"
+		"    NULL: Null scan, requires root privileges\n"
+		"    FIN: FIN scan, requires root privileges\n"
+		"    XMAS: Xmas scan, requires root privileges\n"
+		"    ACK: ACK scan, requires root privileges\n"
+		"    TCP: Connect scan, doesnt not require root privileges\n"
 		"  UDP SCANS:\n"
-		"    UDP: UDP scan\n"
+		"    UDP: UDP scan, requires root privileges\n"
 	);
 }
 
@@ -99,19 +101,48 @@ static void verbose()
 	);
 }
 
+static void misc()
+{
+	printf("MISC:\n"
+		"  --no-progress: Hide the progress bar while scanning, this may result in a performance gain\n"
+		"  --ascii: Edit the output of ft_nmap to match terminals that doesnt handle 256 colors\n"
+		"  -h --help: Display the help menu\n"
+		"  -V --version: Output the current version of this software\n"
+	);
+}
+
+static void examples()
+{
+	printf("EXAMPLES:\n"
+		"  sudo ./ft_nmap scanme.org -p 1-4242 -t 250\n"
+		"  ./ft_nmap 127.0.0.1 -s TCP\n"
+		"  sudo ./ft_nmap localhost --scan=FIN,SYN\n"
+		"  sudo ./ft_nmap scanme.org localhost --verbose=INFO -t 50 2>log.txt\n"
+		"  ./ft_nmap localhost -p 22,25,4242 -s TCP\n"
+		"  sudo ./ft_nmap --file=list.ip -scan SYN,FIN,NULL,XMAS,ACK,TCP,UDP -v DEBUG\n"
+	);
+}
+
 void		print_help()
 {
 	/* TODO: Check if all options are included in the help */
-	/* TODO: --quiet description */
+	/* Header with ascii art and usage */
 	print_art(DB_ASCII);
 	print_usage(stdout);
 	printf("\n");
+
+	/* Content */
 	target_specification();
 	scan_techniques();
 	port_specification();
 	service_detection();
 	multithreading();
 	verbose();
+	misc();
+	examples();
+
+	/* Footer with version */
+	printf("\n");
 	print_version();
 	printf("\n");
 }

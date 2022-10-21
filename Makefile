@@ -15,7 +15,7 @@ SERVER_NAME = ft_server
 
 CC = gcc
 FLAGS = -Wall -Werror -Wextra -g
-LDFLAGS = -lpthread
+LDFLAGS = -lpthread -lm
 
 GREEN = '\033[4;32m'
 RED = '\033[4;31m'

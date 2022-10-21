@@ -90,3 +90,6 @@ All scans are consistant but UDP and TCP
 # Do not forget to put all scantypes by default if none are specified (subject restriction)
 
 # -v DEBUG is broken when multithreading
+
+# error -p
+make -j4 && sudo ./ft_nmap scanme.org -p1-24,26-50 -t 250

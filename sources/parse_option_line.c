@@ -263,6 +263,7 @@ int	parse_nmap_args(int ac, char **av)
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'd'},
+		{"no-progress",	0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
@@ -284,6 +285,12 @@ int	parse_nmap_args(int ac, char **av)
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
 		switch (opt) {
+			case 0:
+				{
+					if (ft_strequ(long_options[option_index].name, "no-progress"))
+						g_data.opt |= OPT_NO_PROGRESS;
+					break;
+				}
 			case 's':
 				{
 					int scan_ret;
