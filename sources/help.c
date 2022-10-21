@@ -96,7 +96,7 @@ static void verbose()
 		"  -v --verbose <verbose level>: Specify a verbose level between INFO or DEBUG\n"
 		"  Display all informations about what ft_nmap is doing, which packet are sent and which are received\n"
 		"  With DEBUG level, packets content will also be displayed\n"
-		"  Note that the debug level is printed on STDERR so you can redirect the verbose output easily for analysis\n"
+		"  Note that verbose messages are printed on STDERR so you can redirect the output easily for analysis\n"
 		"    Exemple: ./ft_nmap localhost -v INFO 2>log.txt\n"
 	);
 }
