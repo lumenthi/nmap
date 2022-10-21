@@ -99,6 +99,7 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 			udp_packet = (struct udp_packet*)&(icmp_packet->udp);
 			//print_ip4_header((struct ip*)&udp_packet->ip);
 			dest = udp_packet->udp.uh_sport;
+			source = udp_packet->udp.uh_dport;
 		}
 	}
 
