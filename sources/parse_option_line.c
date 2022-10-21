@@ -272,12 +272,12 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:dq";
+	const char	*optstring = "hv::Vp:i:f:t:s:d";
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'd'},
-		{"quiet",		0				,	0, 'q'},
+		{"no-progress",	0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
@@ -300,6 +300,12 @@ int	parse_nmap_args(int ac, char **av)
 	while ((opt = ft_getopt_long(ac, av, optstring, &optarg,
 					long_options, &option_index)) != -1) {
 		switch (opt) {
+			case 0:
+				{
+					if (ft_strequ(long_options[option_index].name, "no-progress"))
+						g_data.opt |= OPT_NO_PROGRESS;
+					break;
+				}
 			case 's':
 				{
 					int scan_ret;
@@ -394,9 +400,6 @@ int	parse_nmap_args(int ac, char **av)
 				}
 			case 'd':
 				g_data.opt |= OPT_SERVICE_DESC;
-				break;
-			case 'q':
-				g_data.opt |= OPT_NO_PROGRESS;
 				break;
 			default:
 				{
