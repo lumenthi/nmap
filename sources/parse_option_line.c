@@ -86,14 +86,14 @@ int			set_positive_range(t_set *set, char *arg)
 			/* Each "," is a new range to parse */
 			if (arg[j] == '-') {
 				int nb = ft_atoi(arg + i);
-				if (nb > 65535)
+				if (nb > USHRT_MAX)
 					out_of_range_ports();
 				if (nb < 0)
 					nb = set->min;
 				set->ranges[crange].start = nb;
 				if (arg[j + 1]) {
 					nb = ft_atoi(arg + j + 1);
-					if (nb < 0 || nb > 65535)
+					if (nb < 0 || nb > USHRT_MAX)
 						out_of_range_ports();
 					if (nb < set->ranges[crange].start) {
 							fprintf(stderr, "Your port range %d-%d is backwards. Did you mean %d-%d?\n",
@@ -219,8 +219,6 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 			*port_max = *port_max * 10 + (data[i] - '0');
 		i++;
 	}
-
-	/* printf("Port min: %d, Port max: %d\n", *port_min, *port_max); */
 
 	close(fd);
 }
@@ -371,12 +369,6 @@ int	parse_nmap_args(int ac, char **av)
 					parse_positive_range(&g_data.set, optarg);
 					if (set_positive_range(&g_data.set, optarg))
 						return -1;
-					/*for (size_t k = 0; k < g_data.set.nb_ranges; k++)
-						printf("Range %ld: [%d - %d]\n", k + 1,
-							g_data.set.ranges[k].start, g_data.set.ranges[k].end);
-					for (size_t k = 0; k < g_data.set.nb_single_values; k++)
-						printf("Value %ld = %d\n", k + 1,
-							g_data.set.single_values[k]);*/
 					break;
 				}
 			case '?':
@@ -403,6 +395,10 @@ int	parse_nmap_args(int ac, char **av)
 		g_data.scan_types_counter = 1;
 	}
 
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Filling IP structs\n");
+
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
@@ -413,7 +409,6 @@ int	parse_nmap_args(int ac, char **av)
 		}
 		tmp = tmp->next;
 	}
-
 	/* Filling scans with ips from arguments */
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
@@ -424,5 +419,10 @@ int	parse_nmap_args(int ac, char **av)
 			}
 		}
 	}
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] IP structs filled successfully\n");
+
 	return 0;
 }

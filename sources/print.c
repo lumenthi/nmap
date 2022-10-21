@@ -130,7 +130,7 @@ static int print_port(struct s_ip ip, uint16_t port, struct s_pinfo *info,
 			if (scan->final_status == OPEN
 				|| g_data.port_counter / g_data.ip_counter <= 25
 				|| (cstatus[FILTERED]+cstatus[OPEN_FILTERED]+cstatus[UNFILTERED]
-					<= 25 && (scan->final_status == FILTERED 
+					<= 25 && (scan->final_status == FILTERED
 						   || scan->final_status == OPEN_FILTERED
 						   || scan->final_status == UNFILTERED))
 				|| (cstatus[CLOSED] <= 25 && scan->final_status == CLOSED))
