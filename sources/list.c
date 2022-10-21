@@ -115,7 +115,7 @@ static int push_scan(struct s_scan **head, struct s_scan *new)
 	return 1;
 }
 
-static int assign_port(uint16_t min, uint16_t max)
+int assign_port(uint16_t min, uint16_t max)
 {
 	static int port = 0;
 

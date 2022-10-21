@@ -103,6 +103,7 @@ struct port {
 struct s_ip {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct timeval		timeout;
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
@@ -134,6 +135,7 @@ typedef struct	s_data {
 	/* Ports services and status */
 	struct port			*ports;
 
+	/* Diplay related */
 	pthread_mutex_t		print_lock;
 
 	/* Counters */
@@ -180,7 +182,8 @@ void	print_help();
 /* print.c */
 void	print_ip4_header(struct ip *header);
 void	print_udp_header(struct udphdr *header);
-void	print_time(struct timeval start_time, struct timeval end_time);
+void	print_time(struct timeval start_time, struct timeval end_time,
+			struct timeval sstart_time, struct timeval send_time);
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
@@ -216,7 +219,7 @@ int		parse_file(char *path, t_ipset **head);
 void	print_usage(FILE* f);
 
 /* nmap.c */
-int		ft_nmap(char *path);
+int		ft_nmap(char *path, struct timeval *start, struct timeval *end);
 
 /* free_and_exit.c */
 void	free_and_exit(int exit_val);
@@ -240,8 +243,12 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+int		assign_port(uint16_t min, uint16_t max);
 
 /* timedout.c */
 int timed_out(struct timeval start, struct timeval timeout, int status);
+
+/* host_discovery.c */
+int	host_discovery(void);
 
 #endif

@@ -234,6 +234,7 @@ static void add_ip(char *ip_string, t_set *set)
 		/* Default status */
 		tmp->status = UP;
 		/* Prepare addr structs */
+		/* TODO no need to malloc this.. */
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->saddr || !tmp->daddr)
