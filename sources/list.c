@@ -74,12 +74,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 
 static void	free_scan(struct s_scan *current)
 {
-	//if (current->saddr)
-	//	free(current->saddr);
-
-	//if (current->daddr)
-	//	free(current->daddr);
-
 	free(current);
 }
 
@@ -157,7 +151,6 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
-
 	}
 
 	return tmp;

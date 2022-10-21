@@ -11,6 +11,7 @@ void	init_data()
 	g_data.privilegied = getuid() == 0 ? 1 : 0;
 
 	g_data.ip_counter = 0;
+	g_data.vip_counter = 0;
 	g_data.port_counter = 0;
 
 	/* Default range */
@@ -40,13 +41,15 @@ void	print_start(void)
 
 	printf("\n................. Config ..................\n");
 
-	if (g_data.ip_counter == 1)
-		printf("Target IP : %s\n", g_data.ips->dhostname);
+	if (g_data.ip_counter == 1) {
+		printf("Target IP : %s\n",
+		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
+	}
 	else {
 		printf("Scanning %d targets\n", g_data.ip_counter);
 	}
 
-	int nb_ports = g_data.ip_counter > 0 ? g_data.port_counter / g_data.ip_counter : 0;
+	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
 	printf("Number of ports to scan : %d\n", nb_ports);
 
 	printf("Scan types to be performed : ");

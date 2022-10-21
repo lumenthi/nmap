@@ -225,9 +225,19 @@ static void	count_status(struct s_ip *ips, size_t **cstatus)
 
 void	print_scans(struct s_ip *ips)
 {
-	char *hstatus[] = {"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", 
-		"UNFILTERED", "DOWN", "ERROR", "UNKNOWN", "TIMEOUT", "UP", "READY",
-		NULL};
+	static const char *status[] = {
+		"open", "closed", "filtered", "open|filtered",
+		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
+		"printed", "scanning", "invalid", "in use", "free", NULL
+	};
+	static const char *colors[] = {
+		NMAP_COLOR_GREEN, // "open"
+		NMAP_COLOR_RED, // "closed"
+		NMAP_COLOR_YELLOW, // "filtered"
+		NMAP_COLOR_YELLOW, // "open|filtered"
+		NMAP_COLOR_YELLOW, // "unfiltered"
+		NULL
+	};
 
 	size_t **cstatus;
 	struct s_ip *ip = ips;
@@ -244,32 +254,19 @@ void	print_scans(struct s_ip *ips)
 			return ;
 		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
 	}
-	static const char *status[] = {
-		"open", "closed", "filtered", "open|filtered",
-		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
-		"printed", "scanning", "invalid", NULL
-	};
-	static const char *colors[] = {
-		NMAP_COLOR_GREEN, // "open"
-		NMAP_COLOR_RED, // "closed"
-		NMAP_COLOR_YELLOW, // "filtered"
-		NMAP_COLOR_YELLOW, // "open|filtered"
-		NMAP_COLOR_YELLOW, // "unfiltered"
-		NULL
-	};
 
 	count_status(ips, cstatus);
-	
+
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
+		if (!(g_data.opt & OPT_NO_PROGRESS)) {
+			printf("\r");
+			for (int_fast32_t i = 0; i < 80; i++)
+				printf(" ");
+			printf("\r");
+			fflush(stdout);
+		}
 		if (ip->status == UP) {
-			if (!(g_data.opt & OPT_NO_PROGRESS)) {
-				printf("\r");
-				for (int_fast32_t i = 0; i < 80; i++)
-					printf(" ");
-				printf("\r");
-				fflush(stdout);
-			}
 			printf("ft_nmap scan report for ");
 			print_ip(ip->daddr);
 			printf("\n");
@@ -299,7 +296,7 @@ void	print_scans(struct s_ip *ips)
 			printf(NMAP_COLOR_RESET"\n");
 		}
 		else
-			printf("%s is %s\n", ip->destination, hstatus[ip->status]);
+			printf("%s is %s\n", ip->destination, status[ip->status]);
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;
