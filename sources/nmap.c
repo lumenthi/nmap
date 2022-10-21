@@ -85,17 +85,26 @@ static int launch_threads()
 		if (pthread_join(g_data.threads[g_data.created_threads], &retval) != 0)
 			return -1;
 	}
+
 	return 0;
 }
 
 int ft_nmap(char *path)
 {
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Started scan process\n");
+
 	if (g_data.nb_threads && launch_threads() != 0) {
 		fprintf(stderr, "%s: Failed to create threads\n", path);
 		return 1;
 	}
 	else
 		launch_scan(g_data.ips);
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Finished scan process\n");
 
 	print_scans(g_data.ips);
 	return 0;

@@ -221,10 +221,10 @@ int null_scan(struct s_scan *scan)
 		scan->end_time.tv_usec = 0;
 	}
 
-	char *status[] = {
-		"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
-	};
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		char *status[] = {
+			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
+		};
 		fprintf(stderr, "[%ld] Updating %s:%d NULL scan to %s\n", pthread_self(),
 		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
 		status[scan->status]);

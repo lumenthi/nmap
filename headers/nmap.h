@@ -35,6 +35,10 @@
 #define SERVICES_FILENAME "services"
 #define DB_SERVICES DB_PATH SERVICES_FILENAME
 
+/* ASCII ART */
+#define ASCII_FILENAME "art.ascii"
+#define DB_ASCII DB_PATH ASCII_FILENAME
+
 /* STATUS */
 #define OPEN 0
 #define CLOSED 1
@@ -99,7 +103,7 @@ struct port {
 struct s_ip {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
-	char				*dhostname; /* found ip hostnme */
+	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
 	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
@@ -134,6 +138,7 @@ typedef struct	s_data {
 
 	/* Counters */
 	int					ip_counter;
+	int					vip_counter; /* valid ips counter */
 	int					port_counter;
 	int					scan_types_counter;
 	int					total_scan_counter;
@@ -166,6 +171,11 @@ struct			icmp_packet {
 };
 
 extern t_data	g_data;
+
+/* help.c */
+void	print_version(void);
+void	print_usage(FILE* f);
+void	print_help();
 
 /* print.c */
 void	print_ip4_header(struct ip *header);

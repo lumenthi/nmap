@@ -74,12 +74,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 
 static void	free_scan(struct s_scan *current)
 {
-	//if (current->saddr)
-	//	free(current->saddr);
-
-	//if (current->daddr)
-	//	free(current->daddr);
-
 	free(current);
 }
 
@@ -157,7 +151,6 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
-
 	}
 
 	return tmp;
@@ -199,15 +192,28 @@ void	push_ports(struct s_ip **input, t_set *set)
 		start = set->ranges[crange].start;
 		end = set->ranges[crange].end;
 		while (start <= end) {
-			if (push_scantypes(*input, &ip->scans, start++) > 0)
+			if (push_scantypes(*input, &ip->scans, start) > 0) {
+				/* Verbose print */
+				if (g_data.opt & OPT_VERBOSE_DEBUG)
+					fprintf(stderr, "[*] Filling structures for %s:%d\n",
+						ip->dhostname, start);
 				g_data.port_counter++;
+			}
+			if (start == USHRT_MAX)
+				break;
+			start++;
 		}
 		crange++;
 	}
 	csingle = 0;
 	while (csingle < set->nb_single_values) {
-		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0)
+		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0) {
+			/* Verbose print */
+			if (g_data.opt & OPT_VERBOSE_DEBUG)
+				fprintf(stderr, "[*] Filling structures for %s:%d\n",
+					ip->dhostname, set->single_values[csingle]);
 			g_data.port_counter++;
+		}
 		csingle++;
 	}
 }

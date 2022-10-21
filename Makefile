@@ -6,7 +6,7 @@
 #    By: lumenthi <lumenthi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2017/12/22 14:06:43 by lumenthi          #+#    #+#              #
-#    Updated: 2022/10/19 11:22:12 by lumenthi         ###   ########.fr        #
+#    Updated: 2022/10/20 07:55:58 by lumenthi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,10 +41,7 @@ OBJDIR = objs
 ###### DATABASE #####
 
 SRC_DB = database
-SRC_SERVICES = $(SRC_DB)/services
-
 DST_DB = /tmp/ft_nmap
-DST_SERVICES = $(DST_DB)/services
 
 #####################
 
@@ -75,6 +72,7 @@ SRCS = main.c \
 		checksum.c \
 		addr_config.c \
 		print.c \
+		help.c \
 		parse_file.c \
 		craft_packet.c \
 		services.c \
@@ -120,7 +118,7 @@ all:
 
 ###### BINARY COMPILATION ######
 
-$(NAME): $(LIBFT) $(OBJS) ${HEADERS} $(DST_SERVICES)
+$(NAME): $(LIBFT) $(OBJS) ${HEADERS} $(DST_DB)
 	@ printf "[Linking] "
 	$(CC) $(OBJS) -o $(NAME) $(LIBFT) $(LDFLAGS)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(NAME) $(BLANK)
@@ -136,7 +134,7 @@ $(SERVER_NAME): $(LIBFT) $(SERVER_OBJS) ${HEADERS}
 	$(CC) $(SERVER_OBJS) -o $(SERVER_NAME) $(LIBFT)
 	@ printf " %b | Compiled %b%b%b\n" $(TICK) $(GREEN) $(SERVER_NAME) $(BLANK)
 
-$(DST_SERVICES):
+$(DST_DB):
 	@ printf "[Installing] Creating database...\n"
 	@ cp -r $(SRC_DB) $(DST_DB)
 	@ printf "[Installing] Done creating database !\n"
