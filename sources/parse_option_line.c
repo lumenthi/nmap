@@ -278,6 +278,7 @@ int	parse_nmap_args(int ac, char **av)
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'd'},
 		{"no-progress",	0				,	0,  0 },
+		{"ascii",		0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
@@ -304,6 +305,8 @@ int	parse_nmap_args(int ac, char **av)
 				{
 					if (ft_strequ(long_options[option_index].name, "no-progress"))
 						g_data.opt |= OPT_NO_PROGRESS;
+					else if (ft_strequ(long_options[option_index].name, "ascii"))
+						g_data.opt |= OPT_ASCII_PROGRESS;
 					break;
 				}
 			case 's':
