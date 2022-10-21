@@ -90,11 +90,19 @@ static int launch_threads()
 	return 0;
 }
 
-int ft_nmap(char *path)
+int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Started scan process\n");
+
+	start->tv_sec = 0;
+	start->tv_usec = 0;
+	end->tv_sec = 0;
+	end->tv_usec = 0;
+
+	/* scan process start time */
+	gettimeofday(start, NULL);
 
 	if (g_data.nb_threads && launch_threads() != 0) {
 		fprintf(stderr, "%s: Failed to create threads\n", path);
@@ -102,6 +110,9 @@ int ft_nmap(char *path)
 	}
 	else
 		launch_scan(g_data.ips);
+
+	/* scan process end time */
+	gettimeofday(end, NULL);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

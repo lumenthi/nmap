@@ -134,6 +134,7 @@ typedef struct	s_data {
 	/* Ports services and status */
 	struct port			*ports;
 
+	/* Diplay related */
 	pthread_mutex_t		print_lock;
 
 	/* Counters */
@@ -180,7 +181,8 @@ void	print_help();
 /* print.c */
 void	print_ip4_header(struct ip *header);
 void	print_udp_header(struct udphdr *header);
-void	print_time(struct timeval start_time, struct timeval end_time);
+void	print_time(struct timeval start_time, struct timeval end_time,
+			struct timeval sstart_time, struct timeval send_time);
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
@@ -216,7 +218,7 @@ int		parse_file(char *path, t_ipset **head);
 void	print_usage(FILE* f);
 
 /* nmap.c */
-int		ft_nmap(char *path);
+int		ft_nmap(char *path, struct timeval *start, struct timeval *end);
 
 /* free_and_exit.c */
 void	free_and_exit(int exit_val);

@@ -1,7 +1,6 @@
 #include "nmap.h"
 #include "options.h"
 #include "colors.h"
-//#include <netdb.h>
 
 /* Contains infos for our printing function */
 struct s_pinfo {
@@ -43,7 +42,8 @@ static int scan_index(int scan_code)
 	return count-2;
 }
 
-void print_time(struct timeval start_time, struct timeval end_time)
+void print_time(struct timeval start_time, struct timeval end_time,
+	struct timeval sstart_time, struct timeval send_time)
 {
 	long int diff_sec = end_time.tv_sec - start_time.tv_sec;
 	long int diff_usec = end_time.tv_usec - start_time.tv_usec;
@@ -54,8 +54,24 @@ void print_time(struct timeval start_time, struct timeval end_time)
 	while (ms > 99)
 		ms /= 10;
 
-	printf("\nft_nmap scanned %d ip(s) in %01lld.%02lld seconds\n",
-		g_data.ip_counter,sec, ms);
+	/* Global timer */
+	printf("\nft_nmap scanned %d ip(s) in %01lld.%02lld seconds",
+		g_data.ip_counter, sec, ms);
+
+	diff_sec = send_time.tv_sec - sstart_time.tv_sec;
+	diff_usec = send_time.tv_usec - sstart_time.tv_usec;
+	total_usec = diff_sec*1000000+diff_usec;
+	ms = total_usec % 1000000;
+	sec = total_usec / 1000000;
+
+	while (ms > 99)
+		ms /= 10;
+
+	sec = sec < 0 ? 0 : sec;
+	ms = ms < 0 ? 0 : ms;
+
+	/* Scantime timer */
+	printf(" (%01lld.%02lld seconds scantime)\n", sec, ms);
 }
 
 static void print_content(struct s_scan *scan, struct s_pinfo *info,
