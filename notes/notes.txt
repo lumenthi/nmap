@@ -97,3 +97,7 @@ make -j4 && sudo ./ft_nmap scanme.org -p1-24,26-50 -t 250
 $ sudo valgrind ./ft_nmap localhostinvalidhostcc
 
 # must recheck if segfault/leak when thread creation fail
+
+# pthread_self() in verbose output bug
+
+# Is it allowed to do char buf[len]??

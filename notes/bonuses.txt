@@ -1,0 +1,14 @@
+# Bonus scans: TCP connect scan.
+# Host discovery
+# Dynamic timeout
+# Progress bar
+# Verbose output with multiple levels
+# Insane help menu
+# Able to launch without privileges
+# Able to scan more than 1024 ports at once
+# Reverse DNS
+# Advanced service resolution + description
+# Server
+
+TODO
+# Parse ranges of IP? 1.1.1.1/24. Host discovery is interesting here

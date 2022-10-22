@@ -115,6 +115,15 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	/* scan process end time */
 	gettimeofday(end, NULL);
 
+	/* Erase progress bar */
+	if (!(g_data.opt & OPT_NO_PROGRESS)) {
+		printf("\r");
+		for (int_fast32_t i = 0; i < 80; i++)
+			printf(" ");
+		printf("\r");
+		fflush(stdout);
+	}
+
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Finished scan process\n");
