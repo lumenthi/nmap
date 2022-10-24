@@ -247,6 +247,9 @@ static void add_ip(char *ip_string, t_set *set)
 			push_ports(&tmp, set);
 			++g_data.vip_counter;
 		}
+		tmp->srtt = 0;
+		tmp->rttvar = 0;
+		tmp->timeout = 1345678;
 		push_ip(&g_data.ips, tmp);
 	}
 }

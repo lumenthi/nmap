@@ -115,7 +115,9 @@ SRCS = ft_atoi.c \
 		ft_getlen.c \
 		ft_random.c \
 		ft_strjoin_free.c \
-		ft_rmchar.c
+		ft_rmchar.c \
+		time_utils.c \
+		ft_abs.c 
 
 OBJDIR = objs
 OBJS = $(addprefix $(OBJDIR)/, $(SRCS:.c=.o))

@@ -101,3 +101,10 @@ $ sudo valgrind ./ft_nmap localhostinvalidhostcc
 # pthread_self() in verbose output bug
 
 # Is it allowed to do char buf[len]??
+
+# remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+
+# UDP speed: scanning 1000 ports at once is slow due to icmp limiting but
+scanning multiple hosts is no big deal
+
+# TODO: gentle debug level

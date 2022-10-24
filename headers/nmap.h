@@ -103,7 +103,9 @@ struct port {
 struct s_ip {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
-	struct timeval		timeout;
+	int64_t				srtt;
+	int64_t				rttvar;
+	uint64_t			timeout;
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
@@ -137,6 +139,11 @@ typedef struct	s_data {
 
 	/* Diplay related */
 	pthread_mutex_t		print_lock;
+
+	/* Dynamic timeout */
+	struct timeval		max_rtt;
+	struct timeval		min_rtt;
+	struct timeval		initial_rtt;
 
 	/* Counters */
 	int					ip_counter;
@@ -252,5 +259,6 @@ int timed_out(struct timeval start, struct timeval timeout, int status);
 
 /* host_discovery.c */
 int	host_discovery(void);
+void update_timeout(struct s_ip *ip, uint64_t start, uint64_t end);
 
 #endif

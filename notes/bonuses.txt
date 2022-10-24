@@ -1,6 +1,6 @@
 # Bonus scans: TCP connect scan.
-# Host discovery
-# Dynamic timeout
+# Host discovery (https://nmap.org/book/man-host-discovery.html)
+# Dynamic timeout (https://nmap.org/book/port-scanning-algorithms.html#idm45323736699888)
 # Progress bar
 # Verbose output with multiple levels
 # Insane help menu
@@ -10,5 +10,8 @@
 # Advanced service resolution + description
 # Server
 
-TODO
-# Parse ranges of IP? 1.1.1.1/24. Host discovery is interesting here
+Ideas
+# Parse initial, min and max rtt
+# Parse ranges of IP? 1.1.1.1/24. Host discovery is interesting here?
+# Version detection?
+# OS detection?

@@ -30,6 +30,7 @@ void	init_data()
 	}
 
 	g_data.ipset = NULL;
+
 }
 
 void	print_start(void)

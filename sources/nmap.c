@@ -91,19 +91,19 @@ static int launch_threads()
 
 int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
-	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Started scan process\n");
-
 	start->tv_sec = 0;
 	start->tv_usec = 0;
 	end->tv_sec = 0;
 	end->tv_usec = 0;
 
+	host_discovery();
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Starting scan process\n");
+
 	/* scan process start time */
 	gettimeofday(start, NULL);
-
-	host_discovery();
 
 	if (g_data.nb_threads && launch_threads() != 0) {
 		fprintf(stderr, "%s: Failed to create threads\n", path);
