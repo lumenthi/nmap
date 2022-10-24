@@ -77,7 +77,6 @@ struct s_scan {
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
-	int					final_status; /* Final status after combining every scan type's result */
 	char				*service; /* Service running on this port */
 	char				*service_desc; /* Small description of the service running on this port */
 	uint16_t			sport; /* Source port */
@@ -86,8 +85,6 @@ struct s_scan {
 	struct timeval		end_time; /* Scan end time */
 
 	pthread_mutex_t		lock; /* Mutex */
-
-	struct s_scan		*next; /* Next scan */
 };
 
 struct port {
@@ -97,7 +94,21 @@ struct port {
 	char	*udp_name;
 	char	*udp_desc;
 
+	/* Is this port currently used for sending */
 	int		status;
+};
+
+struct s_port {
+	/* All scans for a port */
+	struct s_scan *syn_scan;
+	struct s_scan *null_scan;
+	struct s_scan *fin_scan;
+	struct s_scan *xmas_scan;
+	struct s_scan *ack_scan;
+	struct s_scan *udp_scan;
+	struct s_scan *tcp_scan;
+
+	int final_status; /* Final status after combining every scan type's result */
 };
 
 struct s_ip {
@@ -106,7 +117,7 @@ struct s_ip {
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
-	struct s_scan		*scans; /* list of ports to scan along with the type of scan */
+	struct s_port		ports[USHRT_MAX]; /* All ports for an IP */
 	struct s_ip			*next; /* next ip */
 };
 
@@ -186,20 +197,20 @@ void	print_time(struct timeval start_time, struct timeval end_time,
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
-int		syn_scan(struct s_scan *to_scan);
+int		syn_scan(struct s_scan *to_scan, struct s_port *ports);
 /* udp_scan.c */
-int		udp_scan(struct s_scan *to_scan);
+int		udp_scan(struct s_scan *to_scan, struct s_port *ports);
 /* fin_scan.c */
-int		fin_scan(struct s_scan *to_scan);
+int		fin_scan(struct s_scan *to_scan, struct s_port *ports);
 /* null_scan.c */
-int		null_scan(struct s_scan *to_scan);
+int		null_scan(struct s_scan *to_scan, struct s_port *ports);
 /* xmas_scan.c */
-int		xmas_scan(struct s_scan *to_scan);
+int		xmas_scan(struct s_scan *to_scan, struct s_port *ports);
 /* xmas_scan.c */
-int		ack_scan(struct s_scan *to_scan);
+int		ack_scan(struct s_scan *to_scan, struct s_port *ports);
 
 /* tcp_scan.c */
-int		tcp_scan(struct s_scan *to_scan);
+int		tcp_scan(struct s_scan *to_scan, struct s_port *ports);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
@@ -237,8 +248,8 @@ void	free_services(void);
 
 /* list.c */
 void	print_progress(void);
-int update_scans(struct s_scan *scan, int status, uint16_t source_port,
-	uint16_t dest_port, int scantype);
+int update_scans(struct s_scan *scan, struct s_port *ports, int status,
+	uint16_t source_port, uint16_t dest_port, int scantype);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
