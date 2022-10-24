@@ -117,7 +117,7 @@ struct s_ip {
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
-	struct s_port		ports[USHRT_MAX]; /* All ports for an IP */
+	struct s_port		ports[USHRT_MAX+1]; /* All ports for an IP */
 	struct s_ip			*next; /* next ip */
 };
 
@@ -210,7 +210,7 @@ int		xmas_scan(struct s_scan *to_scan, struct s_port *ports);
 int		ack_scan(struct s_scan *to_scan, struct s_port *ports);
 
 /* tcp_scan.c */
-int		tcp_scan(struct s_scan *to_scan, struct s_port *ports);
+int		tcp_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
@@ -249,7 +249,7 @@ void	free_services(void);
 /* list.c */
 void	print_progress(void);
 int update_scans(struct s_scan *scan, struct s_port *ports, int status,
-	uint16_t source_port, uint16_t dest_port, int scantype);
+	uint16_t source_port, uint16_t dest_port);
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);

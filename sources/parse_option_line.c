@@ -125,7 +125,10 @@ int			set_positive_range(t_set *set, char *arg)
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				if (arg[j] == ',' && j > 0 && arg[j - 1] == ',')
 					illegal_ports();
-				set->single_values[csingle++] = ft_atoi(arg + i);
+				int value = ft_atoi(arg + i);
+				if (value > USHRT_MAX)
+					out_of_range_ports();
+				set->single_values[csingle++] = value;
 				if (arg[++j])
 					i = j;
 				if (!arg[j])

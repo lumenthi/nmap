@@ -119,7 +119,7 @@ static void examples()
 		"  sudo ./ft_nmap localhost --scan=FIN,SYN\n"
 		"  sudo ./ft_nmap scanme.org localhost --verbose=INFO -t 50 2>log.txt\n"
 		"  ./ft_nmap localhost -p 22,25,4242 -s TCP\n"
-		"  sudo ./ft_nmap --file=list.ip -scan SYN,FIN,NULL,XMAS,ACK,TCP,UDP -v DEBUG\n"
+		"  sudo ./ft_nmap --file=list.ip -s SYN,FIN,NULL,XMAS,ACK,TCP,UDP -v DEBUG\n"
 	);
 }
 

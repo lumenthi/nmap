@@ -41,7 +41,7 @@ int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 }
 
 static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
-	struct timeval timeout)
+	struct timeval timeout, struct s_port *ports)
 {
 	ssize_t ret;
 	int icmpret;
@@ -110,7 +110,9 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest, source, OPT_SCAN_UDP))) {
+		if ((update_ret = update_scans(scan, ports, status,
+			dest, source)))
+		{
 			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
 				pthread_mutex_lock(&g_data.print_lock);
@@ -131,7 +133,7 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int		udp_scan(struct s_scan *scan)
+int		udp_scan(struct s_scan *scan, struct s_port *ports)
 {
 	int	udpsockfd;
 	int	icmpsockfd;
@@ -212,7 +214,7 @@ int		udp_scan(struct s_scan *scan)
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_udp(udpsockfd, icmpsockfd, scan, timeout)));
+		while (!(ret = read_udp(udpsockfd, icmpsockfd, scan, timeout, ports)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
@@ -232,7 +234,8 @@ int		udp_scan(struct s_scan *scan)
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_udp(udpsockfd, icmpsockfd, scan, timeout)));
+				while (!(ret = read_udp(udpsockfd, icmpsockfd, scan,
+					timeout, ports)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);

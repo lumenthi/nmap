@@ -48,8 +48,11 @@ void	print_progress()
  * returns UPDATE_TARGET if our target scan `scan` is updated
  * returns UPDATE if we update another scan than target scan `scan` */
 int update_scans(struct s_scan *scan, struct s_port *ports, int status,
-	uint16_t source_port, uint16_t dest_port, int scantype)
+	uint16_t source_port, uint16_t dest_port)
 {
+	source_port = ntohs(source_port);
+	dest_port = ntohs(dest_port);
+
 	struct s_port port = ports[dest_port];
 	struct s_scan *tmp = NULL;
 
@@ -78,9 +81,11 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 		return 0;
 	}
 
+	if (!tmp)
+		return 0;
+
 	if (tmp && (tmp->status == SCANNING || tmp->status == TIMEOUT) &&
-		tmp->saddr.sin_port == source_port &&
-		tmp->daddr.sin_port == dest_port && tmp->scantype == scantype)
+		tmp->sport == source_port && tmp->dport == dest_port)
 	{
 		LOCK(tmp);
 		tmp->status = status;
@@ -97,26 +102,40 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 
 static void	free_port(struct s_port *port)
 {
-	if (port->syn_scan)
+	if (port->syn_scan) {
 		free(port->syn_scan);
-	if (port->null_scan)
+		port->syn_scan = NULL;
+	}
+	if (port->null_scan) {
 		free(port->null_scan);
-	if (port->fin_scan)
+		port->null_scan = NULL;
+	}
+	if (port->fin_scan) {
 		free(port->fin_scan);
-	if (port->xmas_scan)
+		port->fin_scan = NULL;
+	}
+	if (port->xmas_scan) {
 		free(port->xmas_scan);
-	if (port->ack_scan)
+		port->xmas_scan = NULL;
+	}
+	if (port->ack_scan) {
 		free(port->ack_scan);
-	if (port->udp_scan)
+		port->ack_scan = NULL;
+	}
+	if (port->udp_scan) {
 		free(port->udp_scan);
-	if (port->tcp_scan)
+		port->udp_scan = NULL;
+	}
+	if (port->tcp_scan) {
 		free(port->tcp_scan);
+		port->tcp_scan = NULL;
+	}
 }
 
 static void	free_ports(struct s_port *ports)
 {
 	int i = 0;
-	while (i < USHRT_MAX) {
+	while (i < USHRT_MAX+1) {
 		free_port(&ports[i]);
 		i++;
 	}

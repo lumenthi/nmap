@@ -41,7 +41,7 @@ static int send_ack(int tcpsockfd,
 }
 
 static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
-	struct timeval timeout)
+	struct timeval timeout, struct s_port *ports)
 {
 	int ret;
 	int icmpret;
@@ -102,7 +102,9 @@ static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest, source, OPT_SCAN_ACK))) {
+		if ((update_ret = update_scans(scan, ports, status, dest,
+			source)))
+		{
 			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
 				pthread_mutex_lock(&g_data.print_lock);
@@ -123,7 +125,7 @@ static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int ack_scan(struct s_scan *scan)
+int ack_scan(struct s_scan *scan, struct s_port *ports)
 {
 	int tcpsockfd;
 	int icmpsockfd;
@@ -202,7 +204,8 @@ int ack_scan(struct s_scan *scan)
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_ack_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+		while (!(ret = read_ack_ack(tcpsockfd, icmpsockfd, scan,
+			timeout, ports)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
@@ -222,7 +225,8 @@ int ack_scan(struct s_scan *scan)
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_ack_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+				while (!(ret = read_ack_ack(tcpsockfd, icmpsockfd, scan,
+					timeout, ports)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);

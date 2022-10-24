@@ -9,7 +9,7 @@ static int run_scan(struct s_scan *scan, struct s_port *ports)
 			syn_scan(scan, ports);
 			break;
 		case OPT_SCAN_TCP:
-			tcp_scan(scan, ports);
+			tcp_scan(scan);
 			break;
 		case OPT_SCAN_FIN:
 			fin_scan(scan, ports);
@@ -60,15 +60,22 @@ static int launch_scan(void *rip)
 	while (ip) {
 		if (ip->status == UP) {
 			i = 0;
-			while (i < USHRT_MAX) {
+			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
-				start_scan(port.syn_scan, ip->ports);
-				start_scan(port.null_scan, ip->ports);
-				start_scan(port.fin_scan, ip->ports);
-				start_scan(port.xmas_scan, ip->ports);
-				start_scan(port.ack_scan, ip->ports);
-				start_scan(port.udp_scan, ip->ports);
-				start_scan(port.tcp_scan, ip->ports);
+				if (port.syn_scan)
+					start_scan(port.syn_scan, ip->ports);
+				if (port.null_scan)
+					start_scan(port.null_scan, ip->ports);
+				if (port.fin_scan)
+					start_scan(port.fin_scan, ip->ports);
+				if (port.xmas_scan)
+					start_scan(port.xmas_scan, ip->ports);
+				if (port.ack_scan)
+					start_scan(port.ack_scan, ip->ports);
+				if (port.udp_scan)
+					start_scan(port.udp_scan, ip->ports);
+				if (port.tcp_scan)
+					start_scan(port.tcp_scan, ip->ports);
 				i++;
 			}
 		}

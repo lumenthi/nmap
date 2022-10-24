@@ -161,8 +161,19 @@ static int print_port(struct s_port port, struct s_pinfo *info,
 	info->tick = 0;
 
 	if (port.syn_scan)
-		print_scan(port.syn_scan, info, &pstatus, cstatus, status, colors,
-			port);
+		print_scan(port.syn_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.null_scan)
+		print_scan(port.null_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.fin_scan)
+		print_scan(port.fin_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.xmas_scan)
+		print_scan(port.xmas_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.ack_scan)
+		print_scan(port.ack_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.udp_scan)
+		print_scan(port.udp_scan, info, &pstatus, cstatus, status, colors, port);
+	if (port.tcp_scan)
+		print_scan(port.tcp_scan, info, &pstatus, cstatus, status, colors, port);
 
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
@@ -219,8 +230,10 @@ static void	count_scan_status(struct s_port *port, int ip_counter, size_t **csta
 		}
 		i++;
 	}
-	port->final_status = pstatus;
-	cstatus[ip_counter][pstatus]++;
+	if (pstatus >= 0) {
+		port->final_status = pstatus;
+		cstatus[ip_counter][pstatus]++;
+	}
 }
 
 static void	count_status(struct s_ip *ips, size_t **cstatus)
@@ -234,7 +247,7 @@ static void	count_status(struct s_ip *ips, size_t **cstatus)
 		if (ip->status == UP) {
 			ports = ip->ports;
 			i = 0;
-			while (i < USHRT_MAX) {
+			while (i < USHRT_MAX+1) {
 				count_scan_status(&ports[i], ip_counter, cstatus);
 				i++;
 			}
@@ -293,7 +306,7 @@ void	print_scans(struct s_ip *ips)
 			printf("\n");
 			/* TODO: Put variable at the beginning of the fonction */
 			int i = 0;
-			while (i < USHRT_MAX) {
+			while (i < USHRT_MAX+1) {
 				print_port(ip->ports[i], &info, status, colors, cstatus[ip_counter]);
 				i++;
 			}
