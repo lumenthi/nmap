@@ -41,6 +41,8 @@ void	print_progress()
 		printf("| %.2f%%", progress);
 	}
 	fflush(stdout);
+	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_INFO)
+		fprintf(stderr, "\n");
 	pthread_mutex_unlock(&g_data.print_lock);
 }
 
@@ -58,8 +60,6 @@ int update_scans(struct s_scan *scan, int status, uint16_t source_port,
 		{
 			LOCK(tmp);
 			tmp->status = status;
-			//if (!(g_data.opt & OPT_NO_PROGRESS))
-			//	print_progress();
 			if (tmp == scan) {
 				UNLOCK(tmp);
 				return UPDATE_TARGET;

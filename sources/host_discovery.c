@@ -255,6 +255,7 @@ int	discover_target(struct s_ip *ip)
 	return 0;
 }
 
+/*	TODO: Apply this to scans! */
 int		host_discovery(void)
 {
 	struct s_ip *ip = g_data.ips;
