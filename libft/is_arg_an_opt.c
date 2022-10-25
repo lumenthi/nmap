@@ -124,7 +124,7 @@ int		is_arg_an_opt(char * const argv[], int argi, const char *optstring,
 				|| current_opt.has_arg == optional_argument))
 		{
 			//printf("Arg of long opt %s\n", prev_arg);
-			//	Current arg is the arg of the previous long opt
+			//Current arg is the arg of the previous long opt
 			return 2;
 		}
 		i++;

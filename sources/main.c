@@ -30,14 +30,12 @@ void	init_data()
 	}
 
 	g_data.ipset = NULL;
+
 }
 
 void	print_start(void)
 {
 	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
-
-	printf("\nStarting ft_nmap 1.0 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
 
 	printf("\n................. Config ..................\n");
 
@@ -64,7 +62,6 @@ void	print_start(void)
 		i++;
 	}
 	printf("\n");
-	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
 	printf("Number of threads : %hhu\n", g_data.nb_threads);
 	printf("...........................................\n\n");
@@ -73,14 +70,28 @@ void	print_start(void)
 /* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {
+	/* Timers for the whole proccess */
 	struct timeval start_time;
 	struct timeval end_time;
+	struct tm *local_time;
+	time_t ctime;
+
+	/* Timers for the scan process */
+	struct timeval sstart_time;
+	struct timeval send_time;
 
 	if (argc < 2) {
 		fprintf(stdout, "Use -h for help\n");
 		print_usage(stdout);
 		return 1;
 	}
+
+	ctime = time(NULL);
+	local_time = localtime(&ctime);
+
+	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at %d-%d-%d %d:%d CEST\n", 1900 + local_time->tm_year, local_time->tm_mon + 1,
+		local_time->tm_mday, local_time->tm_hour, local_time->tm_min);
 
 	/* ft_nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {
@@ -97,20 +108,23 @@ int		main(int argc, char **argv)
 		free_and_exit(EXIT_FAILURE);
 	}
 
-	print_start();
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+		|| g_data.opt & OPT_VERBOSE_PACKET)
+		print_start();
 
 	/* Getting service list */
 	if (get_services() != 0)
 		free_and_exit(EXIT_FAILURE);
 
-	ft_nmap(argv[0]);
+	ft_nmap(argv[0], &sstart_time, &send_time);
 
 	/* ft_nmap end time */
 	if ((gettimeofday(&end_time, NULL)) != 0) {
 		end_time.tv_sec = 0;
 		end_time.tv_usec = 0;
 	}
-	print_time(start_time, end_time);
+	print_time(start_time, end_time,
+		sstart_time, send_time);
 
 	free_and_exit(EXIT_SUCCESS);
 

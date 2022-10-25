@@ -1,30 +1,41 @@
 #include "nmap.h"
 #include "options.h"
 
-static int run_scan(struct s_scan *scan)
+static void erase_progress_bar()
 {
-	/* TODO: match nmap's options for each scan type (both IP and the next layer) */
+	/* Erase progress bar */
+	if (!(g_data.opt & OPT_NO_PROGRESS)) {
+		printf("\r");
+		for (int_fast32_t i = 0; i < 80; i++)
+			printf(" ");
+		printf("\r");
+		fflush(stdout);
+	}
+}
+
+static int run_scan(struct s_scan *scan, struct s_port *ports)
+{
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
-			syn_scan(scan);
+			syn_scan(scan, ports);
 			break;
 		case OPT_SCAN_TCP:
 			tcp_scan(scan);
 			break;
 		case OPT_SCAN_FIN:
-			fin_scan(scan);
+			fin_scan(scan, ports);
 			break;
 		case OPT_SCAN_NULL:
-			null_scan(scan);
+			null_scan(scan, ports);
 			break;
 		case OPT_SCAN_ACK:
-			ack_scan(scan);
+			ack_scan(scan, ports);
 			break;
 		case OPT_SCAN_XMAS:
-			xmas_scan(scan);
+			xmas_scan(scan, ports);
 			break;
 		case OPT_SCAN_UDP:
-			udp_scan(scan);
+			udp_scan(scan, ports);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -35,29 +46,48 @@ static int run_scan(struct s_scan *scan)
 	return 0;
 }
 
+static void start_scan(struct s_scan *scan, struct s_port *ports)
+{
+	if (scan->sport == g_data.port_max)
+		while (g_data.ports[scan->sport].status == IN_USE);
+	LOCK(scan);
+	if (scan->status == READY) {
+		scan->status = SCANNING;
+		g_data.ports[scan->sport].status = IN_USE;
+		UNLOCK(scan);
+		run_scan(scan, ports);
+		g_data.ports[scan->sport].status = FREE;
+	}
+	else
+		UNLOCK(scan);
+}
+
 static int launch_scan(void *rip)
 {
 	struct s_ip *ip = (struct s_ip *)rip;
-	struct s_scan *scan;
+	struct s_port port;
+	int i;
 
 	while (ip) {
-		if (ip->status == UP) {
-			scan = ip->scans;
-			/* Resolve scans for this IP */
-			while (scan) {
-				if (scan->sport == g_data.port_max)
-					while (g_data.ports[scan->sport].status == IN_USE);
-				LOCK(scan);
-				if (scan->status == READY) {
-					scan->status = SCANNING;
-					g_data.ports[scan->sport].status = IN_USE;
-					UNLOCK(scan);
-					run_scan(scan);
-					g_data.ports[scan->sport].status = FREE;
-				}
-				else
-					UNLOCK(scan);
-				scan = scan->next;
+		if (ip->status == UP || ip->status == SCANNING) {
+			i = 0;
+			while (i < USHRT_MAX+1) {
+				port = ip->ports[i];
+				if (port.syn_scan)
+					start_scan(port.syn_scan, ip->ports);
+				if (port.null_scan)
+					start_scan(port.null_scan, ip->ports);
+				if (port.fin_scan)
+					start_scan(port.fin_scan, ip->ports);
+				if (port.xmas_scan)
+					start_scan(port.xmas_scan, ip->ports);
+				if (port.ack_scan)
+					start_scan(port.ack_scan, ip->ports);
+				if (port.udp_scan)
+					start_scan(port.udp_scan, ip->ports);
+				if (port.tcp_scan)
+					start_scan(port.tcp_scan, ip->ports);
+				i++;
 			}
 		}
 		ip = ip->next;
@@ -90,11 +120,21 @@ static int launch_threads()
 	return 0;
 }
 
-int ft_nmap(char *path)
+int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
+	start->tv_sec = 0;
+	start->tv_usec = 0;
+	end->tv_sec = 0;
+	end->tv_usec = 0;
+
+	host_discovery();
+
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Started scan process\n");
+		fprintf(stderr, "[*] Starting scan process\n");
+
+	/* scan process start time */
+	gettimeofday(start, NULL);
 
 	if (g_data.nb_threads && launch_threads() != 0) {
 		fprintf(stderr, "%s: Failed to create threads\n", path);
@@ -102,6 +142,11 @@ int ft_nmap(char *path)
 	}
 	else
 		launch_scan(g_data.ips);
+
+	/* scan process end time */
+	gettimeofday(end, NULL);
+
+	erase_progress_bar();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

@@ -186,6 +186,7 @@ static int set_short_optarg(char * const argv[], char **optarg, int optindex, in
 		}
 		*optarg = argv[optindex + 1];
 	}
+	//printf("optarg = |%s|\n", *optarg);
 	return 0;
 }
 
@@ -229,7 +230,8 @@ static int	parse_option_line(char * const argv[], const char *optstring,
 					argv[0], argv[*optindex][*nextchar]);
 		//	Option that requires an arg (or optional arg)
 		else if (requires_arg == 1 || (requires_arg == 2
-				&& argv[*optindex + 1] && argv[*optindex + 1][0] != '-'))
+				&& ((argv[*optindex + 1] && argv[*optindex + 1][0] != '-')
+				|| argv[*optindex][*nextchar + 1])))
 		{
 			if (set_short_optarg(argv, optarg, *optindex, *nextchar))
 				return '?';
@@ -273,6 +275,7 @@ int		ft_getopt_long(int argc, char * const argv[],
 	{
 		if (is_arg_an_opt(argv, optindex, optstring, longopts) == 1)
 		{
+			//printf("%s is an opt\n", argv[optindex]);
 			ret = parse_option_line(argv, optstring, longopts, longindex,
 					optarg, &optindex, &nextchar);
 			//	Found a valid option
@@ -293,7 +296,10 @@ int		ft_getopt_long(int argc, char * const argv[],
 		}
 		//	Did not find any option in this argv, keep looking
 		else
+		{
+			//printf("%s is NOT an opt\n", argv[optindex]);
 			optindex++;
+		}
 	}
 	return -1;
 }

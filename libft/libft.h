@@ -15,6 +15,8 @@
 
 # include <string.h>
 # include <getopt.h>
+# include <sys/time.h>
+# include <stdint.h>
 
 typedef struct	s_list
 {
@@ -114,5 +116,10 @@ double			ft_ceil(double nb);
 int				ft_random(int min, int max);
 char			*ft_strjoin_free(char *s1, const char *s2);
 char			*ft_rmchar(char *str, char c);
+uint64_t		timeval_to_usec(struct timeval t);
+uint64_t		get_time(void);
+int				ft_abs(int nb);
+long			ft_labs(long nb);
+long long		ft_llabs(long long nb);
 
 #endif

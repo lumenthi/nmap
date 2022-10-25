@@ -41,81 +41,142 @@ void	print_progress()
 		printf("| %.2f%%", progress);
 	}
 	fflush(stdout);
+	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+		fprintf(stderr, "\n");
 	pthread_mutex_unlock(&g_data.print_lock);
 }
 
 /* Update scan with port `source_port`
  * returns UPDATE_TARGET if our target scan `scan` is updated
  * returns UPDATE if we update another scan than target scan `scan` */
-int update_scans(struct s_scan *scan, int status, uint16_t source_port,
-	uint16_t dest_port, int scantype)
+int update_scans(struct s_scan *scan, struct s_port *ports, int status,
+	uint16_t source_port, uint16_t dest_port)
 {
-	struct s_scan *tmp = scan;
-	while (tmp) {
-		if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
-			tmp->saddr.sin_port == source_port &&
-			tmp->daddr.sin_port == dest_port && tmp->scantype == scantype)
-		{
-			LOCK(tmp);
+	source_port = ntohs(source_port);
+	dest_port = ntohs(dest_port);
+
+	struct s_port port = ports[dest_port];
+	struct s_scan *tmp = NULL;
+
+	int ret = 0;
+
+	switch (scan->scantype) {
+		case OPT_SCAN_SYN:
+			tmp = port.syn_scan;
+			break;
+		case OPT_SCAN_NULL:
+			tmp = port.null_scan;
+			break;
+		case OPT_SCAN_FIN:
+			tmp = port.fin_scan;
+			break;
+		case OPT_SCAN_XMAS:
+			tmp = port.xmas_scan;
+			break;
+		case OPT_SCAN_ACK:
+			tmp = port.ack_scan;
+			break;
+		case OPT_SCAN_UDP:
+			tmp = port.udp_scan;
+			break;
+		case OPT_SCAN_TCP:
+			tmp = port.tcp_scan;
+			break;
+		return 0;
+	}
+
+	if (!tmp)
+		return 0;
+
+	LOCK(tmp);
+	if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
+		tmp->sport == source_port && tmp->dport == dest_port)
+	{
+		if (tmp == scan) {
 			tmp->status = status;
-			//if (!(g_data.opt & OPT_NO_PROGRESS))
-			//	print_progress();
-			if (tmp == scan) {
-				UNLOCK(tmp);
-				return UPDATE_TARGET;
-			}
-			UNLOCK(tmp);
-			return UPDATE;
+			ret = UPDATE_TARGET;
 		}
-		tmp = tmp->next;
 	}
-	return 0;
+	UNLOCK(tmp);
+	return ret;
 }
 
-static void	free_scan(struct s_scan *current)
+static void	free_port(struct s_port *port)
 {
-	free(current);
+	if (port->syn_scan) {
+		free(port->syn_scan);
+		port->syn_scan = NULL;
+	}
+	if (port->null_scan) {
+		free(port->null_scan);
+		port->null_scan = NULL;
+	}
+	if (port->fin_scan) {
+		free(port->fin_scan);
+		port->fin_scan = NULL;
+	}
+	if (port->xmas_scan) {
+		free(port->xmas_scan);
+		port->xmas_scan = NULL;
+	}
+	if (port->ack_scan) {
+		free(port->ack_scan);
+		port->ack_scan = NULL;
+	}
+	if (port->udp_scan) {
+		free(port->udp_scan);
+		port->udp_scan = NULL;
+	}
+	if (port->tcp_scan) {
+		free(port->tcp_scan);
+		port->tcp_scan = NULL;
+	}
 }
 
-static void	free_scans(struct s_scan **scan)
+static void	free_ports(struct s_port *ports)
 {
-	struct s_scan *current = *scan;
-	struct s_scan *next;
-
-	while (current != NULL) {
-		next = current->next;
-		free_scan(current);
-		current = next;
+	int i = 0;
+	while (i < USHRT_MAX+1) {
+		free_port(&ports[i]);
+		i++;
 	}
-	*scan = NULL;
 }
 
-static int push_scan(struct s_scan **head, struct s_scan *new)
+static int push_scan(struct s_port *scanlist, struct s_scan *new)
 {
-	struct s_scan *tmp = *head;
+	struct s_scan **tmp;
 
-	if (*head == NULL || (tmp->dport >= new->dport &&
-		tmp->scantype == new->scantype)) {
-		if (tmp && (tmp->dport == new->dport))
-			return 0;
-		new->next = *head;
-		*head = new;
+	switch (new->scantype) {
+		case OPT_SCAN_SYN:
+			tmp = &scanlist->syn_scan;
+			break;
+		case OPT_SCAN_NULL:
+			tmp = &scanlist->null_scan;
+			break;
+		case OPT_SCAN_FIN:
+			tmp = &scanlist->fin_scan;
+			break;
+		case OPT_SCAN_XMAS:
+			tmp = &scanlist->xmas_scan;
+			break;
+		case OPT_SCAN_ACK:
+			tmp = &scanlist->ack_scan;
+			break;
+		case OPT_SCAN_UDP:
+			tmp = &scanlist->udp_scan;
+			break;
+		case OPT_SCAN_TCP:
+			tmp = &scanlist->tcp_scan;
+			break;
+		return 0;
 	}
-	else {
-		while (tmp->next != NULL &&
-			new->dport >= tmp->next->dport) {
-				if (tmp->next->dport == new->dport &&
-					tmp->next->scantype == new->scantype)
-					return 0;
-				tmp = tmp->next;
-		}
-		new->next = tmp->next;
-		tmp->next = new;
-	}
+
+	*tmp = new;
+
 	return 1;
 }
 
-static int assign_port(uint16_t min, uint16_t max)
+int assign_port(uint16_t min, uint16_t max)
 {
 	static int port = 0;
 
@@ -135,7 +196,6 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_scan));
 		tmp->status = READY;
-		tmp->final_status = -1;
 		tmp->dport = port;
 		tmp->scantype = scantype;
 		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
@@ -156,7 +216,7 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 	return tmp;
 }
 
-static int	push_scantypes(struct s_ip *ip, struct s_scan **head, uint16_t port)
+static int	push_scantypes(struct s_ip *ip, uint16_t port)
 {
 	int scans[] = {OPT_SCAN_SYN, OPT_SCAN_NULL, OPT_SCAN_FIN,
 		OPT_SCAN_XMAS, OPT_SCAN_ACK, OPT_SCAN_UDP, OPT_SCAN_TCP, 0};
@@ -164,14 +224,16 @@ static int	push_scantypes(struct s_ip *ip, struct s_scan **head, uint16_t port)
 	struct s_scan *tmp;
 	int ret = 0;
 
+	struct s_port *ports = ip->ports;
+
 	while (scans[i]) {
 		if (g_data.opt & scans[i]) {
 			tmp = create_scan(ip, port, scans[i]);
-			if (tmp && !(push_scan(head, tmp))) {
+			if (tmp && !(push_scan(&ports[port], tmp))) {
 				/* printf("[*] Scan %d on port %d already exists, dropping it\n",
 					tmp->scantype, tmp->dport); */
 				ret--;
-				free_scan(tmp);
+				free(tmp);
 			}
 			else
 				ret++;
@@ -192,9 +254,9 @@ void	push_ports(struct s_ip **input, t_set *set)
 		start = set->ranges[crange].start;
 		end = set->ranges[crange].end;
 		while (start <= end) {
-			if (push_scantypes(*input, &ip->scans, start) > 0) {
+			if (push_scantypes(*input, start) > 0) {
 				/* Verbose print */
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
+				if (g_data.opt & OPT_VERBOSE_PACKET)
 					fprintf(stderr, "[*] Filling structures for %s:%d\n",
 						ip->dhostname, start);
 				g_data.port_counter++;
@@ -207,9 +269,9 @@ void	push_ports(struct s_ip **input, t_set *set)
 	}
 	csingle = 0;
 	while (csingle < set->nb_single_values) {
-		if (push_scantypes(*input, &ip->scans, set->single_values[csingle]) > 0) {
+		if (push_scantypes(*input, set->single_values[csingle]) > 0) {
 			/* Verbose print */
-			if (g_data.opt & OPT_VERBOSE_DEBUG)
+			if (g_data.opt & OPT_VERBOSE_PACKET)
 				fprintf(stderr, "[*] Filling structures for %s:%d\n",
 					ip->dhostname, set->single_values[csingle]);
 			g_data.port_counter++;
@@ -244,7 +306,7 @@ void	free_ips(struct s_ip **ip)
 			free(current->daddr);
 		if (current->dhostname)
 			free(current->dhostname);
-		free_scans(&current->scans);
+		free_ports(current->ports);
 		free(current);
 		current = next;
 	}

@@ -45,6 +45,7 @@ static int		parse_positive_range(t_set *set, char *arg)
 				i = j;
 				if (!arg[j])
 					return 0;
+				is_range = 0;
 				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
@@ -125,7 +126,10 @@ int			set_positive_range(t_set *set, char *arg)
 			else if (arg[j] == ',' || !arg[j + 1]) {
 				if (arg[j] == ',' && j > 0 && arg[j - 1] == ',')
 					illegal_ports();
-				set->single_values[csingle++] = ft_atoi(arg + i);
+				int value = ft_atoi(arg + i);
+				if (value > USHRT_MAX)
+					out_of_range_ports();
+				set->single_values[csingle++] = value;
 				if (arg[++j])
 					i = j;
 				if (!arg[j])
@@ -234,6 +238,7 @@ static void add_ip(char *ip_string, t_set *set)
 		/* Default status */
 		tmp->status = UP;
 		/* Prepare addr structs */
+		/* TODO no need to malloc this.. */
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->saddr || !tmp->daddr)
@@ -246,6 +251,9 @@ static void add_ip(char *ip_string, t_set *set)
 			push_ports(&tmp, set);
 			++g_data.vip_counter;
 		}
+		tmp->srtt = 0;
+		tmp->rttvar = 0;
+		tmp->timeout = 1345678;
 		push_ip(&g_data.ips, tmp);
 	}
 }
@@ -312,12 +320,21 @@ int	parse_nmap_args(int ac, char **av)
 			case 'v':
 				g_data.opt |= OPT_VERBOSE_INFO;
 				if (optarg != NULL) {
-					if (ft_strcmp(optarg, "DEBUG") == 0) {
-						g_data.opt |= OPT_VERBOSE_DEBUG;
+					if (ft_strcmp(optarg, "PACKET") == 0) {
+						g_data.opt |= OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_DEBUG;
 						g_data.opt &= ~OPT_VERBOSE_INFO;
 					}
-					else if (ft_strcmp(optarg, "INFO") == 0)
+					else if (ft_strcmp(optarg, "DEBUG") == 0) {
+						g_data.opt |= OPT_VERBOSE_DEBUG;
+						g_data.opt &= ~OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_INFO;
+					}
+					else if (ft_strcmp(optarg, "INFO") == 0) {
 						g_data.opt |= OPT_VERBOSE_INFO;
+						g_data.opt &= ~OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_DEBUG;
+					}
 					else {
 						fprintf(stderr, "Invalid verbose level\n");
 						return 1;
@@ -327,7 +344,7 @@ int	parse_nmap_args(int ac, char **av)
 			case 't':
 				{
 					int threads = ft_atoi(optarg);
-					if (threads < 0 || threads > 250) {
+					if (threads <= 0 || threads > 250) {
 						fprintf(stderr, "Invalid thread number [0-250]\n");
 						return 1;
 					}
@@ -396,7 +413,7 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] Filling IP structs\n");
 
 	/* Filling scans with ips from files */
@@ -421,8 +438,9 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] IP structs filled successfully\n");
 
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	return 0;
 }

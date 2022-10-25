@@ -14,21 +14,25 @@ static int send_xmas(int tcpsockfd,
 	craft_tcp_packet(packet, saddr, daddr, TH_FIN | TH_PUSH | TH_URG, NULL);
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
+		pthread_mutex_lock(&g_data.print_lock);
 		fprintf(stderr, "[%ld] Sending XMAS request to: %s:%d from port %d\n",
 			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
-
-	if (g_data.opt & OPT_VERBOSE_DEBUG)
-		print_ip4_header((struct ip *)ip);
-
+		if (g_data.opt & OPT_VERBOSE_PACKET)
+			print_ip4_header((struct ip *)ip);
+		pthread_mutex_unlock(&g_data.print_lock);
+	}
 	/* Sending handcrafted packet */
 	if (sendto(tcpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
+			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to send XMAS packet to: %s:%d from port %d\n",
-			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
-			ntohs(saddr->sin_port));
+				pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
+				ntohs(saddr->sin_port));
+			pthread_mutex_unlock(&g_data.print_lock);
+		}
 		return 1;
 	}
 
@@ -36,7 +40,7 @@ static int send_xmas(int tcpsockfd,
 }
 
 static int read_xmas_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
-	struct timeval timeout)
+	struct timeval timeout, struct s_port *ports)
 {
 	int ret;
 	int icmpret;
@@ -54,10 +58,6 @@ static int read_xmas_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 
 	uint16_t dest = 0;
 	uint16_t source = 0;
-
-	/* Check if another thread already updated the scan status */
-	if (scan->status != TIMEOUT && scan->status != SCANNING)
-		return ALREADY_UPDATED;
 
 	/* Receiving process */
 	ret = recv(tcpsockfd, buffer, len, MSG_DONTWAIT);
@@ -97,15 +97,19 @@ static int read_xmas_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (status != -1) {
 		/* Update the corresponding scan if the recv packet is a response to one of our
 		 * requests */
-		if ((update_ret = update_scans(scan, status, dest, source, OPT_SCAN_XMAS))) {
-			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
+		if ((update_ret = update_scans(scan, ports, status, dest,
+			source)))
+		{
+			if ((g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
+				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] Received packet from %s:%d with status: %d\n",
 					pthread_self(), inet_ntoa(*(struct in_addr*)&ip->saddr),
 					ntohs(tcp_packet->tcp.source),
 					status);
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
-					print_ip4_header((struct ip *)&tcp_packet->ip);
+				if (g_data.opt & OPT_VERBOSE_PACKET)
+					print_ip4_header((struct ip *)ip);
+				pthread_mutex_unlock(&g_data.print_lock);
 			}
 			/* The target scan has been updated */
 			if (update_ret == UPDATE_TARGET)
@@ -116,7 +120,7 @@ static int read_xmas_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int xmas_scan(struct s_scan *scan)
+int xmas_scan(struct s_scan *scan, struct s_port *ports)
 {
 	int tcpsockfd;
 	int icmpsockfd;
@@ -127,8 +131,12 @@ int xmas_scan(struct s_scan *scan)
 
 	/* Socket creation */
 	if ((tcpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
+			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
+			pthread_mutex_unlock(&g_data.print_lock);
+		}
 		scan->status = ERROR;
 		UNLOCK(scan);
 		return 1;
@@ -136,8 +144,12 @@ int xmas_scan(struct s_scan *scan)
 	/* Set options */
 	int one = 1;
 	if ((setsockopt(tcpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
+			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
+			pthread_mutex_unlock(&g_data.print_lock);
+		}
 		scan->status = ERROR;
 		close(tcpsockfd);
 		UNLOCK(scan);
@@ -146,8 +158,12 @@ int xmas_scan(struct s_scan *scan)
 
 	/* ICMP Socket creation */
 	if ((icmpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
+			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to create ICMP socket\n", pthread_self());
+			pthread_mutex_unlock(&g_data.print_lock);
+		}
 		scan->status = ERROR;
 		close(tcpsockfd);
 		close(icmpsockfd);
@@ -156,8 +172,12 @@ int xmas_scan(struct s_scan *scan)
 	}
 	/* Set options */
 	if ((setsockopt(icmpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
+			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
+			pthread_mutex_unlock(&g_data.print_lock);
+		}
 		scan->status = ERROR;
 		close(tcpsockfd);
 		close(icmpsockfd);
@@ -183,13 +203,17 @@ int xmas_scan(struct s_scan *scan)
 	}
 	else {
 		UNLOCK(scan);
-		while (!(ret = read_xmas_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+		while (!(ret = read_xmas_ack(tcpsockfd, icmpsockfd, scan,
+			timeout, ports)));
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
+				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] XMAS request on %s:%d timedout\n", pthread_self(),
-				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+					inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+				pthread_mutex_unlock(&g_data.print_lock);
+			}
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
@@ -200,7 +224,8 @@ int xmas_scan(struct s_scan *scan)
 			else {
 				/* Successful send */
 				UNLOCK(scan);
-				while (!(ret = read_xmas_ack(tcpsockfd, icmpsockfd, scan, timeout)));
+				while (!(ret = read_xmas_ack(tcpsockfd, icmpsockfd, scan,
+					timeout, ports)));
 				/* Another timeout, set the status to filtered */
 				if (ret == TIMEOUT) {
 					LOCK(scan);
@@ -217,13 +242,15 @@ int xmas_scan(struct s_scan *scan)
 		scan->end_time.tv_usec = 0;
 	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
+		pthread_mutex_lock(&g_data.print_lock);
 		char *status[] = {
 			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
 		};
 		fprintf(stderr, "[%ld] Updating %s:%d XMAS scan to %s\n", pthread_self(),
 		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
 		status[scan->status]);
+		pthread_mutex_unlock(&g_data.print_lock);
 	}
 
 	close(icmpsockfd);
