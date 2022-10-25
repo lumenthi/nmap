@@ -60,10 +60,6 @@ static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	uint16_t dest = 0;
 	uint16_t source = 0;
 
-	/* Check if another thread already updated the scan status */
-	if (scan->status != TIMEOUT && scan->status != SCANNING)
-		return ALREADY_UPDATED;
-
 	/* Receiving process */
 	ret = recv(tcpsockfd, buffer, len, MSG_DONTWAIT);
 	icmpret = recv(icmpsockfd, icmpbuffer, len, MSG_DONTWAIT);
