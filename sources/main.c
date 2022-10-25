@@ -62,7 +62,6 @@ void	print_start(void)
 		i++;
 	}
 	printf("\n");
-	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
 	printf("Number of threads : %hhu\n", g_data.nb_threads);
 	printf("...........................................\n\n");
@@ -109,7 +108,9 @@ int		main(int argc, char **argv)
 		free_and_exit(EXIT_FAILURE);
 	}
 
-	print_start();
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+		|| g_data.opt & OPT_VERBOSE_PACKET)
+		print_start();
 
 	/* Getting service list */
 	if (get_services() != 0)
