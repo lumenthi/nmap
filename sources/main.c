@@ -116,6 +116,10 @@ int		main(int argc, char **argv)
 	if (get_services() != 0)
 		free_and_exit(EXIT_FAILURE);
 
+	/* Getting service list */
+	if (get_payloads() != 0)
+		free_and_exit(EXIT_FAILURE);
+
 	ft_nmap(argv[0], &sstart_time, &send_time);
 
 	/* ft_nmap end time */
