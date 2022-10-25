@@ -53,3 +53,5 @@ scanning multiple hosts is no big deal
 # TODO: gentle debug level
 
 # TODO: Include dynamic timeout in threads
+
+# -vDEBUG -t=X

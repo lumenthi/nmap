@@ -225,7 +225,7 @@ static void	count_status(struct s_ip *ips, size_t **cstatus)
 	int	ip_counter = 0;
 
 	while (ip) {
-		if (ip->status == UP) {
+		if (ip->status == UP || ip->status == SCANNING) {
 			scan = ip->scans;
 			while (scan) {
 				if (scan->final_status == -1)
@@ -274,7 +274,7 @@ void	print_scans(struct s_ip *ips)
 
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
-		if (ip->status == UP) {
+		if (ip->status == UP || ip->status == SCANNING) {
 			printf("ft_nmap scan report for ");
 			print_ip(ip->daddr);
 			printf("\n");

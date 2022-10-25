@@ -15,7 +15,8 @@ int tcp_scan(struct s_scan *scan)
 
 	/* Socket creation */
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -26,7 +27,8 @@ int tcp_scan(struct s_scan *scan)
 
 	/* Not authorized, remains a bonus */
 	if (fcntl(sockfd, F_SETFL, O_NONBLOCK) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to set fcntl option\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -73,7 +75,7 @@ int tcp_scan(struct s_scan *scan)
 		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&err, (socklen_t *)&len);
 
 		/* Verbose print */
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Sent TCP request to %s:%d\n", pthread_self(),
 				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
@@ -82,7 +84,7 @@ int tcp_scan(struct s_scan *scan)
 
 		/* Getsockopt analysis */
 		if (err == ECONNREFUSED) {
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] Received TCP [CLOSED] response from %s:%d\n",
 					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
@@ -93,7 +95,7 @@ int tcp_scan(struct s_scan *scan)
 			break ;
 		}
 		else if (err) {
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] Received TCP [FILTERED] response from %s:%d\n",
 					pthread_self(), inet_ntoa(scan->daddr.sin_addr),
@@ -105,7 +107,7 @@ int tcp_scan(struct s_scan *scan)
 		/* A socket is ready, our port is open */
 		else if (select(sockfd+1, &rfds, &lfds, &efds, &timeout)) {
 			if (write(sockfd, NULL, 0) != -1) {
-				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+				if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 					pthread_mutex_lock(&g_data.print_lock);
 					fprintf(stderr, "[%ld] Received TCP [OPEN] response from: %s:%d\n",
 						pthread_self(), inet_ntoa(scan->daddr.sin_addr),
@@ -118,7 +120,7 @@ int tcp_scan(struct s_scan *scan)
 				scan->status = CLOSED;
 			break ;
 		}
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 			pthread_mutex_lock(&g_data.print_lock);
 			if (i == 0)
 				fprintf(stderr, "[%ld] TCP request to %s:%d timedout\n",

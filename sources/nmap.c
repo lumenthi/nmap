@@ -1,6 +1,18 @@
 #include "nmap.h"
 #include "options.h"
 
+static void erase_progress_bar()
+{
+	/* Erase progress bar */
+	if (!(g_data.opt & OPT_NO_PROGRESS)) {
+		printf("\r");
+		for (int_fast32_t i = 0; i < 80; i++)
+			printf(" ");
+		printf("\r");
+		fflush(stdout);
+	}
+}
+
 static int run_scan(struct s_scan *scan)
 {
 	switch (scan->scantype) {
@@ -40,7 +52,18 @@ static int launch_scan(void *rip)
 	struct s_scan *scan;
 
 	while (ip) {
-		if (ip->status == UP) {
+		if (ip->status == UP || ip->status == SCANNING) {
+			if (ip->status == UP) {
+				pthread_mutex_lock(&g_data.print_lock);
+				ip->status = SCANNING;
+				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+					|| g_data.opt & OPT_VERBOSE_PACKET) {
+					if (!(g_data.opt & OPT_NO_PROGRESS) && ip != rip)
+						erase_progress_bar();
+					fprintf(stderr, "[**] Starting scans for %s\n", ip->dhostname);
+				}
+				pthread_mutex_unlock(&g_data.print_lock);
+			}
 			scan = ip->scans;
 			/* Resolve scans for this IP */
 			while (scan) {
@@ -115,14 +138,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	/* scan process end time */
 	gettimeofday(end, NULL);
 
-	/* Erase progress bar */
-	if (!(g_data.opt & OPT_NO_PROGRESS)) {
-		printf("\r");
-		for (int_fast32_t i = 0; i < 80; i++)
-			printf(" ");
-		printf("\r");
-		fflush(stdout);
-	}
+	erase_progress_bar();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
