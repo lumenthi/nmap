@@ -92,11 +92,10 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 	if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
 		tmp->sport == source_port && tmp->dport == dest_port)
 	{
-		tmp->status = status;
-		if (tmp == scan)
+		if (tmp == scan) {
+			tmp->status = status;
 			ret = UPDATE_TARGET;
-		else
-			ret = UPDATE;
+		}
 	}
 	UNLOCK(tmp);
 	return ret;
