@@ -155,6 +155,7 @@ typedef struct	s_data {
 	struct timeval		max_rtt;
 	struct timeval		min_rtt;
 	struct timeval		initial_rtt;
+	uint64_t			delay;
 
 	/* Counters */
 	int					ip_counter;

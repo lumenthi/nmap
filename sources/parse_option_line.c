@@ -266,14 +266,15 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:d";
+	const char	*optstring = "hv::Vp:i:f:t:s:Dd:";
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
-		{"description",	0				,	0, 'd'},
+		{"description",	0				,	0, 'D'},
 		{"no-progress",	0				,	0,  0 },
 		{"ascii",		0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
+		{"delay",		required_argument,	0, 'd'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
 		{"file",		required_argument,	0, 'f'},
@@ -341,6 +342,18 @@ int	parse_nmap_args(int ac, char **av)
 					}
 				}
 				break;
+			case 'd':
+				{
+					long long delay = ft_atoll(optarg);
+					if (delay <= 0 || delay > 10000) {
+						fprintf(stderr, "Invalid delay [0ms - 10 000ms]\n");
+						return 1;
+					}
+					g_data.delay = delay * 1000;
+					g_data.nb_threads = 0;
+					g_data.opt |= OPT_DELAY;
+					break;
+				}
 			case 't':
 				{
 					int threads = ft_atoi(optarg);
@@ -349,6 +362,8 @@ int	parse_nmap_args(int ac, char **av)
 						return 1;
 					}
 					g_data.nb_threads = threads;
+					g_data.delay = 0;
+					g_data.opt &= ~OPT_DELAY;
 					break;
 				}
 			case 'V':
@@ -393,7 +408,7 @@ int	parse_nmap_args(int ac, char **av)
 					free_and_exit(255);
 					break;
 				}
-			case 'd':
+			case 'D':
 				g_data.opt |= OPT_SERVICE_DESC;
 				break;
 			default:

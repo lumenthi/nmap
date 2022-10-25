@@ -26,6 +26,8 @@
 
 # define OPT_VERBOSE_PACKET		(1UL << 14)
 
+# define OPT_DELAY				(1UL << 15)
+
 # define FATAL_ERROR 2
 # define PRINT_VERSION 3
 

@@ -48,6 +48,13 @@ static int run_scan(struct s_scan *scan, struct s_port *ports)
 
 static void start_scan(struct s_scan *scan, struct s_port *ports)
 {
+	static uint64_t	last_probe = 0;
+
+	if (g_data.opt & OPT_DELAY) {
+		uint64_t currtime = get_time();
+		while (currtime - last_probe < g_data.delay)
+			currtime = get_time();
+	}
 	if (scan->sport == g_data.port_max)
 		while (g_data.ports[scan->sport].status == IN_USE);
 	LOCK(scan);
@@ -55,6 +62,8 @@ static void start_scan(struct s_scan *scan, struct s_port *ports)
 		scan->status = SCANNING;
 		g_data.ports[scan->sport].status = IN_USE;
 		UNLOCK(scan);
+		if (g_data.opt & OPT_DELAY)
+			last_probe = get_time();
 		run_scan(scan, ports);
 		g_data.ports[scan->sport].status = FREE;
 	}
