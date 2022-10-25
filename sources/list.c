@@ -58,6 +58,8 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 	struct s_port port = ports[dest_port];
 	struct s_scan *tmp = NULL;
 
+	int ret = 0;
+
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
 			tmp = port.syn_scan;
@@ -86,20 +88,18 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 	if (!tmp)
 		return 0;
 
-	if (tmp && (tmp->status == SCANNING || tmp->status == TIMEOUT) &&
+	LOCK(tmp);
+	if ((tmp->status == SCANNING || tmp->status == TIMEOUT) &&
 		tmp->sport == source_port && tmp->dport == dest_port)
 	{
-		LOCK(tmp);
 		tmp->status = status;
-
-		if (tmp == scan) {
-			UNLOCK(tmp);
-			return UPDATE_TARGET;
-		}
-		UNLOCK(tmp);
-		return UPDATE;
+		if (tmp == scan)
+			ret = UPDATE_TARGET;
+		else
+			ret = UPDATE;
 	}
-	return 0;
+	UNLOCK(tmp);
+	return ret;
 }
 
 static void	free_port(struct s_port *port)

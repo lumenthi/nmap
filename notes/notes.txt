@@ -53,3 +53,14 @@ scanning multiple hosts is no big deal
 # TODO: gentle debug level
 
 # TODO: Include dynamic timeout in threads
+
+# sudo valgrind ./ft_nmap localhost -p 33
+==6361== Syscall param socketcall.sendto(to.sin_port) points to uninitialised byte(s)
+==6361==    at 0x48769B4: sendto (sendto.c:27)
+==6361==    by 0x1150B8: send_icmp (host_discovery.c:120)
+==6361==    by 0x1156CC: discover_target (host_discovery.c:238)
+==6361==    by 0x115815: host_discovery (host_discovery.c:268)
+==6361==    by 0x10ADB0: ft_nmap (nmap.c:118)
+==6361==    by 0x10A81E: main (main.c:118)
+==6361==  Address 0x1fff000362 is on thread 1's stack
+==6361==  in frame #2, created by discover_target (host_discovery.c:155)
