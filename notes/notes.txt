@@ -64,3 +64,5 @@ scanning multiple hosts is no big deal
 ==6361==    by 0x10A81E: main (main.c:118)
 ==6361==  Address 0x1fff000362 is on thread 1's stack
 ==6361==  in frame #2, created by discover_target (host_discovery.c:155)
+
+# -vDEBUG -t=X

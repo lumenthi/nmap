@@ -40,20 +40,20 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 	craft_tcp_packet(packet, saddr, daddr, flags, NULL);
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sending TCP request to: %s:%d from port %d\n",
+	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[***] Sending TCP request to: %s:%d from port %d\n",
 			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 
-	if (g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		print_ip4_header((struct ip *)iphdr);
 
 	/* Sending handcrafted packet */
 	start = get_time();
 	if (sendto(tcpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to send TCP packet to: %s:%d from port %d\n",
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG)
+			fprintf(stderr, "[***] Failed to send TCP packet to: %s:%d from port %d\n",
 			inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
 		return 0;
@@ -75,13 +75,15 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 		struct tcphdr *tcp = (struct tcphdr*)(iphdr + 1); 
 		if (tcp->dest == saddr->sin_port && (tcp->source == ntohs(443)
 			|| tcp->source == ntohs(80))) {
-			//printf("Received from %d\n", ntohs(tcp->source));
 			/* TODO: if there was a given initial timeout, don't do this */
+			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+				fprintf(stderr, "[***] Received TCP from port %d\n",
+				ntohs(tcp->source));
+			if (g_data.opt & OPT_VERBOSE_PACKET)
+				print_ip4_header((struct ip*)iphdr);
 			if (ip->srtt == 0) {
 				ip->srtt = diff;
 				ip->timeout = ip->srtt * 3;
-				//printf("New srtt = %ldus (%fms)\n", ip->srtt, ip->srtt / 1000.0);
-				//printf("New timeout = %ldus (%fms)\n", ip->timeout, ip->timeout / 1000.0);
 			}
 			else
 				update_timeout(ip, start, end);
@@ -108,19 +110,19 @@ static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
 	craft_icmp_packet(packet, type, code, id, sequence, NULL, 0);
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Sending ICMP type %d with id %d to: %s\n",
+	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+		fprintf(stderr, "[***] Sending ICMP type %d with id %d to: %s\n",
 			type, id, inet_ntoa(daddr->sin_addr));
 
-	if (g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		print_ip4_header((struct ip *)iphdr);
 
 	/* Sending handcrafted packet */
 	start = get_time();
 	if (sendto(icmpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to send ICMP packet to: %s\n",
+		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[***] Failed to send ICMP packet to: %s\n",
 			inet_ntoa(daddr->sin_addr));
 		return 0;
 	}
@@ -144,6 +146,11 @@ static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
 		if (((type == ICMP_ECHO && icmp->type == ICMP_ECHOREPLY)
 			|| (type == ICMP_TIMESTAMP && icmp->type == ICMP_TIMESTAMPREPLY))
 			&& icmp->un.echo.id == id) {
+			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+				fprintf(stderr, "[***] Received ICMP type %d code %d\n",
+				icmp->type, icmp->code);
+			if (g_data.opt & OPT_VERBOSE_PACKET)
+				print_ip4_header((struct ip*)iphdr);
 			update_timeout(ip, start, end);
 			return 1;
 		}
@@ -161,38 +168,43 @@ int	discover_target(struct s_ip *ip)
 
 	/* Socket creation */
 	if ((tcpsock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to create socket\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to create socket\n");
 		return 1;
 	}
 	/* Set options */
 	if ((setsockopt(tcpsock, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set header option\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to set header option\n");
 		close(tcpsock);
 		return 1;
 	}
 	if (setsockopt(tcpsock, SOL_SOCKET, SO_RCVTIMEO,
 		&timeout, sizeof(timeout)) != 0)
 	{
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set header option\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to set header option\n");
 		close(tcpsock);
 		return 1;
 	}
 
 	/* ICMP Socket creation */
 	if ((icmpsock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to create ICMP socket\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to create ICMP socket\n");
 		close(tcpsock);
 		close(icmpsock);
 		return 1;
 	}
 	/* Set options */
 	if ((setsockopt(icmpsock, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set header option\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to set header option\n");
 		close(tcpsock);
 		close(icmpsock);
 		return 1;
@@ -200,8 +212,9 @@ int	discover_target(struct s_ip *ip)
 	if (setsockopt(icmpsock, SOL_SOCKET, SO_RCVTIMEO,
 		&timeout, sizeof(timeout)) != 0)
 	{
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to set header option\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to set header option\n");
 		close(tcpsock);
 		close(icmpsock);
 		return 1;
@@ -210,8 +223,9 @@ int	discover_target(struct s_ip *ip)
 	source.sin_family = AF_INET;
 	source.sin_addr.s_addr = ip->saddr->sin_addr.s_addr;
 	if (sconfig(inet_ntoa(source.sin_addr), &source) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-			fprintf(stderr, "[*] Failed to config source address for host discovery\n");
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Failed to config source address for host discovery\n");
 		return 1;
 	}
 	source.sin_port = htons(assign_port(g_data.port_min, g_data.port_max));
@@ -232,22 +246,27 @@ int	discover_target(struct s_ip *ip)
 
 	ret += send_tcp(tcpsock, ip, &source, &tcp80, TH_ACK);
 
-	//receive_tcp(tcpsock, ip, &source, &td);
-
 	echo_id = get_time();
 	ret += send_icmp(icmpsock, ip, &source, &icmp, ICMP_ECHO, 0, echo_id, 0);
 
 	timestamp_id = get_time();
 	ret += send_icmp(icmpsock, ip, &source, &icmp, ICMP_TIMESTAMP, 0, timestamp_id, 0);
 
-	//receive_icmp(icmpsock, ip, echo_id, timestamp_id, &td);
-
-	if (!ret)
+	if (!ret) {
 		ip->status = DOWN;
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+				|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[***] Host %s is down\n", ip->dhostname);
+	}
+	else if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
+		fprintf(stderr, "[***] Host %s is up\n", ip->dhostname);
+	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Initial timeout set to be %ld.%06ld\n",
-			ip->timeout / 1000000, ip->timeout % 1000000);
+	if (g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+		fprintf(stderr, "[***] %s initial timeout set to be %ld.%06ld\n",
+			ip->dhostname, ip->timeout / 1000000, ip->timeout % 1000000);
 
 	close(tcpsock);
 	close(icmpsock);
@@ -260,13 +279,20 @@ int		host_discovery(void)
 {
 	struct s_ip *ip = g_data.ips;
 
-	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] Starting host discovery\n");
 
 	while (ip) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+				|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[**] Scanning %s\n", ip->dhostname);
 		discover_target(ip);
 		ip = ip->next;
 	}
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+		fprintf(stderr, "[*] Completed host discovery\n");
 	return 0;
 }

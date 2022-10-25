@@ -41,7 +41,7 @@ void	print_progress()
 		printf("| %.2f%%", progress);
 	}
 	fflush(stdout);
-	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_INFO)
+	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "\n");
 	pthread_mutex_unlock(&g_data.print_lock);
 }
@@ -257,7 +257,7 @@ void	push_ports(struct s_ip **input, t_set *set)
 		while (start <= end) {
 			if (push_scantypes(*input, start) > 0) {
 				/* Verbose print */
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
+				if (g_data.opt & OPT_VERBOSE_PACKET)
 					fprintf(stderr, "[*] Filling structures for %s:%d\n",
 						ip->dhostname, start);
 				g_data.port_counter++;
@@ -272,7 +272,7 @@ void	push_ports(struct s_ip **input, t_set *set)
 	while (csingle < set->nb_single_values) {
 		if (push_scantypes(*input, set->single_values[csingle]) > 0) {
 			/* Verbose print */
-			if (g_data.opt & OPT_VERBOSE_DEBUG)
+			if (g_data.opt & OPT_VERBOSE_PACKET)
 				fprintf(stderr, "[*] Filling structures for %s:%d\n",
 					ip->dhostname, set->single_values[csingle]);
 			g_data.port_counter++;

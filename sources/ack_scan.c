@@ -14,12 +14,12 @@ static int send_ack(int tcpsockfd,
 	craft_tcp_packet(packet, saddr, daddr, TH_ACK, NULL);
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 		pthread_mutex_lock(&g_data.print_lock);
 		fprintf(stderr, "[%ld] Sending ACK request to: %s:%d from port %d\n",
 			pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
 			ntohs(saddr->sin_port));
-		if (g_data.opt & OPT_VERBOSE_DEBUG)
+		if (g_data.opt & OPT_VERBOSE_PACKET)
 			print_ip4_header((struct ip *)ip);
 		pthread_mutex_unlock(&g_data.print_lock);
 	}
@@ -27,7 +27,7 @@ static int send_ack(int tcpsockfd,
 	/* Sending handcrafted packet */
 	if (sendto(tcpsockfd, packet, sizeof(packet), 0, (struct sockaddr *)daddr,
 		sizeof(struct sockaddr)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to send ACK packet to: %s:%d from port %d\n",
 				pthread_self(), inet_ntoa(daddr->sin_addr), ntohs(daddr->sin_port),
@@ -105,14 +105,14 @@ static int read_ack_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 		if ((update_ret = update_scans(scan, ports, status, dest,
 			source)))
 		{
-			if ((g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG))
+			if ((g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG))
 			{
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] Received packet from %s:%d with status: %d\n",
 					pthread_self(), inet_ntoa(*(struct in_addr*)&ip->saddr),
 					ntohs(tcp_packet->tcp.source),
 					status);
-				if (g_data.opt & OPT_VERBOSE_DEBUG)
+				if (g_data.opt & OPT_VERBOSE_PACKET)
 					print_ip4_header((struct ip *)ip);
 				pthread_mutex_unlock(&g_data.print_lock);
 			}
@@ -136,7 +136,8 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 
 	/* Socket creation */
 	if ((tcpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to create socket\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -148,7 +149,8 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 	/* Set options */
 	int one = 1;
 	if ((setsockopt(tcpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -161,7 +163,8 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 
 	/* ICMP Socket creation */
 	if ((icmpsockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to create ICMP socket\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -174,7 +177,8 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 	}
 	/* Set options */
 	if ((setsockopt(icmpsockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one))) != 0) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET) {
 			pthread_mutex_lock(&g_data.print_lock);
 			fprintf(stderr, "[%ld] Failed to set header option\n", pthread_self());
 			pthread_mutex_unlock(&g_data.print_lock);
@@ -209,7 +213,7 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 		/* We timed out, send the packet again */
 		if (ret == TIMEOUT) {
 			LOCK(scan);
-			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] ACK request on %s:%d timedout\n", pthread_self(),
 					inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
@@ -243,7 +247,7 @@ int ack_scan(struct s_scan *scan, struct s_port *ports)
 		scan->end_time.tv_usec = 0;
 	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG) {
+	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 		pthread_mutex_lock(&g_data.print_lock);
 		char *status[] = {
 			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL

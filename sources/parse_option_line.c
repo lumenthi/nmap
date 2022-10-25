@@ -319,12 +319,21 @@ int	parse_nmap_args(int ac, char **av)
 			case 'v':
 				g_data.opt |= OPT_VERBOSE_INFO;
 				if (optarg != NULL) {
-					if (ft_strcmp(optarg, "DEBUG") == 0) {
-						g_data.opt |= OPT_VERBOSE_DEBUG;
+					if (ft_strcmp(optarg, "PACKET") == 0) {
+						g_data.opt |= OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_DEBUG;
 						g_data.opt &= ~OPT_VERBOSE_INFO;
 					}
-					else if (ft_strcmp(optarg, "INFO") == 0)
+					else if (ft_strcmp(optarg, "DEBUG") == 0) {
+						g_data.opt |= OPT_VERBOSE_DEBUG;
+						g_data.opt &= ~OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_INFO;
+					}
+					else if (ft_strcmp(optarg, "INFO") == 0) {
 						g_data.opt |= OPT_VERBOSE_INFO;
+						g_data.opt &= ~OPT_VERBOSE_PACKET;
+						g_data.opt &= ~OPT_VERBOSE_DEBUG;
+					}
 					else {
 						fprintf(stderr, "Invalid verbose level\n");
 						return 1;
@@ -403,7 +412,7 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] Filling IP structs\n");
 
 	/* Filling scans with ips from files */
@@ -428,7 +437,7 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] IP structs filled successfully\n");
 
 	return 0;
