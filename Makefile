@@ -83,7 +83,8 @@ SRCS = main.c \
 		xmas_scan.c \
 		fin_scan.c \
 		ack_scan.c \
-		tcp_scan.c
+		tcp_scan.c \
+		host_discovery.c
 
 SERVER_SOURCES = $(addprefix $(SRCDIR)/, $(SERVER_SRCS))
 SOURCES = $(addprefix $(SRCDIR)/, $(SRCS))

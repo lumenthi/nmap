@@ -41,6 +41,8 @@ void	print_progress()
 		printf("| %.2f%%", progress);
 	}
 	fflush(stdout);
+	if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_INFO)
+		fprintf(stderr, "\n");
 	pthread_mutex_unlock(&g_data.print_lock);
 }
 
@@ -175,7 +177,7 @@ static int push_scan(struct s_port *scanlist, struct s_scan *new)
 	return 1;
 }
 
-static int assign_port(uint16_t min, uint16_t max)
+int assign_port(uint16_t min, uint16_t max)
 {
 	static int port = 0;
 

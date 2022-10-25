@@ -3,7 +3,6 @@
 
 static int run_scan(struct s_scan *scan, struct s_port *ports)
 {
-	/* TODO: match nmap's options for each scan type (both IP and the next layer) */
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
 			syn_scan(scan, ports);
@@ -111,14 +110,16 @@ static int launch_threads()
 
 int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
-	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
-		fprintf(stderr, "[*] Started scan process\n");
-
 	start->tv_sec = 0;
 	start->tv_usec = 0;
 	end->tv_sec = 0;
 	end->tv_usec = 0;
+
+	host_discovery();
+
+	/* Verbose print */
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+		fprintf(stderr, "[*] Starting scan process\n");
 
 	/* scan process start time */
 	gettimeofday(start, NULL);
@@ -132,6 +133,15 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 
 	/* scan process end time */
 	gettimeofday(end, NULL);
+
+	/* Erase progress bar */
+	if (!(g_data.opt & OPT_NO_PROGRESS)) {
+		printf("\r");
+		for (int_fast32_t i = 0; i < 80; i++)
+			printf(" ");
+		printf("\r");
+		fflush(stdout);
+	}
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

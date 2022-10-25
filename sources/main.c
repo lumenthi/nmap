@@ -30,14 +30,12 @@ void	init_data()
 	}
 
 	g_data.ipset = NULL;
+
 }
 
 void	print_start(void)
 {
 	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
-
-	printf("\nStarting ft_nmap 1.0 ( https://github.com/lumenthi/nmap )"\
-		" at [TODO:DATE] CEST\n");
 
 	printf("\n................. Config ..................\n");
 
@@ -76,6 +74,8 @@ int		main(int argc, char **argv)
 	/* Timers for the whole proccess */
 	struct timeval start_time;
 	struct timeval end_time;
+	struct tm *local_time;
+	time_t ctime;
 
 	/* Timers for the scan process */
 	struct timeval sstart_time;
@@ -86,6 +86,13 @@ int		main(int argc, char **argv)
 		print_usage(stdout);
 		return 1;
 	}
+
+	ctime = time(NULL);
+	local_time = localtime(&ctime);
+
+	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+		" at %d-%d-%d %d:%d CEST\n", 1900 + local_time->tm_year, local_time->tm_mon + 1,
+		local_time->tm_mday, local_time->tm_hour, local_time->tm_min);
 
 	/* ft_nmap start time */
 	if ((gettimeofday(&start_time, NULL)) != 0) {

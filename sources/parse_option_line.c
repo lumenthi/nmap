@@ -237,6 +237,7 @@ static void add_ip(char *ip_string, t_set *set)
 		/* Default status */
 		tmp->status = UP;
 		/* Prepare addr structs */
+		/* TODO no need to malloc this.. */
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->saddr || !tmp->daddr)
@@ -249,6 +250,9 @@ static void add_ip(char *ip_string, t_set *set)
 			push_ports(&tmp, set);
 			++g_data.vip_counter;
 		}
+		tmp->srtt = 0;
+		tmp->rttvar = 0;
+		tmp->timeout = 1345678;
 		push_ip(&g_data.ips, tmp);
 	}
 }

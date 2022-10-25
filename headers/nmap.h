@@ -114,6 +114,9 @@ struct s_port {
 struct s_ip {
 	struct sockaddr_in	*saddr; /* sockaddr_in of source */
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	int64_t				srtt;
+	int64_t				rttvar;
+	uint64_t			timeout;
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
@@ -147,6 +150,11 @@ typedef struct	s_data {
 
 	/* Diplay related */
 	pthread_mutex_t		print_lock;
+
+	/* Dynamic timeout */
+	struct timeval		max_rtt;
+	struct timeval		min_rtt;
+	struct timeval		initial_rtt;
 
 	/* Counters */
 	int					ip_counter;
@@ -241,6 +249,8 @@ void	craft_tcp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t flags, struct tcp_options *options);
 void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, char *payload, uint16_t payload_len);
+void	craft_icmp_packet(void *packet, uint8_t type, uint8_t code,
+	uint16_t id, uint16_t sequence, char *payload, uint16_t payload_len);
 
 /* services.c */
 int		get_services(void);
@@ -253,8 +263,13 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+int		assign_port(uint16_t min, uint16_t max);
 
 /* timedout.c */
 int timed_out(struct timeval start, struct timeval timeout, int status);
+
+/* host_discovery.c */
+int	host_discovery(void);
+void update_timeout(struct s_ip *ip, uint64_t start, uint64_t end);
 
 #endif

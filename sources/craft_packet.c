@@ -92,3 +92,20 @@ void	craft_udp_packet(void *packet, struct sockaddr_in *saddr,
 	if (payload && payload_len > 0)
 		ft_memcpy(udp + 1, payload, payload_len);
 }
+
+void	craft_icmp_packet(void *packet, uint8_t type, uint8_t code,
+	uint16_t id, uint16_t sequence, char *payload, uint16_t payload_len)
+{
+	struct icmphdr *icmp = (struct icmphdr *)(packet + sizeof(struct iphdr)); 
+
+	icmp->type = type;
+	icmp->code = code;
+	icmp->un.echo.id = id;
+	icmp->un.echo.sequence = sequence;
+
+	if (payload && payload_len > 0)
+		ft_memcpy(icmp + 1, payload, payload_len);
+
+	icmp->checksum = checksum((char*)icmp, sizeof(struct icmphdr));
+	/* TODO print TIMESTAMP packets */
+}

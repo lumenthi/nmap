@@ -40,7 +40,6 @@ unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp)
 	psh.dest_address = ip->daddr;
 	psh.placeholder = 0;
 	psh.protocol = IPPROTO_TCP;
-	/* TODO: Options calculation */
 	psh.tcp_length = htons(sizeof(struct tcphdr));
 
 	ft_memcpy(ppacket, (char*)&psh, sizeof(struct pseudo_header));
