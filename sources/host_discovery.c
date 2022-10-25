@@ -240,6 +240,7 @@ int	discover_target(struct s_ip *ip)
 
 	icmp.sin_family = AF_INET;
 	icmp.sin_addr.s_addr = ip->daddr->sin_addr.s_addr;
+	icmp.sin_port = 0;
 
 	/* TODO: Connect scan if unprivileged */
 	ret += send_tcp(tcpsock, ip, &source, &tcp443, TH_SYN);
