@@ -45,6 +45,7 @@ static int		parse_positive_range(t_set *set, char *arg)
 				i = j;
 				if (!arg[j])
 					return 0;
+				is_range = 0;
 				continue;
 			}
 			else if (arg[j] == ',' || !arg[j + 1]) {
@@ -343,7 +344,7 @@ int	parse_nmap_args(int ac, char **av)
 			case 't':
 				{
 					int threads = ft_atoi(optarg);
-					if (threads < 0 || threads > 250) {
+					if (threads <= 0 || threads > 250) {
 						fprintf(stderr, "Invalid thread number [0-250]\n");
 						return 1;
 					}
