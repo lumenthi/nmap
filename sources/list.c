@@ -50,11 +50,12 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		mask |= (1 << (31 - i));
 	mask = htonl(mask);
 	nmask = ~mask;
-	printf("mask = %u\n", ntohs(mask));
-	printf("~mask = %u\n", ntohs(nmask));
+	(void)nmask;
+	//printf("mask = %u\n", ntohs(mask));
+	//printf("~mask = %u\n", ntohs(nmask));
 	struct in_addr imask;
 	ft_memcpy(&imask, &mask, sizeof(mask));
-	printf("\nIP mask = %s\n", inet_ntoa(imask));
+	//printf("\nIP mask = %s\n", inet_ntoa(imask));
 	if (maskarg == 32)
 		nb_hosts = 1;
 	else if (maskarg == 31)
@@ -69,18 +70,20 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	*slash = '/';
 	struct in_addr hia, nia;
 	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
-	printf("\nStart ip = %s\n", inet_ntoa(nia));
+	//printf("\nStart ip = %s\n", inet_ntoa(nia));
 	nia.s_addr &= mask;
 	hia.s_addr = ntohl(nia.s_addr);
 	for (uint32_t i = 0; i < nb_hosts; i++) {
 		nia.s_addr = htonl(hia.s_addr);
+		//if (hostname)
+		//	*hostname = ft_strdup(inet_ntoa(nia));
 		add_ip(inet_ntoa(nia), set);
 		++g_data.ip_counter;
 		/*if (++g_data.ip_counter > MAX_IPS) {
 			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
 			return 1;
 		}*/
-		printf("ip = %s\n", inet_ntoa(nia));
+		//printf("ip = %s\n", inet_ntoa(nia));
 		hia.s_addr++;
 	}
 	return 0;

@@ -318,8 +318,8 @@ void	print_scans(struct s_ip *ips)
 			}
 			printf(NMAP_COLOR_RESET"\n");
 		}
-		else
-			printf("%s is %s\n", ip->destination, status[ip->status]);
+		else// if (ip->status != DOWN)
+			printf("%s is %s\n", inet_ntoa(ip->daddr->sin_addr), status[ip->status]);
 		if (ip->next)
 			ft_putchar('\n');
 		ip = ip->next;
