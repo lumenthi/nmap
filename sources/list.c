@@ -8,6 +8,87 @@
 #define G 1
 #define B 2
 
+void add_ip(char *ip_string, t_set *set)
+{
+	struct s_ip *tmp;
+
+	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
+	if (tmp) {
+		ft_memset(tmp, 0, sizeof(struct s_ip));
+		tmp->destination = ip_string;
+		/* Default status */
+		tmp->status = UP;
+		/* Prepare addr structs */
+		/* TODO no need to malloc this.. */
+		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+		if (!tmp->saddr || !tmp->daddr)
+			tmp->status = ERROR;
+		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
+			tmp->status = DOWN;
+		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
+			tmp->status = ERROR;
+		if (tmp->status == UP) {
+			push_ports(&tmp, set);
+			++g_data.vip_counter;
+		}
+		tmp->srtt = 0;
+		tmp->rttvar = 0;
+		tmp->timeout = 1345678;
+		push_ip(&g_data.ips, tmp);
+	}
+}
+
+int	add_ip_range(char *destination, char *slash, t_set *set)
+{
+	/* TODO: error if not 0 < mask < 32 */
+	int maskarg = ft_atoi(slash + 1);
+	uint32_t mask = 0;
+	uint32_t nmask;
+	uint32_t nb_hosts;
+	for (int i = 0; i < maskarg; i++)
+		mask |= (1 << (31 - i));
+	mask = htonl(mask);
+	nmask = ~mask;
+	(void)nmask;
+	//printf("mask = %u\n", ntohs(mask));
+	//printf("~mask = %u\n", ntohs(nmask));
+	struct in_addr imask;
+	ft_memcpy(&imask, &mask, sizeof(mask));
+	//printf("\nIP mask = %s\n", inet_ntoa(imask));
+	if (maskarg == 32)
+		nb_hosts = 1;
+	else if (maskarg == 31)
+		nb_hosts = 2;
+	else
+		nb_hosts = ft_power(2, 32 - maskarg);
+
+	struct hostent *host;
+	*slash = 0;
+	if (!(host = gethostbyname(destination)))
+		return 1;
+	*slash = '/';
+	struct in_addr hia, nia;
+	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
+	//printf("\nStart ip = %s\n", inet_ntoa(nia));
+	nia.s_addr &= mask;
+	hia.s_addr = ntohl(nia.s_addr);
+	for (uint32_t i = 0; i < nb_hosts; i++) {
+		nia.s_addr = htonl(hia.s_addr);
+		//if (hostname)
+		//	*hostname = ft_strdup(inet_ntoa(nia));
+		add_ip(inet_ntoa(nia), set);
+		++g_data.ip_counter;
+		/*if (++g_data.ip_counter > MAX_IPS) {
+			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
+			return 1;
+		}*/
+		//printf("ip = %s\n", inet_ntoa(nia));
+		hia.s_addr++;
+	}
+	return 0;
+}
+
 void	print_progress()
 {
 	pthread_mutex_lock(&g_data.print_lock);

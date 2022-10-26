@@ -2,8 +2,6 @@
 
 # Remove useless comments before push
 
-# Allow 1024 ports max
-
 # Do not forget to put all scantypes by default if none are specified (subject restriction)
 
 # must recheck if segfault/leak when thread creation fail
@@ -14,4 +12,8 @@
 
 # Packets conflicts when multiple instances of nmap are running
 
+# TODO?: Include dynamic timeout in threads
+
 # Update -h before push
+
+# TODO: multithread host discovery...

@@ -231,37 +231,6 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 	close(fd);
 }
 
-static void add_ip(char *ip_string, t_set *set)
-{
-	struct s_ip *tmp;
-
-	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
-	if (tmp) {
-		ft_memset(tmp, 0, sizeof(struct s_ip));
-		tmp->destination = ip_string;
-		/* Default status */
-		tmp->status = UP;
-		/* Prepare addr structs */
-		/* TODO no need to malloc this.. */
-		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->saddr || !tmp->daddr)
-			tmp->status = ERROR;
-		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
-			tmp->status = DOWN;
-		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
-			tmp->status = ERROR;
-		if (tmp->status == UP) {
-			push_ports(&tmp, set);
-			++g_data.vip_counter;
-		}
-		tmp->srtt = 0;
-		tmp->rttvar = 0;
-		tmp->timeout = 1345678;
-		push_ip(&g_data.ips, tmp);
-	}
-}
-
 /*
  **	Parse all the options
  */
@@ -439,20 +408,29 @@ int	parse_nmap_args(int ac, char **av)
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
 		add_ip(tmp->string, &g_data.set);
-		if (++g_data.ip_counter > MAX_IPS) {
+		/*if (++g_data.ip_counter > MAX_IPS) {
 			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
 			return 1;
-		}
+		}*/
+		++g_data.ip_counter;
 		tmp = tmp->next;
 	}
 	/* Filling scans with ips from arguments */
+	char *slash;
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
-			add_ip(av[i], &g_data.set);
-			if (++g_data.ip_counter > MAX_IPS) {
+			slash = ft_strchr(av[i], '/');
+			if (slash) {
+				if (add_ip_range(av[i], slash, &g_data.set))
+					return 1;
+			}
+			else
+				add_ip(av[i], &g_data.set);
+			/*if (++g_data.ip_counter > MAX_IPS) {
 				fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
 				return 1;
-			}
+			}*/
+			++g_data.ip_counter;
 		}
 	}
 
