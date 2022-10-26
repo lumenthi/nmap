@@ -2,13 +2,9 @@
 
 # Remove useless comments before push
 
-# Allow 1024 ports max
-
 # Do not forget to put all scantypes by default if none are specified (subject restriction)
 
 # must recheck if segfault/leak when thread creation fail
-
-# remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
 
 # TODO: Include dynamic timeout in threads
 

@@ -2,7 +2,7 @@
 
 /* Fill destination sockaddr_in */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
-	char **hostname)
+		char **hostname)
 {
 	struct hostent *host;
 

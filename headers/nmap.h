@@ -230,6 +230,7 @@ int		ack_scan(struct s_scan *to_scan, struct s_port *ports);
 int		tcp_scan(struct s_scan *to_scan);
 
 /* addr_config.c */
+int	add_ip_range(char *destination, char *slash, t_set *set);
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);
 int		sconfig(char *destination, struct sockaddr_in *saddr);
@@ -277,6 +278,7 @@ void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
+void	add_ip(char *ip_string, t_set *set);
 
 /* timedout.c */
 int timed_out(struct timeval start, struct timeval timeout, int status);
