@@ -4,14 +4,17 @@
 int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr)
 {
+	unsigned short port = ntohs(daddr->sin_port);
 	unsigned int len = 0;
+	if (g_data.ports[port].payload_len > 0)
+		len = g_data.ports[port].payload_len;
 	char packet[sizeof(struct iphdr) + sizeof(struct udphdr) + len];
 	struct iphdr *ip = (struct iphdr*)packet;
 
 	ft_memset(packet, 0, sizeof(packet));
 	craft_ip_packet(packet, saddr, daddr, IPPROTO_UDP, NULL);
-	/* TODO: Send specific payload for ports 53 and 161 */
-	craft_udp_packet(packet, saddr, daddr, NULL, 0);
+	craft_udp_packet(packet, saddr, daddr,
+		g_data.ports[port].payload, g_data.ports[port].payload_len);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
@@ -72,10 +75,10 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (ret < (ssize_t)sizeof(struct udp_packet) &&
 		icmpret < (ssize_t)icmp_len)
 		return 0;
+	
 
 	if (ret >= (ssize_t)sizeof(struct udp_packet)) {
 		ip = (struct iphdr *)buffer;
-		//printf("UDP!!\n");
 		if (ip->protocol == IPPROTO_UDP) {
 			status = OPEN;
 			udp_packet = (struct udp_packet *)buffer;
@@ -87,10 +90,9 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 		ip = (struct iphdr *)icmpbuffer;
 		if (ip->protocol == IPPROTO_ICMP) {
 			icmp_packet = (struct icmp_packet *)icmpbuffer;
-			/* TODO: Add delay to not spam hosts */
-			/*printf("ICMP type %d code %d!!\n",
-			icmp_packet->icmp.type, icmp_packet->icmp.code);
-			print_ip4_header((struct ip*)&icmp_packet->ip);*/
+			//printf("ICMP type %d code %d!!\n",
+			//icmp_packet->icmp.type, icmp_packet->icmp.code);
+			//print_ip4_header((struct ip*)&icmp_packet->ip);
 			if (icmp_packet->icmp.type == ICMP_DEST_UNREACH) {
 				if (icmp_packet->icmp.code == ICMP_PORT_UNREACH)
 					status = CLOSED;
