@@ -1,36 +1,14 @@
 # Flags d'opti (remove -g ?)
 
-# print date and hours at launch
-"Starting Nmap 7.60 ( https://nmap.org ) at 2022-10-06 10:24 CEST"
-
-#### Opti ####
-Do not identify the services in each thread during runtime but before.
-Going through the lists in every thread is slow. + the locking, and we do it two times:
-when the thread is searching for a scan to do, and when the thread updates a scan it received.
-So maybe use arrays or feed the threads with what scan they must do so they don't need to
-search themselves?
-Receiving in the threads is slow but it is necessary to receive soon enough after sending
-otherwise we may lose the answers
-
-# Do we really need to lock when saving scan results (check this with the future refactor)?
-
 # Remove useless comments before push
 
 # Allow 1024 ports max
-
-# Scans
-All scans are consistant but UDP
 
 # Do not forget to put all scantypes by default if none are specified (subject restriction)
 
 # must recheck if segfault/leak when thread creation fail
 
 # remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
-
-# UDP speed: scanning 1000 ports at once is slow due to icmp limiting but
-scanning multiple hosts is no big deal
-
-# TODO: Include dynamic timeout in threads
 
 # Must determine a limit IP number to scan in one command
 
@@ -43,3 +21,5 @@ but
 sudo ./ft_nmap localhost --scan=TCP -p 1-25 does
 
 # Packets conflicts when multiple instances of nmap are running
+
+# Update -h before push

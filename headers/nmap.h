@@ -100,6 +100,7 @@ struct port {
 
 	/* UDP payload */
 	char	*payload;
+	size_t	payload_len;
 
 	/* Is this port currently used for sending */
 	int		status;
@@ -162,6 +163,7 @@ typedef struct	s_data {
 	struct timeval		max_rtt;
 	struct timeval		min_rtt;
 	struct timeval		initial_rtt;
+	uint64_t			delay;
 
 	/* Counters */
 	int					ip_counter;
