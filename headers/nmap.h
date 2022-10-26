@@ -35,6 +35,10 @@
 #define SERVICES_FILENAME "services"
 #define DB_SERVICES DB_PATH SERVICES_FILENAME
 
+/* PAYLOADS */
+#define PAYLOADS_FILENAME "payloads"
+#define DB_PAYLOADS DB_PATH PAYLOADS_FILENAME
+
 /* ASCII ART */
 #define ASCII_FILENAME "art.ascii"
 #define DB_ASCII DB_PATH ASCII_FILENAME
@@ -93,6 +97,9 @@ struct port {
 
 	char	*udp_name;
 	char	*udp_desc;
+
+	/* UDP payload */
+	char	*payload;
 
 	/* Is this port currently used for sending */
 	int		status;
@@ -256,6 +263,10 @@ void	craft_icmp_packet(void *packet, uint8_t type, uint8_t code,
 /* services.c */
 int		get_services(void);
 void	free_services(void);
+
+/* payload.c */
+int		get_payloads(void);
+void	free_payloads(void);
 
 /* list.c */
 void	print_progress(void);

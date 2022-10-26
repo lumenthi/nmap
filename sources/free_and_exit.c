@@ -16,6 +16,7 @@ void free_threads()
 void	free_all()
 {
 	free_threads();
+	free_payloads();
 	free_services();
 	free_ips(&g_data.ips);
 	if (g_data.set.ranges)
