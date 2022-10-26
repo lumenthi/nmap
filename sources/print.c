@@ -194,7 +194,7 @@ static void	count_scan_status(struct s_port *port, int ip_counter, size_t **csta
 	port->final_status = -1;
 
 	int i = 0;
-	while (i < 6) {
+	while (i <= 6) {
 		if (scans[i]) {
 			tmp = scans[i];
 			if (pstatus == -1)
@@ -296,7 +296,6 @@ void	print_scans(struct s_ip *ips)
 			printf("ft_nmap scan report for ");
 			print_ip(ip->daddr);
 			printf("\n");
-			/* TODO: Put variable at the beginning of the fonction */
 			int i = 0;
 			while (i < USHRT_MAX+1) {
 				print_port(ip->ports[i], &info, status, colors, cstatus[ip_counter]);

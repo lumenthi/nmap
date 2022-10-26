@@ -12,14 +12,6 @@
 
 # Must determine a limit IP number to scan in one command
 
-# Non root scan doesn't work anymore
-./ft_nmap localhost
-
-# TCP Scan display bug
-sudo ./ft_nmap localhost --scan=TCP -p 1-26 does not print the res
-but
-sudo ./ft_nmap localhost --scan=TCP -p 1-25 does
-
 # Packets conflicts when multiple instances of nmap are running
 
 # Update -h before push
