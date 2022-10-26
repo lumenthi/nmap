@@ -100,6 +100,7 @@ struct port {
 
 	/* UDP payload */
 	char	*payload;
+	size_t	payload_len;
 
 	/* Is this port currently used for sending */
 	int		status;
