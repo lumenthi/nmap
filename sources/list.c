@@ -178,10 +178,28 @@ static int push_scan(struct s_port *scanlist, struct s_scan *new)
 
 int assign_port(uint16_t min, uint16_t max)
 {
+	static int start = -1;
 	static int port = 0;
 
+	if (start == -1) {
+		start = ft_random(min, max);
+		/* Verbose print */
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
+			g_data.opt & OPT_VERBOSE_PACKET)
+		{
+			fprintf(stderr, "[*] Starting scans from source port: %d\n",
+				start);
+		}
+	}
+
+	if (start == -1) {
+		fprintf(stderr, "Port randomisation failed, setting start port to %d\n",
+			min);
+		start = min;
+	}
+
 	if (port < min || port >= max)
-		port = min;
+		port = start;
 	else
 		port++;
 

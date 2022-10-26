@@ -224,6 +224,10 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 		i++;
 	}
 
+	/* DEBUG */
+	/* *port_min = 32768;
+	*port_max = (*port_min)+5; */
+
 	close(fd);
 }
 
