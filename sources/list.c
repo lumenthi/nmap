@@ -44,6 +44,8 @@ void add_tmp_ip(char *ip_string)
 			tmp->status = ERROR;
 		if (tmp->status == ERROR)
 			g_data.nb_invalid_ips++;
+		else if (!g_data.privilegied)
+			tmp->status = UP;
 		push_tmp_ip(&g_data.tmp_ips, tmp);
 		g_data.ip_counter++;
 	}
@@ -57,6 +59,7 @@ void add_ip(struct s_tmp_ip *ip, t_set *set)
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_ip));
 		tmp->destination = ip->destination;
+		tmp->dhostname = ft_strdup(ip->dhostname);
 		tmp->status = UP;
 		/* Prepare addr structs */
 		/* TODO: USELESS!! */

@@ -175,8 +175,16 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	end->tv_usec = 0;
 
 	/* host discovery */
-	if (!(g_data.opt & OPT_NO_DISCOVERY))
+	if (!(g_data.opt & OPT_NO_DISCOVERY) && g_data.privilegied == 1) {
 		host_discovery();
+	}
+	else
+		g_data.vip_counter = g_data.ip_counter - g_data.nb_invalid_ips;
+	
+	if (g_data.vip_counter > g_data.max_ips) {
+		fprintf(stderr, "Too much ips (maximum %ld with your currently"
+			"available memory\n", g_data.max_ips);
+	}
 
 	if (g_data.nb_invalid_ips > 0) {
 		g_data.invalid_ips = malloc(sizeof(char *) * g_data.nb_invalid_ips);
@@ -204,7 +212,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 			g_data.invalid_ips[j] = tmp->destination;
 			j++;
 		}
-		else {
+		else if (tmp->status == DOWN) {
 			g_data.down_ips[i] = tmp->daddr.sin_addr;
 			i++;
 		}

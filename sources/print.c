@@ -310,9 +310,9 @@ void	print_scans(struct s_ip *ips)
 				i++;
 			}
 			if (g_data.port_counter > 1)
-				printf("Scanned %d ports, ", g_data.port_counter / g_data.ip_counter);
+				printf("Scanned %d ports, ", g_data.port_counter / g_data.vip_counter);
 			else
-				printf("Scanned %d port, ", g_data.port_counter / g_data.ip_counter);
+				printf("Scanned %d port, ", g_data.port_counter / g_data.vip_counter);
 			if (info.cerror > 1)
 				printf("%ld errors", info.cerror);
 			else

@@ -12,9 +12,9 @@
 
 # Check allowed functions
 
-# Option to disable host dicovery
+# Print down if 0 port were scanned
 
-# Check ip counter + use max_ips
+# check scan broadcast and gateway without privileges
 
 ##### IN THE FUTURE, MORE FEATURES TO COME
 
