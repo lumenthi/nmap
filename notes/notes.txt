@@ -1,19 +1,32 @@
+###### Features to implement before defence
+
 # Flags d'opti (remove -g ?)
 
 # Remove useless comments before push
 
-# Do not forget to put all scantypes by default if none are specified (subject restriction)
+# Put all scantypes by default if none are specified (subject restriction) (sources/parse_option_line.c:397)
 
-# must recheck if segfault/leak when thread creation fail
-
-# remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+# Must recheck if segfault/leak when thread creation fail
 
 # Must determine a limit IP number to scan in one command
 
-# Packets conflicts when multiple instances of nmap are running
-
-# TODO?: Include dynamic timeout in threads
-
 # Update -h before push
 
-# TODO: multithread host discovery...
+# Check allowed functions
+
+##### IN THE FUTURE, MORE FEATURES TO COME
+
+## NEW FEATURES
+# Parse initial, min and max rtt
+# Version detection
+# OS detection
+# Non root (connect) host discovery
+
+## OPTIMISATION
+# Use the same port structure for all IPs, ft_nmap will use way less memory to perform scans
+# Remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+# Dynamic timeout in threads
+
+## OTHERS
+# No need to malloc saddr, daddr structs (sources/list.c:22)
+# Print TIMESTAMP in craft packet (sources/craft_packet.c)

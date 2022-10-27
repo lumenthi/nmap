@@ -125,7 +125,6 @@ static void examples()
 
 void		print_help()
 {
-	/* TODO: Check if all options are included in the help */
 	/* Header with ascii art and usage */
 	print_art(DB_ASCII);
 	print_usage(stdout);

@@ -162,7 +162,6 @@ int get_payloads()
 		return 0;
 	}
 
-	/* TODO: Print verbose for level PACKET too */
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
 		fprintf(stderr, "[*] Parsing payloads database %s\n", DB_PAYLOADS);

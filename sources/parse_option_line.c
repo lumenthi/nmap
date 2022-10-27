@@ -394,7 +394,6 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Default SCAN */
-	/* TODO: default must be all scans (counter = 6) according to the subject */
 	if (!g_data.scan_types_counter) {
 		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 		g_data.scan_types_counter = 1;

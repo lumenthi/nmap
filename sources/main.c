@@ -67,7 +67,6 @@ void	print_start(void)
 	printf("...........................................\n\n");
 }
 
-/* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {
 	/* Timers for the whole proccess */

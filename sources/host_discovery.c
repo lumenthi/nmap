@@ -24,7 +24,6 @@ void	update_timeout(struct s_ip *ip, uint64_t start, uint64_t end)
 	//printf("New timeout = %ldus (%fms)\n", ip->timeout, ip->timeout / 1000.0);
 }
 
-/* TODO use this for all tcp sends? */
 static int send_tcp(int tcpsockfd, struct s_ip *ip,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr, uint8_t flags)
 {
@@ -242,7 +241,7 @@ int	discover_target(struct s_ip *ip)
 	icmp.sin_addr.s_addr = ip->daddr->sin_addr.s_addr;
 	icmp.sin_port = 0;
 
-	/* TODO: Connect scan if unprivileged */
+	/* Idea: Connect scan if unprivileged */
 	ret += send_tcp(tcpsock, ip, &source, &tcp443, TH_SYN);
 
 	ret += send_tcp(tcpsock, ip, &source, &tcp80, TH_ACK);
@@ -275,7 +274,6 @@ int	discover_target(struct s_ip *ip)
 	return 0;
 }
 
-/*	TODO: Apply this to scans! */
 int		host_discovery(void)
 {
 	struct s_ip *ip = g_data.ips;
