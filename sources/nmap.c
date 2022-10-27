@@ -13,29 +13,30 @@ static void erase_progress_bar()
 	}
 }
 
-static int run_scan(struct s_scan *scan, struct s_port *ports)
+static int run_scan(struct s_scan *scan, struct s_port *ports,
+	struct timeval timeout)
 {
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
-			syn_scan(scan, ports);
+			syn_scan(scan, ports, timeout);
 			break;
 		case OPT_SCAN_TCP:
-			tcp_scan(scan);
+			tcp_scan(scan, timeout);
 			break;
 		case OPT_SCAN_FIN:
-			fin_scan(scan, ports);
+			fin_scan(scan, ports, timeout);
 			break;
 		case OPT_SCAN_NULL:
-			null_scan(scan, ports);
+			null_scan(scan, ports, timeout);
 			break;
 		case OPT_SCAN_ACK:
-			ack_scan(scan, ports);
+			ack_scan(scan, ports, timeout);
 			break;
 		case OPT_SCAN_XMAS:
-			xmas_scan(scan, ports);
+			xmas_scan(scan, ports, timeout);
 			break;
 		case OPT_SCAN_UDP:
-			udp_scan(scan, ports);
+			udp_scan(scan, ports, timeout);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -46,7 +47,8 @@ static int run_scan(struct s_scan *scan, struct s_port *ports)
 	return 0;
 }
 
-static void start_scan(struct s_scan *scan, struct s_port *ports)
+static void start_scan(struct s_scan *scan, struct s_port *ports,
+	struct timeval timeout)
 {
 	static uint64_t	last_probe = 0;
 
@@ -64,7 +66,7 @@ static void start_scan(struct s_scan *scan, struct s_port *ports)
 		UNLOCK(scan);
 		if (g_data.opt & OPT_DELAY)
 			last_probe = get_time();
-		run_scan(scan, ports);
+		run_scan(scan, ports, timeout);
 		g_data.ports[scan->sport].status = FREE;
 	}
 	else
@@ -83,19 +85,19 @@ static int launch_scan(void *rip)
 			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
 				if (port.syn_scan)
-					start_scan(port.syn_scan, ip->ports);
+					start_scan(port.syn_scan, ip->ports, ip->timeout);
 				if (port.null_scan)
-					start_scan(port.null_scan, ip->ports);
+					start_scan(port.null_scan, ip->ports, ip->timeout);
 				if (port.fin_scan)
-					start_scan(port.fin_scan, ip->ports);
+					start_scan(port.fin_scan, ip->ports, ip->timeout);
 				if (port.xmas_scan)
-					start_scan(port.xmas_scan, ip->ports);
+					start_scan(port.xmas_scan, ip->ports, ip->timeout);
 				if (port.ack_scan)
-					start_scan(port.ack_scan, ip->ports);
+					start_scan(port.ack_scan, ip->ports, ip->timeout);
 				if (port.udp_scan)
-					start_scan(port.udp_scan, ip->ports);
+					start_scan(port.udp_scan, ip->ports, ip->timeout);
 				if (port.tcp_scan)
-					start_scan(port.tcp_scan, ip->ports);
+					start_scan(port.tcp_scan, ip->ports, ip->timeout);
 				i++;
 			}
 		}
@@ -162,7 +164,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		else
 			tmp = tmp->next;
 	}
-	print_ip_list(g_data.ips);
+	//print_ip_list(g_data.ips);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

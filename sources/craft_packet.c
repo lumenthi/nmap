@@ -107,5 +107,4 @@ void	craft_icmp_packet(void *packet, uint8_t type, uint8_t code,
 		ft_memcpy(icmp + 1, payload, payload_len);
 
 	icmp->checksum = checksum((char*)icmp, sizeof(struct icmphdr));
-	/* TODO print TIMESTAMP packets */
 }

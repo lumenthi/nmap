@@ -287,9 +287,15 @@ void	print_scans(struct s_ip *ips)
 			return ;
 		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
 	}
+	
+	printf("\n");
 
 	count_status(ips, cstatus);
 
+	if (g_data.nb_down_ips <= 5) {
+		for (int i = 0; i < g_data.nb_down_ips; i++)
+			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
+	}
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
 		if (ip->status == UP || ip->status == SCANNING) {
@@ -316,11 +322,9 @@ void	print_scans(struct s_ip *ips)
 				}
 			}
 			printf(NMAP_COLOR_RESET"\n");
+			if (ip->next)
+				ft_putchar('\n');
 		}
-		else if (ip->status != DOWN)
-			printf("%s is %s\n", inet_ntoa(ip->daddr->sin_addr), status[ip->status]);
-		if (ip->next && ip->status != DOWN)
-			ft_putchar('\n');
 		ip = ip->next;
 		ip_counter++;
 	}

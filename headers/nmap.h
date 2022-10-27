@@ -124,7 +124,7 @@ struct s_ip {
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
 	int64_t				srtt;
 	int64_t				rttvar;
-	uint64_t			timeout; /* Time to wait until timeout (determined by host discovery) */
+	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
@@ -222,20 +222,26 @@ void	print_time(struct timeval start_time, struct timeval end_time,
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
-int		syn_scan(struct s_scan *to_scan, struct s_port *ports);
+int		syn_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* udp_scan.c */
-int		udp_scan(struct s_scan *to_scan, struct s_port *ports);
+int		udp_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* fin_scan.c */
-int		fin_scan(struct s_scan *to_scan, struct s_port *ports);
+int		fin_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* null_scan.c */
-int		null_scan(struct s_scan *to_scan, struct s_port *ports);
+int		null_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* xmas_scan.c */
-int		xmas_scan(struct s_scan *to_scan, struct s_port *ports);
+int		xmas_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* xmas_scan.c */
-int		ack_scan(struct s_scan *to_scan, struct s_port *ports);
-
+int		ack_scan(struct s_scan *to_scan, struct s_port *ports,
+	struct timeval timeout);
 /* tcp_scan.c */
-int		tcp_scan(struct s_scan *to_scan);
+int		tcp_scan(struct s_scan *to_scan,
+	struct timeval timeout);
 
 /* addr_config.c */
 int	add_ip_range(char *destination, char *slash, t_set *set);
@@ -291,10 +297,9 @@ void	print_ip_list(struct s_ip *ips);
 void	remove_ip(struct s_ip **ips, struct s_ip *ip);
 
 /* timedout.c */
-int timed_out(struct timeval start, struct timeval timeout, int status);
+int		timed_out(struct timeval start, struct timeval timeout, int status);
 
 /* host_discovery.c */
-int	host_discovery(void);
-void update_timeout(struct s_ip *ip, uint64_t start, uint64_t end);
+int		host_discovery(void);
 
 #endif

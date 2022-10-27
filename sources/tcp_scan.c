@@ -1,13 +1,12 @@
 #include "nmap.h"
 #include "options.h"
 
-int tcp_scan(struct s_scan *scan)
+int tcp_scan(struct s_scan *scan, struct timeval timeout)
 {
 	int sockfd;
 	int err;
 	int len = sizeof(err);
 	int i = 0;
-	struct timeval timeout;
 
 	/* Prepare ports */
 	scan->saddr.sin_port = htons(scan->sport);

@@ -123,12 +123,11 @@ static int read_fin_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int fin_scan(struct s_scan *scan, struct s_port *ports)
+int fin_scan(struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	int tcpsockfd;
 	int icmpsockfd;
 	int ret;
-	struct timeval timeout = {1, 345678};
 
 	LOCK(scan);
 

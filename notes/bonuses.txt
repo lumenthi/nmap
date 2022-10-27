@@ -1,17 +1,16 @@
 # Bonus scans: Non root TCP connect scan.
-# Multithreaded host discovery (https://nmap.org/book/man-host-discovery.html)
-# Dynamic timeout (https://nmap.org/book/port-scanning-algorithms.html#idm45323736699888)
+# MULTITHREADED!! Host discovery (https://nmap.org/book/man-host-discovery.html)
+# DYNAMIC TIMEOUT !
 # Progress bar
 # Verbose output with multiple levels
 # Insane help menu
-# Able to launch without privileges
 # Able to scan more than 1024 ports at once
 # Reverse DNS
 # Advanced service resolution + description
 # Server
 # Implement scan delay
 # Parsing of IP ranges: 1.1.1.1/24. Allow us to scan a whole network
-# Determining the max number of ips we can scan in one run
+# Ressources check (Determining the max number of ips we can scan in one run)
 
 Ideas
 # Disable host discovery
