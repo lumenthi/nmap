@@ -165,6 +165,8 @@ typedef struct	s_data {
 	struct timeval		initial_rtt;
 	uint64_t			delay;
 
+	unsigned long		max_ips;
+
 	/* Counters */
 	int					ip_counter;
 	int					vip_counter; /* valid ips counter */

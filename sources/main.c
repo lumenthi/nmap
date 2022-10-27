@@ -31,6 +31,18 @@ void	init_data()
 
 	g_data.ipset = NULL;
 
+	long pagesize = sysconf(_SC_PAGE_SIZE);
+	long a_pages = sysconf(_SC_AVPHYS_PAGES);
+	uint64_t total_size = pagesize * a_pages;
+	uint64_t a_memory = total_size * 0.8 - sizeof(g_data);
+	g_data.max_ips = a_memory / sizeof(struct s_ip);
+	/*printf("Page size = %ld\n", pagesize);
+	printf("Available pages = %ld\n", a_pages);
+	printf("Total size = %ld\n", total_size);
+	printf("size of g_data = %ld\n", sizeof(t_data));
+	printf("size of struct ip = %ld\n", sizeof(struct s_ip));
+	printf("Free size = %ld\n", a_memory);
+	printf("%lu max ips\n", g_data.max_ips);*/
 }
 
 void	print_start(void)

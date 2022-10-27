@@ -136,7 +136,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	end->tv_sec = 0;
 	end->tv_usec = 0;
 
-	host_discovery();
+	//host_discovery();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
