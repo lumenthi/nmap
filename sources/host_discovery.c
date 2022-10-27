@@ -2,12 +2,6 @@
 #include "options.h"
 #include "libft.h"
 
-struct s_timeout_data {
-	uint64_t	start[4];
-	uint64_t	end[4];
-	int			nb_recv;
-};
-
 void	update_timeout(struct s_ip *ip, uint64_t start, uint64_t end)
 {
 	int64_t oldsrtt = ip->srtt;
@@ -73,8 +67,9 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 			return 0;
 		iphdr = (struct iphdr*)tcpbuffer;
 		struct tcphdr *tcp = (struct tcphdr*)(iphdr + 1); 
-		if (tcp->dest == saddr->sin_port && (tcp->source == ntohs(443)
-			|| tcp->source == ntohs(80))) {
+		if (tcp->dest == saddr->sin_port
+			&& iphdr->daddr == ip->saddr->sin_addr.s_addr 
+			&& (tcp->source == ntohs(443) || tcp->source == ntohs(80))) {
 			/* TODO: if there was a given initial timeout, don't do this */
 			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 				fprintf(stderr, "[***] Received TCP from port %d\n",
@@ -143,7 +138,8 @@ static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
 			return 0;
 		iphdr = (struct iphdr*)icmpbuffer;
 		struct icmphdr *icmp = (struct icmphdr*)(iphdr + 1); 
-		if (((type == ICMP_ECHO && icmp->type == ICMP_ECHOREPLY)
+		if (iphdr->daddr == ip->saddr->sin_addr.s_addr
+			&& ((type == ICMP_ECHO && icmp->type == ICMP_ECHOREPLY)
 			|| (type == ICMP_TIMESTAMP && icmp->type == ICMP_TIMESTAMPREPLY))
 			&& icmp->un.echo.id == id) {
 			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
@@ -259,9 +255,12 @@ int	discover_target(struct s_ip *ip)
 				|| g_data.opt & OPT_VERBOSE_PACKET)
 			fprintf(stderr, "[***] Host %s is down\n", ip->dhostname);
 	}
-	else if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
-			|| g_data.opt & OPT_VERBOSE_PACKET) {
-		fprintf(stderr, "[***] Host %s is up\n", ip->dhostname);
+	else {
+		ip->status = UP;
+		g_data.vip_counter++;
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+			|| g_data.opt & OPT_VERBOSE_PACKET)
+			fprintf(stderr, "[***] Host %s is up\n", ip->dhostname);
 	}
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG
@@ -275,22 +274,64 @@ int	discover_target(struct s_ip *ip)
 	return 0;
 }
 
+static int		discover_hosts(void *param)
+{
+	(void)param;
+	struct s_ip *ip = g_data.ips;
+	while (ip) {
+		LOCK(ip);
+		if (ip->status == READY) {
+			ip->status = SCANNING;
+			UNLOCK(ip);
+			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+					|| g_data.opt & OPT_VERBOSE_PACKET)
+				fprintf(stderr, "[**] Scanning %s\n", ip->dhostname);
+			discover_target(ip);
+		}
+		else
+			UNLOCK(ip);
+		ip = ip->next;
+	}
+	return 0;
+}
+
+static int		launch_discoveries(void)
+{
+	void	*retval;
+
+	g_data.threads = malloc(sizeof(pthread_t) * g_data.nb_threads);
+	if (!g_data.threads)
+		return -1;
+	ft_bzero(g_data.threads, sizeof(pthread_t) * g_data.nb_threads);
+
+	while (g_data.created_threads < g_data.nb_threads) {
+		if (pthread_create(&g_data.threads[g_data.created_threads], NULL,
+			(void*)discover_hosts, (void*)g_data.ips) != 0)
+			return -1;
+		g_data.created_threads++;
+	}
+
+	while (g_data.created_threads > 0) {
+		g_data.created_threads--;
+		if (pthread_join(g_data.threads[g_data.created_threads], &retval) != 0)
+			return -1;
+	}
+	return 0;
+}
+
 /*	TODO: Apply this to scans! */
 int		host_discovery(void)
 {
-	struct s_ip *ip = g_data.ips;
-
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 			|| g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] Starting host discovery\n");
 
-	while (ip) {
-		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
-				|| g_data.opt & OPT_VERBOSE_PACKET)
-			fprintf(stderr, "[**] Scanning %s\n", ip->dhostname);
-		discover_target(ip);
-		ip = ip->next;
+	if (g_data.nb_threads && launch_discoveries() != 0) {
+		fprintf(stderr, "ft_nmap: Failed to create threads\n");
+		return 1;
 	}
+	else
+		discover_hosts(NULL);
 
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 			|| g_data.opt & OPT_VERBOSE_PACKET)

@@ -17,7 +17,7 @@ void add_ip(char *ip_string, t_set *set)
 		ft_memset(tmp, 0, sizeof(struct s_ip));
 		tmp->destination = ip_string;
 		/* Default status */
-		tmp->status = UP;
+		tmp->status = READY;
 		/* Prepare addr structs */
 		/* TODO no need to malloc this.. */
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
@@ -28,13 +28,14 @@ void add_ip(char *ip_string, t_set *set)
 			tmp->status = DOWN;
 		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
 			tmp->status = ERROR;
-		if (tmp->status == UP) {
+		if (tmp->status == READY) {
 			push_ports(&tmp, set);
-			++g_data.vip_counter;
 		}
 		tmp->srtt = 0;
 		tmp->rttvar = 0;
 		tmp->timeout = 1345678;
+		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+			tmp->status = ERROR;
 		push_ip(&g_data.ips, tmp);
 	}
 }

@@ -15,5 +15,3 @@
 # TODO?: Include dynamic timeout in threads
 
 # Update -h before push
-
-# TODO: multithread host discovery...
