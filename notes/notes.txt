@@ -25,7 +25,6 @@
 ## OPTIMISATION
 # Use the same port structure for all IPs, ft_nmap will use way less memory to perform scans
 # Remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
-# Dynamic timeout in threads
 
 ## OTHER
 # No need to malloc saddr, daddr structs (sources/list.c:22)

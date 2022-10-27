@@ -1,5 +1,6 @@
 # Bonus scans: Non root TCP connect scan.
 # MULTITHREADED!! Host discovery (https://nmap.org/book/man-host-discovery.html)
+# DYNAMIC TIMEOUT !
 # Progress bar
 # Verbose output with multiple levels
 # Insane help menu

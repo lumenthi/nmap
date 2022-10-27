@@ -66,9 +66,9 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 		if (ret < (ssize_t)(sizeof(struct ip) + sizeof(struct tcphdr)))
 			return 0;
 		iphdr = (struct iphdr*)tcpbuffer;
-		struct tcphdr *tcp = (struct tcphdr*)(iphdr + 1); 
+		struct tcphdr *tcp = (struct tcphdr*)(iphdr + 1);
 		if (tcp->dest == saddr->sin_port
-			&& iphdr->daddr == ip->saddr->sin_addr.s_addr 
+			&& iphdr->daddr == ip->saddr->sin_addr.s_addr
 			&& (tcp->source == ntohs(443) || tcp->source == ntohs(80))) {
 			/* TODO: if there was a given initial timeout, don't do this */
 			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
@@ -267,7 +267,7 @@ int	discover_target(struct s_ip *ip, int64_t *gtimeout)
 
 	if (g_data.opt & OPT_VERBOSE_DEBUG
 			|| g_data.opt & OPT_VERBOSE_PACKET)
-		fprintf(stderr, "[***] %s initial timeout set to be %ld.%06ld\n",
+		fprintf(stderr, "[***] Calculated timeout for %s is %ld.%06ld\n",
 			ip->dhostname, *gtimeout / 1000000, *gtimeout % 1000000);
 
 	close(tcpsock);
@@ -278,15 +278,38 @@ int	discover_target(struct s_ip *ip, int64_t *gtimeout)
 
 static void		assign_timeout(struct s_ip *ip, int64_t timeout)
 {
+	struct timeval fast =		{0, 123456};
+	struct timeval average =	{1, 345678};
+	struct timeval laggy =		{2, 678999};
+
 	ip->timeout.tv_sec = timeout / 1000000;
 	ip->timeout.tv_usec = timeout % 1000000;
 
-	/* printf("Final timeout = %ldus (%fms)\n", timeout, timeout / 1000.0); */
+	// printf("Final timeout = %ldus (%fms)\n", timeout, timeout / 1000.0);
+	// printf("Timeout: %ld\n", timeout);
 
-	/* TODO: Tweak value to make it work */
+	/* TODO: Tweak values to make it work */
+	if (timeout < 1000) {
+		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+			printf("[***] Set [fast] timeout for %s\n", ip->destination);
+		ip->timeout.tv_sec = fast.tv_sec;
+		ip->timeout.tv_usec = fast.tv_usec;
+	}
+	else if (timeout < 300000) {
+		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+			printf("[***] Set [average] timeout for %s\n", ip->destination);
+		ip->timeout.tv_sec = average.tv_sec;
+		ip->timeout.tv_usec = average.tv_usec;
+	}
+	else {
+		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
+			printf("[***] Set [laggy] timeout for %s\n", ip->destination);
+		ip->timeout.tv_sec = laggy.tv_sec;
+		ip->timeout.tv_usec = laggy.tv_usec;
+	}
 
-	printf("Timeout for ip %s is %lds%ldus\n", ip->destination,
-		ip->timeout.tv_sec, ip->timeout.tv_usec);
+	/* printf("Timeout for ip %s is %lds%ldus\n", ip->destination,
+		ip->timeout.tv_sec, ip->timeout.tv_usec); */
 }
 
 static int		discover_hosts(void *param)
@@ -302,9 +325,18 @@ static int		discover_hosts(void *param)
 			UNLOCK(ip);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 					|| g_data.opt & OPT_VERBOSE_PACKET)
-				fprintf(stderr, "[**] Scanning %s\n", ip->dhostname);
+				fprintf(stderr, "[**] Discovering %s\n", ip->dhostname);
 			discover_target(ip, &timeout);
-			assign_timeout(ip, timeout);
+			if (timeout)
+				assign_timeout(ip, timeout);
+			else {
+				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
+					g_data.opt & OPT_VERBOSE_PACKET)
+				{
+					fprintf(stderr, "[!] Can't determine dynamic timeout, setting timeout for %s to [average]\n",
+						ip->destination);
+				}
+			}
 		}
 		else
 			UNLOCK(ip);
