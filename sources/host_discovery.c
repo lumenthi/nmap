@@ -251,13 +251,18 @@ int	discover_target(struct s_ip *ip)
 
 	if (!ret) {
 		ip->status = DOWN;
+		pthread_mutex_lock(&g_data.print_lock);
+		g_data.nb_down_ips++;
+		pthread_mutex_unlock(&g_data.print_lock);
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 				|| g_data.opt & OPT_VERBOSE_PACKET)
 			fprintf(stderr, "[***] Host %s is down\n", ip->dhostname);
 	}
 	else {
 		ip->status = UP;
+		pthread_mutex_lock(&g_data.print_lock);
 		g_data.vip_counter++;
+		pthread_mutex_unlock(&g_data.print_lock);
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 			|| g_data.opt & OPT_VERBOSE_PACKET)
 			fprintf(stderr, "[***] Host %s is up\n", ip->dhostname);

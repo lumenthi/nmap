@@ -15,3 +15,5 @@
 # TODO?: Include dynamic timeout in threads
 
 # Update -h before push
+
+# Option to disable host dicovery

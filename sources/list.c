@@ -393,6 +393,58 @@ void	push_ip(struct s_ip **head, struct s_ip *new)
 	}
 }
 
+void	print_ip_list(struct s_ip *ips)
+{
+	struct s_ip *tmp = ips;
+	while (tmp) {
+		printf("IP: %s\n", inet_ntoa(tmp->daddr->sin_addr));
+		tmp = tmp->next;
+	}
+}
+
+void	ft_lstpopfront(struct s_ip **alst)
+{
+	struct s_ip	*new;
+
+	if (!alst)
+		return ;
+	new = (*alst)->next;
+	if ((*alst)->saddr)
+		free((*alst)->saddr);
+	if ((*alst)->daddr)
+		free((*alst)->daddr);
+	if ((*alst)->dhostname)
+		free((*alst)->dhostname);
+	free_ports((*alst)->ports);
+	free(*alst);
+	*alst = new;
+}
+
+void	remove_ip(struct s_ip **ips, struct s_ip *ip)
+{
+	struct s_ip	*prec;
+	struct s_ip	*tmp;
+
+	tmp = *ips;
+	prec = NULL;
+	while (tmp)
+	{
+		if (tmp == ip)
+		{
+			ft_lstpopfront(&tmp);
+			if (prec)
+				prec->next = tmp;
+			else
+				*ips = tmp;
+		}
+		else
+		{
+			prec = tmp;
+			tmp = tmp->next;
+		}
+	}
+}
+
 void	free_ips(struct s_ip **ip)
 {
 	struct s_ip *current = *ip;

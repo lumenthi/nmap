@@ -25,6 +25,8 @@ void	free_all()
 		free(g_data.set.single_values);
 	if (g_data.ipset)
 		free_ipset(&g_data.ipset);
+	if (g_data.down_ips)
+		free(g_data.down_ips);
 }
 
 void	free_and_exit(int exit_val)
