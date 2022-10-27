@@ -133,6 +133,40 @@ static int launch_threads()
 	return 0;
 }
 
+static void	print_start(void)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+
+	printf("\n................. Config ..................\n");
+
+	if (g_data.vip_counter == 1) {
+		printf("Target IP : %s\n",
+		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
+	}
+	else {
+		printf("Scanning %d targets\n", g_data.ip_counter);
+	}
+
+	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
+	printf("Number of ports to scan : %d\n", nb_ports);
+
+	printf("Scan types to be performed : ");
+	int i = 0;
+	char *pipe = "";
+	while (scans[i])
+	{
+		if (g_data.opt & (1UL << (i + 2))) {
+			printf("%s%s", pipe, scans[i]);
+			pipe = "|";
+		}
+		i++;
+	}
+	printf("\n");
+	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
+	printf("Number of threads : %hhu\n", g_data.nb_threads);
+	printf("...........................................\n\n");
+}
+
 int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
 	start->tv_sec = 0;
@@ -151,25 +185,27 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		}
 	}
 
-	/* Remove down Ips */
-	/*int i = 0;
-	struct s_ip *tmp = g_data.ips;
-	while (tmp) {
-		if (tmp->status == DOWN || tmp->status == ERROR) {
-			g_data.down_ips[i] = tmp->daddr->sin_addr;
-			i++;
-			remove_ip(&g_data.ips, tmp);
-			tmp = g_data.ips;
-		}
-		else
+	/* Create real IPS */
+	int i = 0;
+	if (g_data.vip_counter > 0) {
+		struct s_tmp_ip *tmp = g_data.tmp_ips;
+		while (tmp) {
+			if (tmp->status == UP)
+				add_ip(tmp, &g_data.set);
+			else {
+				g_data.down_ips[i] = tmp->daddr.sin_addr;
+				i++;
+			}
 			tmp = tmp->next;
-	}*/
-	struct s_tmp_ip *tmp = g_data.tmp_ips;
-	while (tmp) {
-		add_ip(tmp->destination, &g_data.set);
-		tmp = tmp->next;
-	}
+		}
 	//print_ip_list(g_data.ips);
+	}
+
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+		|| g_data.opt & OPT_VERBOSE_PACKET)
+		print_start();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

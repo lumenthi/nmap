@@ -31,39 +31,48 @@ void add_tmp_ip(char *ip_string)
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_tmp_ip));
 		tmp->destination = ip_string;
+		/* Default status */
 		tmp->status = READY;
+		if (dconfig(tmp->destination, 0, &tmp->daddr, &tmp->dhostname) != 0)
+			tmp->status = DOWN;
+		if (sconfig(inet_ntoa(tmp->daddr.sin_addr), &tmp->saddr) != 0)
+			tmp->status = ERROR;
+		tmp->srtt = 0;
+		tmp->rttvar = 0;
+		/* Default timeout */
+		tmp->timeout.tv_sec = 1;
+		tmp->timeout.tv_usec = 345678;
+		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+			tmp->status = ERROR;
 		push_tmp_ip(&g_data.tmp_ips, tmp);
 		g_data.ip_counter++;
 	}
 }
 
-void add_ip(char *ip_string, t_set *set)
+void add_ip(struct s_tmp_ip *ip, t_set *set)
 {
 	struct s_ip *tmp;
 
 	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_ip));
-		tmp->destination = ip_string;
-		/* Default status */
-		tmp->status = READY;
+		tmp->destination = ip->destination;
+		tmp->status = UP;
 		/* Prepare addr structs */
+		/* TODO: USELESS!! */
 		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		if (!tmp->saddr || !tmp->daddr)
 			tmp->status = ERROR;
-		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
-			tmp->status = DOWN;
-		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
-			tmp->status = ERROR;
-		if (tmp->status == READY) {
+		*(tmp->saddr) = ip->saddr;
+		*(tmp->daddr) = ip->daddr;
+		/* TODO: remove condition when daddr and saddr are not malloc anymore */
+		if (tmp->status == UP)
 			push_ports(&tmp, set);
-		}
-		tmp->srtt = 0;
-		tmp->rttvar = 0;
+		tmp->srtt = ip->srtt;
+		tmp->rttvar = ip->rttvar;
 		/* Default timeout */
-		tmp->timeout.tv_sec = 1;
-		tmp->timeout.tv_usec = 345678;
+		tmp->timeout = ip->timeout;
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
 		push_ip(&g_data.ips, tmp);

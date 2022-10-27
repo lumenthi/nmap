@@ -45,40 +45,6 @@ void	init_data()
 	printf("%lu max ips\n", g_data.max_ips);*/
 }
 
-void	print_start(void)
-{
-	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
-
-	printf("\n................. Config ..................\n");
-
-	if (g_data.ip_counter == 1) {
-		printf("Target IP : %s\n",
-		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
-	}
-	else {
-		printf("Scanning %d targets\n", g_data.ip_counter);
-	}
-
-	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
-	printf("Number of ports to scan : %d\n", nb_ports);
-
-	printf("Scan types to be performed : ");
-	int i = 0;
-	char *pipe = "";
-	while (scans[i])
-	{
-		if (g_data.opt & (1UL << (i + 2))) {
-			printf("%s%s", pipe, scans[i]);
-			pipe = "|";
-		}
-		i++;
-	}
-	printf("\n");
-	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
-	printf("Number of threads : %hhu\n", g_data.nb_threads);
-	printf("...........................................\n\n");
-}
-
 int		main(int argc, char **argv)
 {
 	/* Timers for the whole proccess */
@@ -118,10 +84,6 @@ int		main(int argc, char **argv)
 		print_usage(stdout);
 		free_and_exit(EXIT_FAILURE);
 	}
-
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
-		|| g_data.opt & OPT_VERBOSE_PACKET)
-		print_start();
 
 	/* Getting service list */
 	if (get_services() != 0)

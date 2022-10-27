@@ -427,6 +427,5 @@ int	parse_nmap_args(int ac, char **av)
 	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] IP structs filled successfully\n");
 
-	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	return 0;
 }

@@ -135,12 +135,16 @@ struct s_ip {
 };
 
 struct s_tmp_ip {
-	struct in_addr	addr;
-	char			*destination;
-	char			*dhostname;
-	int				status;
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
+	int64_t				srtt;
+	int64_t				rttvar;
+	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
+	char				*destination;
+	char				*dhostname;
+	int					status;
 	pthread_mutex_t		lock; /* Mutex */
-	struct s_tmp_ip	*next;
+	struct s_tmp_ip		*next;
 };
 
 typedef struct	s_data {
@@ -303,7 +307,7 @@ void	free_ips(struct s_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
 void	add_tmp_ip(char *ip_string);
 int		add_ip_range(char *destination, char *slash, t_set *set);
-void	add_ip(char *ip_string, t_set *set);
+void	add_ip(struct s_tmp_ip *ip, t_set *set);
 void	print_ip_list(struct s_ip *ips);
 void	remove_ip(struct s_ip **ips, struct s_ip *ip);
 

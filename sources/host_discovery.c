@@ -2,7 +2,7 @@
 #include "options.h"
 #include "libft.h"
 
-static void	update_timeout(struct s_ip *ip, uint64_t start, uint64_t end, int64_t *timeout)
+static void	update_timeout(struct s_tmp_ip *ip, uint64_t start, uint64_t end, int64_t *timeout)
 {
 	int64_t oldsrtt = ip->srtt;
 	int64_t instanceRtt = end - start;
@@ -18,7 +18,7 @@ static void	update_timeout(struct s_ip *ip, uint64_t start, uint64_t end, int64_
 	//printf("New timeout = %ldus (%fms)\n", *timeout, *timeout / 1000.0);
 }
 
-static int send_tcp(int tcpsockfd, struct s_ip *ip,
+static int send_tcp(int tcpsockfd, struct s_tmp_ip *ip,
 	struct sockaddr_in *saddr, struct sockaddr_in *daddr, uint8_t flags,
 	int64_t *gtimeout)
 {
@@ -68,7 +68,7 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 		iphdr = (struct iphdr*)tcpbuffer;
 		struct tcphdr *tcp = (struct tcphdr*)(iphdr + 1);
 		if (tcp->dest == saddr->sin_port
-			&& iphdr->daddr == ip->saddr->sin_addr.s_addr
+			&& iphdr->daddr == ip->saddr.sin_addr.s_addr
 			&& (tcp->source == ntohs(443) || tcp->source == ntohs(80))) {
 			/* TODO: if there was a given initial timeout, don't do this */
 			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
@@ -88,7 +88,7 @@ static int send_tcp(int tcpsockfd, struct s_ip *ip,
 	return 0;
 }
 
-static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
+static int send_icmp(int icmpsockfd, struct s_tmp_ip *ip, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr, uint8_t type, uint8_t code,
 	uint16_t id, uint16_t sequence, int64_t *gtimeout)
 {
@@ -138,7 +138,7 @@ static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
 			return 0;
 		iphdr = (struct iphdr*)icmpbuffer;
 		struct icmphdr *icmp = (struct icmphdr*)(iphdr + 1); 
-		if (iphdr->daddr == ip->saddr->sin_addr.s_addr
+		if (iphdr->daddr == ip->saddr.sin_addr.s_addr
 			&& ((type == ICMP_ECHO && icmp->type == ICMP_ECHOREPLY)
 			|| (type == ICMP_TIMESTAMP && icmp->type == ICMP_TIMESTAMPREPLY))
 			&& icmp->un.echo.id == id) {
@@ -154,7 +154,7 @@ static int send_icmp(int icmpsockfd, struct s_ip *ip, struct sockaddr_in *saddr,
 	return 0;
 }
 
-int	discover_target(struct s_ip *ip, int64_t *gtimeout)
+int	discover_target(struct s_tmp_ip *ip, int64_t *gtimeout)
 {
 	int tcpsock, icmpsock;
 	int one = 1, ret = 0;
@@ -217,7 +217,7 @@ int	discover_target(struct s_ip *ip, int64_t *gtimeout)
 	}
 
 	source.sin_family = AF_INET;
-	source.sin_addr.s_addr = ip->saddr->sin_addr.s_addr;
+	source.sin_addr.s_addr = ip->saddr.sin_addr.s_addr;
 	if (sconfig(inet_ntoa(source.sin_addr), &source) != 0) {
 		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 			|| g_data.opt & OPT_VERBOSE_PACKET)
@@ -227,15 +227,15 @@ int	discover_target(struct s_ip *ip, int64_t *gtimeout)
 	source.sin_port = htons(assign_port(g_data.port_min, g_data.port_max));
 
 	tcp443.sin_family = AF_INET;
-	tcp443.sin_addr.s_addr = ip->daddr->sin_addr.s_addr;
+	tcp443.sin_addr.s_addr = ip->daddr.sin_addr.s_addr;
 	tcp443.sin_port = htons(443);
 
 	tcp80.sin_family = AF_INET;
-	tcp80.sin_addr.s_addr = ip->daddr->sin_addr.s_addr;
+	tcp80.sin_addr.s_addr = ip->daddr.sin_addr.s_addr;
 	tcp80.sin_port = htons(80);
 
 	icmp.sin_family = AF_INET;
-	icmp.sin_addr.s_addr = ip->daddr->sin_addr.s_addr;
+	icmp.sin_addr.s_addr = ip->daddr.sin_addr.s_addr;
 	icmp.sin_port = 0;
 
 	/* Idea: Connect scan if unprivileged */
@@ -281,7 +281,7 @@ int	discover_target(struct s_ip *ip, int64_t *gtimeout)
 	return 0;
 }
 
-static void		assign_timeout(struct s_ip *ip, int64_t timeout)
+static void		assign_timeout(struct s_tmp_ip *ip, int64_t timeout)
 {
 	struct timeval fast =		{0, 123456};
 	struct timeval average =	{1, 345678};
@@ -320,7 +320,7 @@ static void		assign_timeout(struct s_ip *ip, int64_t timeout)
 static int		discover_hosts(void *param)
 {
 	(void)param;
-	struct s_ip *ip = g_data.ips;
+	struct s_tmp_ip *ip = g_data.tmp_ips;
 	int64_t timeout;
 	while (ip) {
 		LOCK(ip);
