@@ -100,7 +100,7 @@ int		main(int argc, char **argv)
 	ctime = time(NULL);
 	local_time = localtime(&ctime);
 
-	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+	printf("Starting ft_nmap 0.1 (https://github.com/lumenthi/nmap)"\
 		" at %d-%d-%d %d:%d CEST\n", 1900 + local_time->tm_year, local_time->tm_mon + 1,
 		local_time->tm_mday, local_time->tm_hour, local_time->tm_min);
 

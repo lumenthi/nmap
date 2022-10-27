@@ -13,7 +13,6 @@
 # Ressources check (Determining the max number of ips we can scan in one run)
 
 Ideas
-# Disable host discovery
 # Parse initial, min and max rtt
 # Version detection?
 # OS detection?

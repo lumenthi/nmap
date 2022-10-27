@@ -55,7 +55,7 @@ void print_time(struct timeval start_time, struct timeval end_time,
 		ms /= 10;
 
 	/* Global timer */
-	printf("\nft_nmap scanned %d ip(s) (%d hosts up) in %01lld.%02lld seconds",
+	printf("\nft_nmap scanned %d ip(s) (%d host(s) up) in %01lld.%02lld seconds",
 		g_data.ip_counter, g_data.vip_counter, sec, ms);
 
 	diff_sec = send_time.tv_sec - sstart_time.tv_sec;

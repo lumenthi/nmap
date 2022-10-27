@@ -330,8 +330,7 @@ static int		discover_hosts(void *param)
 			if (timeout)
 				assign_timeout(ip, timeout);
 			else {
-				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
-					g_data.opt & OPT_VERBOSE_PACKET)
+				if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 				{
 					fprintf(stderr, "[!] Can't determine dynamic timeout, setting timeout for %s to [average]\n",
 						ip->destination);
