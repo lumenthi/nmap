@@ -179,14 +179,14 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		host_discovery();
 
 	if (g_data.nb_invalid_ips > 0) {
-		g_data.invalid_ips = malloc(sizeof(struct in_addr) * g_data.nb_invalid_ips);
+		g_data.invalid_ips = malloc(sizeof(char *) * g_data.nb_invalid_ips);
 		if (!g_data.invalid_ips) {
 			perror("invalid ips:");
 			return 1;
 		}
 	}
 	if (g_data.nb_down_ips > 0) {
-		g_data.down_ips = malloc(sizeof(char*) * g_data.nb_down_ips);
+		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
 		if (!g_data.down_ips) {
 			perror("down ips:");
 			return 1;
