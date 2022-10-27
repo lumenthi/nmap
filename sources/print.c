@@ -292,7 +292,7 @@ void	print_scans(struct s_ip *ips)
 
 	count_status(ips, cstatus);
 
-	if (g_data.nb_down_ips <= 5) {
+	if (g_data.nb_down_ips <= 10) {
 		for (int i = 0; i < g_data.nb_down_ips; i++)
 			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
 	}

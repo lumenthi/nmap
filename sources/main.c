@@ -113,7 +113,7 @@ int		main(int argc, char **argv)
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
 
-	if (g_data.ips == NULL) {
+	if (g_data.tmp_ips == NULL) {
 		fprintf(stdout, "Use -h for help\n");
 		print_usage(stdout);
 		free_and_exit(EXIT_FAILURE);

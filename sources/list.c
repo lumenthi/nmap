@@ -8,6 +8,35 @@
 #define G 1
 #define B 2
 
+static void	push_tmp_ip(struct s_tmp_ip **head, struct s_tmp_ip *new)
+{
+	struct s_tmp_ip *tmp = *head;
+
+	if (*head == NULL)
+		*head = new;
+	else {
+		while (tmp->next != NULL)
+			tmp = tmp->next;
+		tmp->next = new;
+	}
+}
+
+void add_tmp_ip(char *ip_string)
+{
+	struct s_tmp_ip *tmp;
+
+	if (!gethostbyname(ip_string))
+		return ;
+	tmp = (struct s_tmp_ip *)malloc(sizeof(struct s_ip));
+	if (tmp) {
+		ft_memset(tmp, 0, sizeof(struct s_tmp_ip));
+		tmp->destination = ip_string;
+		tmp->status = READY;
+		push_tmp_ip(&g_data.tmp_ips, tmp);
+		g_data.ip_counter++;
+	}
+}
+
 void add_ip(char *ip_string, t_set *set)
 {
 	struct s_ip *tmp;
@@ -53,6 +82,7 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	mask = htonl(mask);
 	nmask = ~mask;
 	(void)nmask;
+	(void)set;
 	//printf("mask = %u\n", ntohs(mask));
 	//printf("~mask = %u\n", ntohs(nmask));
 	struct in_addr imask;
@@ -79,8 +109,8 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		nia.s_addr = htonl(hia.s_addr);
 		//if (hostname)
 		//	*hostname = ft_strdup(inet_ntoa(nia));
-		add_ip(inet_ntoa(nia), set);
-		++g_data.ip_counter;
+		add_tmp_ip(inet_ntoa(nia));
+		//++g_data.ip_counter;
 		/*if (++g_data.ip_counter > MAX_IPS) {
 			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
 			return 1;

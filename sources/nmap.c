@@ -143,7 +143,6 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	/* host discovery */
 	host_discovery();
 
-	printf("%d down ips\n", g_data.nb_down_ips);
 	if (g_data.nb_down_ips > 0) {
 		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
 		if (!g_data.down_ips) {
@@ -151,8 +150,9 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 			return 1;
 		}
 	}
+
 	/* Remove down Ips */
-	int i = 0;
+	/*int i = 0;
 	struct s_ip *tmp = g_data.ips;
 	while (tmp) {
 		if (tmp->status == DOWN || tmp->status == ERROR) {
@@ -163,6 +163,11 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		}
 		else
 			tmp = tmp->next;
+	}*/
+	struct s_tmp_ip *tmp = g_data.tmp_ips;
+	while (tmp) {
+		add_ip(tmp->destination, &g_data.set);
+		tmp = tmp->next;
 	}
 	//print_ip_list(g_data.ips);
 
