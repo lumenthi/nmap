@@ -12,7 +12,7 @@
 
 # Check allowed functions
 
-# Print down if 0 port were scanned
+# Print down and errors if 0 port were scanned
 
 # check scan broadcast and gateway without privileges
 
