@@ -156,10 +156,12 @@ typedef struct	s_data {
 	/* Scan list */
 	struct s_ip			*ips;
 
-	/* Down ips */
+	/* Pseudo ips */
 	struct s_tmp_ip		*tmp_ips;
 	struct in_addr		*down_ips;
 	int					nb_down_ips;
+	char				**invalid_ips;
+	int					nb_invalid_ips;
 
 	/* Threads related */
 	pthread_t			*threads;
@@ -304,6 +306,7 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+void	free_tmp_ips(struct s_tmp_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
 void	add_tmp_ip(char *ip_string);
 int		add_ip_range(char *destination, char *slash, t_set *set);

@@ -25,8 +25,6 @@ void add_tmp_ip(char *ip_string)
 {
 	struct s_tmp_ip *tmp;
 
-	if (!gethostbyname(ip_string))
-		return ;
 	tmp = (struct s_tmp_ip *)malloc(sizeof(struct s_ip));
 	if (tmp) {
 		ft_memset(tmp, 0, sizeof(struct s_tmp_ip));
@@ -34,7 +32,7 @@ void add_tmp_ip(char *ip_string)
 		/* Default status */
 		tmp->status = READY;
 		if (dconfig(tmp->destination, 0, &tmp->daddr, &tmp->dhostname) != 0)
-			tmp->status = DOWN;
+			tmp->status = ERROR;
 		if (sconfig(inet_ntoa(tmp->daddr.sin_addr), &tmp->saddr) != 0)
 			tmp->status = ERROR;
 		tmp->srtt = 0;
@@ -44,6 +42,8 @@ void add_tmp_ip(char *ip_string)
 		tmp->timeout.tv_usec = 345678;
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
+		if (tmp->status == ERROR)
+			g_data.nb_invalid_ips++;
 		push_tmp_ip(&g_data.tmp_ips, tmp);
 		g_data.ip_counter++;
 	}
@@ -499,6 +499,21 @@ void	free_ips(struct s_ip **ip)
 		if (current->dhostname)
 			free(current->dhostname);
 		free_ports(current->ports);
+		free(current);
+		current = next;
+	}
+	*ip = NULL;
+}
+
+void	free_tmp_ips(struct s_tmp_ip **ip)
+{
+	struct s_tmp_ip *current = *ip;
+	struct s_tmp_ip *next;
+
+	while (current != NULL) {
+		next = current->next;
+		if (current->dhostname)
+			free(current->dhostname);
 		free(current);
 		current = next;
 	}

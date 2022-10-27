@@ -178,8 +178,15 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	if (!(g_data.opt & OPT_NO_DISCOVERY))
 		host_discovery();
 
+	if (g_data.nb_invalid_ips > 0) {
+		g_data.invalid_ips = malloc(sizeof(struct in_addr) * g_data.nb_invalid_ips);
+		if (!g_data.invalid_ips) {
+			perror("invalid ips:");
+			return 1;
+		}
+	}
 	if (g_data.nb_down_ips > 0) {
-		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
+		g_data.down_ips = malloc(sizeof(char*) * g_data.nb_down_ips);
 		if (!g_data.down_ips) {
 			perror("down ips:");
 			return 1;
@@ -187,12 +194,16 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	}
 
 	/* Create real IPS */
-	int i = 0;
+	int i = 0, j = 0;
 	struct s_tmp_ip *tmp = g_data.tmp_ips;
 	while (tmp) {
 		if (tmp->status == UP ||
 			(tmp->status == READY && g_data.opt & OPT_NO_DISCOVERY))
 			add_ip(tmp, &g_data.set);
+		else if (tmp->status == ERROR) {
+			g_data.invalid_ips[j] = tmp->destination;
+			j++;
+		}
 		else {
 			g_data.down_ips[i] = tmp->daddr.sin_addr;
 			i++;
@@ -200,6 +211,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		tmp = tmp->next;
 	}
 	//print_ip_list(g_data.ips);
+	free_tmp_ips(&g_data.tmp_ips);
 
 	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 

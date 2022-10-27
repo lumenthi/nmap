@@ -16,8 +16,6 @@
 
 # Check ip counter + use max_ips
 
-# remember invalid ips to print them at the end
-
 ##### IN THE FUTURE, MORE FEATURES TO COME
 
 ## NEW FEATURES

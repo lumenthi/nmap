@@ -292,9 +292,11 @@ void	print_scans(struct s_ip *ips)
 
 	count_status(ips, cstatus);
 
-	if (g_data.nb_down_ips <= 10) {
+	if (g_data.nb_down_ips + g_data.nb_invalid_ips <= 10) {
 		for (int i = 0; i < g_data.nb_down_ips; i++)
 			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
+		for (int i = 0; i < g_data.nb_invalid_ips; i++)
+			printf("%s is invalid\n\n", g_data.invalid_ips[i]);
 	}
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));

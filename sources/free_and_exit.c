@@ -19,6 +19,7 @@ void	free_all()
 	free_payloads();
 	free_services();
 	free_ips(&g_data.ips);
+	free_tmp_ips(&g_data.tmp_ips);
 	if (g_data.set.ranges)
 		free(g_data.set.ranges);
 	if (g_data.set.single_values)
@@ -27,6 +28,8 @@ void	free_all()
 		free_ipset(&g_data.ipset);
 	if (g_data.down_ips)
 		free(g_data.down_ips);
+	if (g_data.invalid_ips)
+		free(g_data.invalid_ips);
 }
 
 void	free_and_exit(int exit_val)
