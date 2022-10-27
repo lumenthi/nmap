@@ -1,4 +1,4 @@
-# Bonus scans: TCP connect scan.
+# Bonus scans: Non root TCP connect scan.
 # Host discovery (https://nmap.org/book/man-host-discovery.html)
 # Dynamic timeout (https://nmap.org/book/port-scanning-algorithms.html#idm45323736699888)
 # Progress bar

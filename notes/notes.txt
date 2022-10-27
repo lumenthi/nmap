@@ -6,7 +6,13 @@
 
 # must recheck if segfault/leak when thread creation fail
 
-# TODO: Include dynamic timeout in threads
+# remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+
+# Must determine a limit IP number to scan in one command
+
+# Packets conflicts when multiple instances of nmap are running
+
+# TODO?: Include dynamic timeout in threads
 
 # Update -h before push
 

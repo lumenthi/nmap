@@ -124,7 +124,7 @@ struct s_ip {
 	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
 	int64_t				srtt;
 	int64_t				rttvar;
-	uint64_t			timeout;
+	uint64_t			timeout; /* Time to wait until timeout (determined by host discovery) */
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
