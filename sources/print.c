@@ -55,8 +55,8 @@ void print_time(struct timeval start_time, struct timeval end_time,
 		ms /= 10;
 
 	/* Global timer */
-	printf("\nft_nmap scanned %d ip(s) in %01lld.%02lld seconds",
-		g_data.ip_counter, sec, ms);
+	printf("\nft_nmap scanned %d ip(s) (%d hosts up) in %01lld.%02lld seconds",
+		g_data.ip_counter, g_data.vip_counter, sec, ms);
 
 	diff_sec = send_time.tv_sec - sstart_time.tv_sec;
 	diff_usec = send_time.tv_usec - sstart_time.tv_usec;
@@ -316,11 +316,14 @@ void	print_scans(struct s_ip *ips)
 				}
 			}
 			printf(NMAP_COLOR_RESET"\n");
+			if (ip->next)
+				ft_putchar('\n');
 		}
-		else// if (ip->status != DOWN)
+		else if (g_data.ip_counter - g_data.vip_counter < 6) { /* Down IPs */
 			printf("%s is %s\n", ip->destination, status[ip->status]);
-		if (ip->next)
-			ft_putchar('\n');
+			if (ip->next)
+				ft_putchar('\n');
+		}
 		ip = ip->next;
 		ip_counter++;
 	}

@@ -1,5 +1,5 @@
 # Bonus scans: Non root TCP connect scan.
-# MULTITHREADED Host discovery (https://nmap.org/book/man-host-discovery.html)
+# MULTITHREADED!! Host discovery (https://nmap.org/book/man-host-discovery.html)
 # Progress bar
 # Verbose output with multiple levels
 # Insane help menu
@@ -9,3 +9,10 @@
 # Server
 # Implement scan delay
 # Parsing of IP ranges: 1.1.1.1/24. Allow us to scan a whole network
+# Ressources check (Determining the max number of ips we can scan in one run)
+
+Ideas
+# Disable host discovery
+# Parse initial, min and max rtt
+# Version detection?
+# OS detection?

@@ -108,6 +108,8 @@ static int launch_threads()
 {
 	void *retval;
 
+	if (g_data.threads)
+		free(g_data.threads);
 	g_data.threads = malloc(sizeof(pthread_t) * g_data.nb_threads);
 	if (!g_data.threads)
 		return -1;

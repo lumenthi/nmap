@@ -129,6 +129,8 @@ struct s_ip {
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
 	struct s_port		ports[USHRT_MAX+1]; /* All ports for an IP */
+	pthread_mutex_t		lock; /* Mutex */
+
 	struct s_ip			*next; /* next ip */
 };
 
@@ -164,6 +166,8 @@ typedef struct	s_data {
 	struct timeval		min_rtt;
 	struct timeval		initial_rtt;
 	uint64_t			delay;
+
+	unsigned long		max_ips;
 
 	/* Counters */
 	int					ip_counter;
