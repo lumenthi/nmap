@@ -246,9 +246,11 @@ int syn_scan(struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 		pthread_mutex_lock(&g_data.print_lock);
 		char *status[] = {
-			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
+			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", "DOWN",
+			"ERROR", NULL
 		};
-		fprintf(stderr, "[%ld] Updating %s:%d SYN scan to %s\n", pthread_self(),
+		fprintf(stderr, "[%ld] Updating %s:%d SYN scan to %s\n",
+		pthread_self(),
 		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
 		status[scan->status]);
 		pthread_mutex_unlock(&g_data.print_lock);
