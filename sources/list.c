@@ -32,7 +32,9 @@ void add_ip(char *ip_string, t_set *set)
 		}
 		tmp->srtt = 0;
 		tmp->rttvar = 0;
-		tmp->timeout = 1345678;
+		/* Default timeout */
+		tmp->timeout.tv_sec = 1;
+		tmp->timeout.tv_usec = 345678;
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
 		push_ip(&g_data.ips, tmp);

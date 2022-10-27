@@ -1,7 +1,7 @@
 #include "nmap.h"
 #include "options.h"
 
-int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
+static int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr)
 {
 	unsigned short port = ntohs(daddr->sin_port);
@@ -132,12 +132,11 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int		udp_scan(struct s_scan *scan, struct s_port *ports)
+int		udp_scan(struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	int	udpsockfd;
 	int	icmpsockfd;
 	int ret;
-	struct timeval timeout = {1, 345678};
 
 	//printf("UDP scan\n");
 
