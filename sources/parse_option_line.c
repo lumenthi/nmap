@@ -245,6 +245,7 @@ int	parse_nmap_args(int ac, char **av)
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'D'},
 		{"no-progress",	0				,	0,  0 },
+		{"no-discovery",0				,	0,  0 },
 		{"ascii",		0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
 		{"delay",		required_argument,	0, 'd'},
@@ -274,6 +275,8 @@ int	parse_nmap_args(int ac, char **av)
 						g_data.opt |= OPT_NO_PROGRESS;
 					else if (ft_strequ(long_options[option_index].name, "ascii"))
 						g_data.opt |= OPT_ASCII_PROGRESS;
+					else if (ft_strequ(long_options[option_index].name, "no-discovery"))
+						g_data.opt |= OPT_NO_DISCOVERY;
 					break;
 				}
 			case 's':

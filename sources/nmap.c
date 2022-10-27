@@ -175,7 +175,8 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	end->tv_usec = 0;
 
 	/* host discovery */
-	host_discovery();
+	if (!(g_data.opt & OPT_NO_DISCOVERY))
+		host_discovery();
 
 	if (g_data.nb_down_ips > 0) {
 		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
@@ -187,19 +188,18 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 
 	/* Create real IPS */
 	int i = 0;
-	if (g_data.vip_counter > 0) {
-		struct s_tmp_ip *tmp = g_data.tmp_ips;
-		while (tmp) {
-			if (tmp->status == UP)
-				add_ip(tmp, &g_data.set);
-			else {
-				g_data.down_ips[i] = tmp->daddr.sin_addr;
-				i++;
-			}
-			tmp = tmp->next;
+	struct s_tmp_ip *tmp = g_data.tmp_ips;
+	while (tmp) {
+		if (tmp->status == UP ||
+			(tmp->status == READY && g_data.opt & OPT_NO_DISCOVERY))
+			add_ip(tmp, &g_data.set);
+		else {
+			g_data.down_ips[i] = tmp->daddr.sin_addr;
+			i++;
 		}
-	//print_ip_list(g_data.ips);
+		tmp = tmp->next;
 	}
+	//print_ip_list(g_data.ips);
 
 	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 
