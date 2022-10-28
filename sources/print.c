@@ -55,8 +55,9 @@ void print_time(struct timeval start_time, struct timeval end_time,
 		ms /= 10;
 
 	/* Global timer */
-	printf("\nft_nmap scanned %d ip(s) (%d hosts up) in %01lld.%02lld seconds",
-		g_data.ip_counter, g_data.vip_counter, sec, ms);
+	printf("\nft_nmap scanned %d ip(s) (%d host(s) up, %d down) in %01lld.%02lld seconds",
+		g_data.ip_counter, g_data.vip_counter,
+		g_data.ip_counter-g_data.vip_counter, sec, ms);
 
 	diff_sec = send_time.tv_sec - sstart_time.tv_sec;
 	diff_usec = send_time.tv_usec - sstart_time.tv_usec;
@@ -223,6 +224,9 @@ static void	count_scan_status(struct s_port *port, int ip_counter, size_t **csta
 					if (pstatus == UNFILTERED || pstatus == -1)
 						pstatus = CLOSED;
 					break;
+				case ERROR:
+					pstatus = ERROR;
+					break;
 				default:
 					pstatus = -2;
 					break;
@@ -261,7 +265,7 @@ void	print_scans(struct s_ip *ips)
 {
 	static const char *status[] = {
 		"open", "closed", "filtered", "open|filtered",
-		"unfiltered", "down", "error", "unknown", "timeout", "up", "ready",
+		"unfiltered", "down", "error(s)", "unknown", "timeout", "up", "ready",
 		"printed", "scanning", "invalid", "in use", "free", NULL
 	};
 	static const char *colors[] = {
@@ -270,6 +274,8 @@ void	print_scans(struct s_ip *ips)
 		NMAP_COLOR_YELLOW, // "filtered"
 		NMAP_COLOR_YELLOW, // "open|filtered"
 		NMAP_COLOR_YELLOW, // "unfiltered"
+		NMAP_COLOR_RED, // "down"
+		NMAP_COLOR_RED, // "error"
 		NULL
 	};
 
@@ -282,10 +288,10 @@ void	print_scans(struct s_ip *ips)
 	if (!cstatus)
 		return ;
 	for (int i = 0; i < g_data.ip_counter; i++) {
-		cstatus[i] = malloc(sizeof(size_t) * 5);
+		cstatus[i] = malloc(sizeof(size_t) * 7);
 		if (!cstatus[i])
 			return ;
-		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
+		ft_memset(cstatus[i], 0, sizeof(size_t) * 7);
 	}
 	
 	printf("\n");
@@ -294,9 +300,9 @@ void	print_scans(struct s_ip *ips)
 
 	if (g_data.nb_down_ips + g_data.nb_invalid_ips <= 10) {
 		for (int i = 0; i < g_data.nb_down_ips; i++)
-			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
+			printf("%s is down\n", inet_ntoa(g_data.down_ips[i]));
 		for (int i = 0; i < g_data.nb_invalid_ips; i++)
-			printf("%s is invalid\n\n", g_data.invalid_ips[i]);
+			printf("%s is invalid\n", g_data.invalid_ips[i]);
 	}
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
@@ -310,14 +316,10 @@ void	print_scans(struct s_ip *ips)
 				i++;
 			}
 			if (g_data.port_counter > 1)
-				printf("Scanned %d ports, ", g_data.port_counter / g_data.vip_counter);
+				printf("Scanned %d ports", g_data.port_counter / g_data.vip_counter);
 			else
-				printf("Scanned %d port, ", g_data.port_counter / g_data.vip_counter);
-			if (info.cerror > 1)
-				printf("%ld errors", info.cerror);
-			else
-				printf("%ld error", info.cerror);
-			for (uint8_t i = 0; i < 5; i++) {
+				printf("Scanned %d port", g_data.port_counter / g_data.vip_counter);
+			for (uint8_t i = 0; i < 7; i++) {
 				if (cstatus[ip_counter][i] > 0) {
 					printf(", "NMAP_COLOR_BOLD"%s%lu %s",
 					colors[i], cstatus[ip_counter][i], status[i]);

@@ -296,19 +296,19 @@ static void		assign_timeout(struct s_tmp_ip *ip, int64_t timeout)
 	/* TODO: Tweak values to make it work */
 	if (timeout < 1000) {
 		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
-			printf("[***] Set [fast] timeout for %s\n", ip->destination);
+			fprintf(stderr, "[***] Set [fast] timeout for %s\n", ip->destination);
 		ip->timeout.tv_sec = fast.tv_sec;
 		ip->timeout.tv_usec = fast.tv_usec;
 	}
 	else if (timeout < 300000) {
 		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
-			printf("[***] Set [average] timeout for %s\n", ip->destination);
+			fprintf(stderr, "[***] Set [average] timeout for %s\n", ip->destination);
 		ip->timeout.tv_sec = average.tv_sec;
 		ip->timeout.tv_usec = average.tv_usec;
 	}
 	else {
 		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
-			printf("[***] Set [laggy] timeout for %s\n", ip->destination);
+			fprintf(stderr, "[***] Set [laggy] timeout for %s\n", ip->destination);
 		ip->timeout.tv_sec = laggy.tv_sec;
 		ip->timeout.tv_usec = laggy.tv_usec;
 	}
@@ -335,8 +335,7 @@ static int		discover_hosts(void *param)
 			if (timeout)
 				assign_timeout(ip, timeout);
 			else {
-				if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
-					g_data.opt & OPT_VERBOSE_PACKET)
+				if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 				{
 					fprintf(stderr, "[!] Can't determine dynamic timeout, setting timeout for %s to [average]\n",
 						ip->destination);

@@ -239,7 +239,7 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:Dd:";
+	const char	*optstring = "ahv::Vp:i:f:t:s:Dd:";
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
@@ -247,6 +247,7 @@ int	parse_nmap_args(int ac, char **av)
 		{"no-progress",	0				,	0,  0 },
 		{"no-discovery",0				,	0,  0 },
 		{"ascii",		0				,	0,  0 },
+		{"all",			0,					0, 'a'},
 		{"verbose",		optional_argument,	0, 'v'},
 		{"delay",		required_argument,	0, 'd'},
 		{"ports",		required_argument,	0, 'p'},
@@ -291,6 +292,19 @@ int	parse_nmap_args(int ac, char **av)
 						fprintf(stderr,
 						"You requested a scan type which requires root privileges.\n");
 						return 1;
+					}
+					break;
+				}
+			case 'a':
+				{
+					if (g_data.privilegied) {
+						g_data.opt |= OPT_SCAN_SYN;
+						g_data.opt |= OPT_SCAN_NULL;
+						g_data.opt |= OPT_SCAN_FIN;
+						g_data.opt |= OPT_SCAN_XMAS;
+						g_data.opt |= OPT_SCAN_ACK;
+						g_data.opt |= OPT_SCAN_UDP;
+						g_data.scan_types_counter = 6;
 					}
 					break;
 				}
@@ -401,6 +415,23 @@ int	parse_nmap_args(int ac, char **av)
 		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 		g_data.scan_types_counter = 1;
 	}
+	/* TODO: Use this for defense */
+	/* Default SCAN */
+	/* if (!g_data.scan_types_counter) {
+		if (g_data.privilegied) {
+			g_data.opt |= OPT_SCAN_SYN;
+			g_data.opt |= OPT_SCAN_NULL;
+			g_data.opt |= OPT_SCAN_FIN;
+			g_data.opt |= OPT_SCAN_XMAS;
+			g_data.opt |= OPT_SCAN_ACK;
+			g_data.opt |= OPT_SCAN_UDP;
+			g_data.scan_types_counter = 6;
+		}
+		else {
+			g_data.opt |= OPT_SCAN_TCP;
+			g_data.scan_types_counter = 1;
+		}
+	}*/
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_PACKET)
