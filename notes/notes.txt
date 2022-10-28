@@ -14,6 +14,8 @@
 
 # sudo ./ft_nmap 192.168.255/255 -t 250 -v DEBUG -p 1 segfault
 
+# test ip from files + ip ranges + single ips combinations
+
 ##### IN THE FUTURE, MORE FEATURES TO COME
 
 ## NEW FEATURES

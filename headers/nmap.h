@@ -144,7 +144,7 @@ struct s_tmp_ip {
 	char				*dhostname;
 	int					status;
 	pthread_mutex_t		lock; /* Mutex */
-	struct s_tmp_ip		*next;
+	//struct s_tmp_ip		*next;
 };
 
 typedef struct	s_data {
@@ -158,6 +158,7 @@ typedef struct	s_data {
 
 	/* Pseudo ips */
 	struct s_tmp_ip		*tmp_ips;
+	unsigned int		nb_tmp_ips;
 	struct in_addr		*down_ips;
 	int					nb_down_ips;
 	char				**invalid_ips;
@@ -308,7 +309,7 @@ void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
 void	free_tmp_ips(struct s_tmp_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
-void	add_tmp_ip(char *ip_string);
+void	add_tmp_ip(struct s_tmp_ip *tmp, char *ip_string);
 int		add_ip_range(char *destination, char *slash, t_set *set);
 void	add_ip(struct s_tmp_ip *ip, t_set *set);
 void	print_ip_list(struct s_ip *ips);

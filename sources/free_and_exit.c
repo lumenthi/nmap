@@ -20,6 +20,10 @@ void	free_all()
 	free_services();
 	free_ips(&g_data.ips);
 	free_tmp_ips(&g_data.tmp_ips);
+	if (g_data.tmp_ips) {
+		free(g_data.tmp_ips);
+		g_data.tmp_ips = NULL;
+	}
 	if (g_data.set.ranges)
 		free(g_data.set.ranges);
 	if (g_data.set.single_values)

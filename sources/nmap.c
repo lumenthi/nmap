@@ -203,20 +203,21 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 
 	/* Create real IPS */
 	int i = 0, j = 0;
+	unsigned int k = 0;
 	struct s_tmp_ip *tmp = g_data.tmp_ips;
-	while (tmp) {
-		if (tmp->status == UP ||
-			(tmp->status == READY && g_data.opt & OPT_NO_DISCOVERY))
-			add_ip(tmp, &g_data.set);
+	while (k < g_data.nb_tmp_ips) {
+		if (g_data.tmp_ips[k].status == UP ||
+			(g_data.tmp_ips[k].status == READY && g_data.opt & OPT_NO_DISCOVERY))
+			add_ip(&g_data.tmp_ips[k], &g_data.set);
 		else if (tmp->status == ERROR) {
-			g_data.invalid_ips[j] = tmp->destination;
+			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
 			j++;
 		}
 		else if (tmp->status == DOWN) {
-			g_data.down_ips[i] = tmp->daddr.sin_addr;
+			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
 			i++;
 		}
-		tmp = tmp->next;
+		k++;
 	}
 	//print_ip_list(g_data.ips);
 	free_tmp_ips(&g_data.tmp_ips);

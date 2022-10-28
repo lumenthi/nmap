@@ -440,8 +440,16 @@ int	parse_nmap_args(int ac, char **av)
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
-		add_tmp_ip(tmp->string);
 		tmp = tmp->next;
+		g_data.nb_tmp_ips++;
+		g_data.tmp_ips =
+		realloc(g_data.tmp_ips, sizeof(struct s_tmp_ip) * g_data.nb_tmp_ips);
+		if (!g_data.tmp_ips) {
+			fprintf(stderr, "Could not realloc tmp ips\n");
+			return 1;
+		}
+		ft_memset(g_data.tmp_ips + g_data.nb_tmp_ips - 1, 0, sizeof(struct s_tmp_ip));
+		add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips - 1], tmp->string);
 	}
 	/* Filling scans with ips from arguments */
 	char *slash;
@@ -452,8 +460,17 @@ int	parse_nmap_args(int ac, char **av)
 				if (add_ip_range(av[i], slash, &g_data.set))
 					return 1;
 			}
-			else
-				add_tmp_ip(av[i]);
+			else {
+				g_data.nb_tmp_ips++;
+				g_data.tmp_ips =
+				realloc(g_data.tmp_ips, sizeof(struct s_tmp_ip) * g_data.nb_tmp_ips);
+				if (!g_data.tmp_ips) {
+					fprintf(stderr, "Could not realloc tmp ips\n");
+					return 1;
+				}
+				ft_memset(g_data.tmp_ips + g_data.nb_tmp_ips - 1, 0, sizeof(struct s_tmp_ip));
+				add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips - 1], av[i]);
+			}
 		}
 	}
 

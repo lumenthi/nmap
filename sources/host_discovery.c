@@ -322,29 +322,28 @@ static int		discover_hosts(void *param)
 	(void)param;
 	struct s_tmp_ip *ip = g_data.tmp_ips;
 	int64_t timeout;
-	while (ip) {
-		LOCK(ip);
-		if (ip->status == READY) {
+	for (uint32_t i = 0; i < g_data.nb_tmp_ips; i++) {
+		pthread_mutex_lock(&ip[i].lock);
+		if (ip[i].status == READY) {
 			timeout = 0;
-			ip->status = SCANNING;
-			UNLOCK(ip);
+			ip[i].status = SCANNING;
+			pthread_mutex_unlock(&ip[i].lock);
 			if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
 					|| g_data.opt & OPT_VERBOSE_PACKET)
-				fprintf(stderr, "[**] Discovering %s\n", ip->dhostname);
-			discover_target(ip, &timeout);
+				fprintf(stderr, "[**] Discovering %s\n", ip[i].dhostname);
+			discover_target(&ip[i], &timeout);
 			if (timeout)
-				assign_timeout(ip, timeout);
+				assign_timeout(&ip[i], timeout);
 			else {
 				if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 				{
 					fprintf(stderr, "[!] Can't determine dynamic timeout, setting timeout for %s to [average]\n",
-						ip->destination);
+						ip[i].destination);
 				}
 			}
 		}
 		else
-			UNLOCK(ip);
-		ip = ip->next;
+			pthread_mutex_unlock(&ip[i].lock);
 	}
 	return 0;
 }
