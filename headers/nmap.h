@@ -65,8 +65,8 @@
 #define UPDATE_TARGET 2
 #define ALREADY_UPDATED 3
 
-/* Max ips to scan in one command */
-#define MAX_IPS 15
+/* Max ips to discover in one command */
+#define MAX_IPS 1048574
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768

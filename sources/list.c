@@ -8,19 +8,6 @@
 #define G 1
 #define B 2
 
-/*static void	push_tmp_ip(struct s_tmp_ip **head, struct s_tmp_ip *new)
-{
-	struct s_tmp_ip *tmp = *head;
-
-	if (*head == NULL)
-		*head = new;
-	else {
-		while (tmp->next != NULL)
-			tmp = tmp->next;
-		tmp->next = new;
-	}
-}*/
-
 void add_tmp_ip(struct s_tmp_ip *tmp, char *ip_string)
 {
 	tmp->destination = ip_string;
@@ -80,8 +67,14 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	/* TODO: error if not 0 < mask < 32 */
 	int maskarg = ft_atoi(slash + 1);
 	if (maskarg > 32) {
-		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n", destination);
+		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n",
+		destination);
 		maskarg = 32;
+	}
+	else if (maskarg < 12) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Cannot go under /12"
+		" (~1 million IPs). Assuming /12\n", destination);
+		maskarg = 12;
 	}
 	uint32_t mask = 0;
 	uint32_t nmask;
@@ -92,11 +85,11 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	nmask = ~mask;
 	(void)nmask;
 	(void)set;
-	printf("mask = %u\n", ntohs(mask));
-	printf("~mask = %u\n", ntohs(nmask));
+	//printf("mask = %u\n", ntohs(mask));
+	//printf("~mask = %u\n", ntohs(nmask));
 	struct in_addr imask;
 	ft_memcpy(&imask, &mask, sizeof(mask));
-	printf("\nIP mask = %s\n", inet_ntoa(imask));
+	//printf("\nIP mask = %s\n", inet_ntoa(imask));
 	if (maskarg == 32)
 		nb_hosts = 1;
 	else if (maskarg == 31)
@@ -105,15 +98,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		nb_hosts = ft_power(2, 32 - maskarg);
 	
 	//printf("%u hosts\n", nb_hosts);
-	/* TODO: handle multiple ranges */
-	uint32_t old_nb_ips = g_data.nb_tmp_ips;
-	g_data.nb_tmp_ips += nb_hosts;
-	g_data.tmp_ips = realloc(g_data.tmp_ips, sizeof(struct s_tmp_ip) * g_data.nb_tmp_ips);
-	if (!g_data.tmp_ips) {
-		fprintf(stderr, "Could not realloc tmp ips\n");
+	if (g_data.nb_tmp_ips + nb_hosts >= MAX_IPS) {
+		fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
 		return 1;
 	}
-	ft_memset(g_data.tmp_ips + old_nb_ips, 0, sizeof(struct s_tmp_ip) * nb_hosts);
 	struct hostent *host;
 	*slash = 0;
 	if (!(host = gethostbyname(destination)))
@@ -121,24 +109,19 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	*slash = '/';
 	struct in_addr hia, nia;
 	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
-	printf("\nStart ip = %s\n", inet_ntoa(nia));
+	//printf("\nStart ip = %s\n", inet_ntoa(nia));
+	//printf("sizeof(tmp) = %ld\n", sizeof(struct s_tmp_ip));
 	nia.s_addr &= mask;
 	hia.s_addr = ntohl(nia.s_addr);
 	for (uint32_t i = 0; i < nb_hosts; i++) {
 		nia.s_addr = htonl(hia.s_addr);
-		//if (hostname)
-		//	*hostname = ft_strdup(inet_ntoa(nia));
-		add_tmp_ip(&g_data.tmp_ips[i + old_nb_ips], inet_ntoa(nia));
-		//++g_data.ip_counter;
-		/*if (++g_data.ip_counter > MAX_IPS) {
-			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
-			return 1;
-		}*/
+		add_tmp_ip(&g_data.tmp_ips[i + g_data.nb_tmp_ips], inet_ntoa(nia));
 		//printf("ip = %s\n", inet_ntoa(nia));
 		//printf("%d/%d\n", i, nb_hosts);
 		hia.s_addr++;
 	}
-	printf("\nEnd ip = %s\n", inet_ntoa(nia));
+	g_data.nb_tmp_ips += nb_hosts;
+	//printf("\nEnd ip = %s\n", inet_ntoa(nia));
 	return 0;
 }
 

@@ -182,8 +182,9 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		g_data.vip_counter = g_data.ip_counter - g_data.nb_invalid_ips;
 	
 	if (g_data.vip_counter > g_data.max_ips) {
-		fprintf(stderr, "Too much ips (maximum %ld with your currently"
-			"available memory\n", g_data.max_ips);
+		fprintf(stderr, "Too much ips: %d (maximum %ld with your currently"
+			" available memory)\n", g_data.vip_counter, g_data.max_ips);
+		return 1;
 	}
 
 	if (g_data.nb_invalid_ips > 0) {
