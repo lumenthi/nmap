@@ -238,8 +238,8 @@ void	print_time(struct timeval start_time, struct timeval end_time,
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
-int		syn_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		syn_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* udp_scan.c */
 int		udp_scan(struct s_scan *to_scan, struct s_port *ports,
 	struct timeval timeout);

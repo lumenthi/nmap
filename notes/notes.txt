@@ -10,6 +10,8 @@
 
 # Check allowed functions
 
+# Compute exact memory that ips are gonna take
+
 ##### IN THE FUTURE, MORE FEATURES TO COME
 
 ## NEW FEATURES

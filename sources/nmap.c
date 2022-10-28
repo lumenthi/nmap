@@ -13,12 +13,12 @@ static void erase_progress_bar()
 	}
 }
 
-static int run_scan(struct s_scan *scan, struct s_port *ports,
-	struct timeval timeout)
+static int run_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
-			syn_scan(scan, ports, timeout);
+			syn_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_TCP:
 			tcp_scan(scan, timeout);
@@ -47,8 +47,8 @@ static int run_scan(struct s_scan *scan, struct s_port *ports,
 	return 0;
 }
 
-static void start_scan(struct s_scan *scan, struct s_port *ports,
-	struct timeval timeout)
+static void start_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	static uint64_t	last_probe = 0;
 
@@ -66,7 +66,7 @@ static void start_scan(struct s_scan *scan, struct s_port *ports,
 		UNLOCK(scan);
 		if (g_data.opt & OPT_DELAY)
 			last_probe = get_time();
-		run_scan(scan, ports, timeout);
+		run_scan(daddr, scan, ports, timeout);
 		g_data.ports[scan->sport].status = FREE;
 	}
 	else
@@ -84,20 +84,23 @@ static int launch_scan(void *rip)
 			i = 0;
 			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
+				struct sockaddr_in daddr;
+				ft_memset(&daddr, 0, sizeof(daddr));
+				daddr.sin_port = htons(i);
 				if (port.syn_scan)
-					start_scan(port.syn_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.syn_scan, ip->ports, ip->timeout);
 				if (port.null_scan)
-					start_scan(port.null_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.null_scan, ip->ports, ip->timeout);
 				if (port.fin_scan)
-					start_scan(port.fin_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.fin_scan, ip->ports, ip->timeout);
 				if (port.xmas_scan)
-					start_scan(port.xmas_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.xmas_scan, ip->ports, ip->timeout);
 				if (port.ack_scan)
-					start_scan(port.ack_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.ack_scan, ip->ports, ip->timeout);
 				if (port.udp_scan)
-					start_scan(port.udp_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.udp_scan, ip->ports, ip->timeout);
 				if (port.tcp_scan)
-					start_scan(port.tcp_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.tcp_scan, ip->ports, ip->timeout);
 				i++;
 			}
 		}
