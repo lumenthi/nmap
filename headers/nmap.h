@@ -120,8 +120,8 @@ struct s_port {
 };
 
 struct s_ip {
-	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
 	int64_t				srtt;
 	int64_t				rttvar;
 	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
@@ -144,7 +144,6 @@ struct s_tmp_ip {
 	char				*dhostname;
 	int					status;
 	pthread_mutex_t		lock; /* Mutex */
-	//struct s_tmp_ip		*next;
 };
 
 typedef struct	s_data {

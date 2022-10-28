@@ -137,7 +137,6 @@ static void print_scan(struct s_scan *scan, struct s_pinfo *info,
 	struct s_port port)
 {
 	if (scan->status != ERROR) {
-		/* TODO: Update when needed */
 		if (port.final_status == OPEN
 			|| g_data.port_counter / g_data.ip_counter <= 25
 			|| (cstatus[FILTERED]+cstatus[OPEN_FILTERED]+cstatus[UNFILTERED]
@@ -308,7 +307,7 @@ void	print_scans(struct s_ip *ips)
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
 		if (ip->status == UP || ip->status == SCANNING) {
 			printf("ft_nmap scan report for ");
-			print_ip(ip->daddr);
+			print_ip(&ip->daddr);
 			printf("\n");
 			int i = 0;
 			while (i < USHRT_MAX+1) {

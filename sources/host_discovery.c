@@ -293,7 +293,6 @@ static void		assign_timeout(struct s_tmp_ip *ip, int64_t timeout)
 	// printf("Final timeout = %ldus (%fms)\n", timeout, timeout / 1000.0);
 	// printf("Timeout: %ld\n", timeout);
 
-	/* TODO: Tweak values to make it work */
 	if (timeout < 1000) {
 		if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 			fprintf(stderr, "[***] Set [fast] timeout for %s\n", ip->destination);

@@ -42,16 +42,9 @@ void add_ip(struct s_tmp_ip *ip, t_set *set)
 		tmp->dhostname = ft_strdup(ip->dhostname);
 		tmp->status = UP;
 		/* Prepare addr structs */
-		/* TODO: USELESS!! */
-		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->saddr || !tmp->daddr)
-			tmp->status = ERROR;
-		*(tmp->saddr) = ip->saddr;
-		*(tmp->daddr) = ip->daddr;
-		/* TODO: remove condition when daddr and saddr are not malloc anymore */
-		if (tmp->status == UP)
-			push_ports(&tmp, set);
+		tmp->saddr = ip->saddr;
+		tmp->daddr = ip->daddr;
+		push_ports(&tmp, set);
 		tmp->srtt = ip->srtt;
 		tmp->rttvar = ip->rttvar;
 		/* Default timeout */
@@ -64,7 +57,6 @@ void add_ip(struct s_tmp_ip *ip, t_set *set)
 
 int	add_ip_range(char *destination, char *slash, t_set *set)
 {
-	/* TODO: error if not 0 < mask < 32 */
 	int maskarg = ft_atoi(slash + 1);
 	if (maskarg > 32) {
 		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n",
@@ -333,14 +325,14 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		tmp->status = READY;
 		tmp->dport = port;
 		tmp->scantype = scantype;
-		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
+		ft_memcpy(&tmp->saddr, &ip->saddr, sizeof(struct sockaddr_in));
 		/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
 		if (scantype != OPT_SCAN_TCP) {
 			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
 			tmp->saddr.sin_port = htons(tmp->sport);
 		}
 
-		ft_memcpy(&tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
+		ft_memcpy(&tmp->daddr, &ip->daddr, sizeof(struct sockaddr_in));
 		tmp->dhostname = ip->dhostname;
 		tmp->daddr.sin_port = htons(tmp->dport);
 
@@ -432,7 +424,7 @@ void	print_ip_list(struct s_ip *ips)
 {
 	struct s_ip *tmp = ips;
 	while (tmp) {
-		printf("IP: %s\n", inet_ntoa(tmp->daddr->sin_addr));
+		printf("IP: %s\n", inet_ntoa(tmp->daddr.sin_addr));
 		tmp = tmp->next;
 	}
 }
@@ -444,10 +436,6 @@ void	ft_lstpopfront(struct s_ip **alst)
 	if (!alst)
 		return ;
 	new = (*alst)->next;
-	if ((*alst)->saddr)
-		free((*alst)->saddr);
-	if ((*alst)->daddr)
-		free((*alst)->daddr);
 	if ((*alst)->dhostname)
 		free((*alst)->dhostname);
 	free_ports((*alst)->ports);
@@ -487,10 +475,6 @@ void	free_ips(struct s_ip **ip)
 
 	while (current != NULL) {
 		next = current->next;
-		if (current->saddr)
-			free(current->saddr);
-		if (current->daddr)
-			free(current->daddr);
 		if (current->dhostname)
 			free(current->dhostname);
 		free_ports(current->ports);
