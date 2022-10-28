@@ -86,6 +86,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 {
 	/* TODO: error if not 0 < mask < 32 */
 	int maskarg = ft_atoi(slash + 1);
+	if (maskarg > 32) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n", destination);
+		maskarg = 32;
+	}
 	uint32_t mask = 0;
 	uint32_t nmask;
 	uint32_t nb_hosts;
@@ -106,7 +110,14 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		nb_hosts = 2;
 	else
 		nb_hosts = ft_power(2, 32 - maskarg);
-
+	
+	//printf("%u hosts\n", nb_hosts);
+	/* TODO: handle multiple ranges */
+	/*g_data.tmp_ips = malloc(sizeof(struct s_tmp_ip) * nb_hosts);
+	if (!g_data.tmp_ips) {
+		fprintf(stderr, "Could not malloc tmp ips\n");
+		return 1;
+	}*/
 	struct hostent *host;
 	*slash = 0;
 	if (!(host = gethostbyname(destination)))
@@ -128,8 +139,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 			return 1;
 		}*/
 		//printf("ip = %s\n", inet_ntoa(nia));
+		//printf("%d/%d\n", i, nb_hosts);
 		hia.s_addr++;
 	}
+	//printf("\nEnd ip = %s\n", inet_ntoa(nia));
 	return 0;
 }
 
@@ -269,7 +282,7 @@ static void	free_ports(struct s_port *ports)
 
 static int push_scan(struct s_port *scanlist, struct s_scan *new)
 {
-	struct s_scan **tmp;
+	struct s_scan **tmp = NULL;
 
 	switch (new->scantype) {
 		case OPT_SCAN_SYN:
