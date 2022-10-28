@@ -1,0 +1,7 @@
+# Do one ip -> print -> free
+# -> rework main loop so that multiple hosts can be 
+scanned together, especially when delay is applied
+# Lighten struct ip 
+# delete down hosts from the struct (in live??)
+# create ips only if they are up
+# Create an array of ips instead of a list

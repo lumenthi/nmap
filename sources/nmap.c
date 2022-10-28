@@ -133,6 +133,40 @@ static int launch_threads()
 	return 0;
 }
 
+static void	print_start(void)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+
+	printf("\n................. Config ..................\n");
+
+	if (g_data.vip_counter == 1) {
+		printf("Target IP : %s\n",
+		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
+	}
+	else {
+		printf("Scanning %d targets\n", g_data.ip_counter);
+	}
+
+	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
+	printf("Number of ports to scan : %d\n", nb_ports);
+
+	printf("Scan types to be performed : ");
+	int i = 0;
+	char *pipe = "";
+	while (scans[i])
+	{
+		if (g_data.opt & (1UL << (i + 2))) {
+			printf("%s%s", pipe, scans[i]);
+			pipe = "|";
+		}
+		i++;
+	}
+	printf("\n");
+	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
+	printf("Number of threads : %hhu\n", g_data.nb_threads);
+	printf("...........................................\n\n");
+}
+
 int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
 	start->tv_sec = 0;
@@ -140,7 +174,58 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	end->tv_sec = 0;
 	end->tv_usec = 0;
 
-	host_discovery();
+	/* host discovery */
+	if (!(g_data.opt & OPT_NO_DISCOVERY) && g_data.privilegied == 1) {
+		host_discovery();
+	}
+	else
+		g_data.vip_counter = g_data.ip_counter - g_data.nb_invalid_ips;
+	
+	if (g_data.vip_counter > g_data.max_ips) {
+		fprintf(stderr, "Too much ips (maximum %ld with your currently"
+			"available memory\n", g_data.max_ips);
+	}
+
+	if (g_data.nb_invalid_ips > 0) {
+		g_data.invalid_ips = malloc(sizeof(char *) * g_data.nb_invalid_ips);
+		if (!g_data.invalid_ips) {
+			perror("invalid ips:");
+			return 1;
+		}
+	}
+	if (g_data.nb_down_ips > 0) {
+		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
+		if (!g_data.down_ips) {
+			perror("down ips:");
+			return 1;
+		}
+	}
+
+	/* Create real IPS */
+	int i = 0, j = 0;
+	struct s_tmp_ip *tmp = g_data.tmp_ips;
+	while (tmp) {
+		if (tmp->status == UP ||
+			(tmp->status == READY && g_data.opt & OPT_NO_DISCOVERY))
+			add_ip(tmp, &g_data.set);
+		else if (tmp->status == ERROR) {
+			g_data.invalid_ips[j] = tmp->destination;
+			j++;
+		}
+		else if (tmp->status == DOWN) {
+			g_data.down_ips[i] = tmp->daddr.sin_addr;
+			i++;
+		}
+		tmp = tmp->next;
+	}
+	//print_ip_list(g_data.ips);
+	free_tmp_ips(&g_data.tmp_ips);
+
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+		|| g_data.opt & OPT_VERBOSE_PACKET)
+		print_start();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

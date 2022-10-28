@@ -287,9 +287,17 @@ void	print_scans(struct s_ip *ips)
 			return ;
 		ft_memset(cstatus[i], 0, sizeof(size_t) * 5);
 	}
+	
+	printf("\n");
 
 	count_status(ips, cstatus);
 
+	if (g_data.nb_down_ips + g_data.nb_invalid_ips <= 10) {
+		for (int i = 0; i < g_data.nb_down_ips; i++)
+			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
+		for (int i = 0; i < g_data.nb_invalid_ips; i++)
+			printf("%s is invalid\n\n", g_data.invalid_ips[i]);
+	}
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));
 		if (ip->status == UP || ip->status == SCANNING) {
@@ -302,9 +310,9 @@ void	print_scans(struct s_ip *ips)
 				i++;
 			}
 			if (g_data.port_counter > 1)
-				printf("Scanned %d ports, ", g_data.port_counter / g_data.ip_counter);
+				printf("Scanned %d ports, ", g_data.port_counter / g_data.vip_counter);
 			else
-				printf("Scanned %d port, ", g_data.port_counter / g_data.ip_counter);
+				printf("Scanned %d port, ", g_data.port_counter / g_data.vip_counter);
 			if (info.cerror > 1)
 				printf("%ld errors", info.cerror);
 			else
@@ -316,11 +324,6 @@ void	print_scans(struct s_ip *ips)
 				}
 			}
 			printf(NMAP_COLOR_RESET"\n");
-			if (ip->next)
-				ft_putchar('\n');
-		}
-		else if (g_data.ip_counter - g_data.vip_counter < 6) { /* Down IPs */
-			printf("%s is %s\n", ip->destination, status[ip->status]);
 			if (ip->next)
 				ft_putchar('\n');
 		}

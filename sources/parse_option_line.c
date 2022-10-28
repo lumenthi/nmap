@@ -245,6 +245,7 @@ int	parse_nmap_args(int ac, char **av)
 		{"version",		0,					0, 'V'},
 		{"description",	0				,	0, 'D'},
 		{"no-progress",	0				,	0,  0 },
+		{"no-discovery",0				,	0,  0 },
 		{"ascii",		0				,	0,  0 },
 		{"verbose",		optional_argument,	0, 'v'},
 		{"delay",		required_argument,	0, 'd'},
@@ -274,6 +275,8 @@ int	parse_nmap_args(int ac, char **av)
 						g_data.opt |= OPT_NO_PROGRESS;
 					else if (ft_strequ(long_options[option_index].name, "ascii"))
 						g_data.opt |= OPT_ASCII_PROGRESS;
+					else if (ft_strequ(long_options[option_index].name, "no-discovery"))
+						g_data.opt |= OPT_NO_DISCOVERY;
 					break;
 				}
 			case 's':
@@ -406,12 +409,7 @@ int	parse_nmap_args(int ac, char **av)
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
-		add_ip(tmp->string, &g_data.set);
-		/*if (++g_data.ip_counter > MAX_IPS) {
-			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
-			return 1;
-		}*/
-		++g_data.ip_counter;
+		add_tmp_ip(tmp->string);
 		tmp = tmp->next;
 	}
 	/* Filling scans with ips from arguments */
@@ -424,12 +422,7 @@ int	parse_nmap_args(int ac, char **av)
 					return 1;
 			}
 			else
-				add_ip(av[i], &g_data.set);
-			/*if (++g_data.ip_counter > MAX_IPS) {
-				fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
-				return 1;
-			}*/
-			++g_data.ip_counter;
+				add_tmp_ip(av[i]);
 		}
 	}
 
@@ -437,6 +430,5 @@ int	parse_nmap_args(int ac, char **av)
 	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] IP structs filled successfully\n");
 
-	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	return 0;
 }

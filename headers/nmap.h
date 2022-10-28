@@ -134,6 +134,19 @@ struct s_ip {
 	struct s_ip			*next; /* next ip */
 };
 
+struct s_tmp_ip {
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
+	int64_t				srtt;
+	int64_t				rttvar;
+	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
+	char				*destination;
+	char				*dhostname;
+	int					status;
+	pthread_mutex_t		lock; /* Mutex */
+	struct s_tmp_ip		*next;
+};
+
 typedef struct	s_data {
 	/* Options related */
 	unsigned long long	opt;
@@ -142,6 +155,13 @@ typedef struct	s_data {
 
 	/* Scan list */
 	struct s_ip			*ips;
+
+	/* Pseudo ips */
+	struct s_tmp_ip		*tmp_ips;
+	struct in_addr		*down_ips;
+	int					nb_down_ips;
+	char				**invalid_ips;
+	int					nb_invalid_ips;
 
 	/* Threads related */
 	pthread_t			*threads;
@@ -167,7 +187,7 @@ typedef struct	s_data {
 	struct timeval		initial_rtt;
 	uint64_t			delay;
 
-	unsigned long		max_ips;
+	long				max_ips;
 
 	/* Counters */
 	int					ip_counter;
@@ -240,7 +260,6 @@ int		tcp_scan(struct s_scan *to_scan,
 	struct timeval timeout);
 
 /* addr_config.c */
-int	add_ip_range(char *destination, char *slash, t_set *set);
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
 	char **hostname);
 int		sconfig(char *destination, struct sockaddr_in *saddr);
@@ -287,8 +306,13 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+void	free_tmp_ips(struct s_tmp_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
-void	add_ip(char *ip_string, t_set *set);
+void	add_tmp_ip(char *ip_string);
+int		add_ip_range(char *destination, char *slash, t_set *set);
+void	add_ip(struct s_tmp_ip *ip, t_set *set);
+void	print_ip_list(struct s_ip *ips);
+void	remove_ip(struct s_ip **ips, struct s_ip *ip);
 
 /* timedout.c */
 int		timed_out(struct timeval start, struct timeval timeout, int status);

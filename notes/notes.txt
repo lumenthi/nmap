@@ -8,11 +8,13 @@
 
 # Must recheck if segfault/leak when thread creation fail
 
-# Must determine a limit IP number to scan in one command
-
 # Update -h before push
 
 # Check allowed functions
+
+# Print down and errors if 0 port were scanned
+
+# check scan broadcast and gateway without privileges
 
 ##### IN THE FUTURE, MORE FEATURES TO COME
 
