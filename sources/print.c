@@ -55,8 +55,9 @@ void print_time(struct timeval start_time, struct timeval end_time,
 		ms /= 10;
 
 	/* Global timer */
-	printf("\nft_nmap scanned %d ip(s) (%d host(s) up) in %01lld.%02lld seconds",
-		g_data.ip_counter, g_data.vip_counter, sec, ms);
+	printf("\nft_nmap scanned %d ip(s) (%d host(s) up, %d down) in %01lld.%02lld seconds",
+		g_data.ip_counter, g_data.vip_counter,
+		g_data.ip_counter-g_data.vip_counter, sec, ms);
 
 	diff_sec = send_time.tv_sec - sstart_time.tv_sec;
 	diff_usec = send_time.tv_usec - sstart_time.tv_usec;
@@ -294,9 +295,9 @@ void	print_scans(struct s_ip *ips)
 
 	if (g_data.nb_down_ips + g_data.nb_invalid_ips <= 10) {
 		for (int i = 0; i < g_data.nb_down_ips; i++)
-			printf("%s is down\n\n", inet_ntoa(g_data.down_ips[i]));
+			printf("%s is down\n", inet_ntoa(g_data.down_ips[i]));
 		for (int i = 0; i < g_data.nb_invalid_ips; i++)
-			printf("%s is invalid\n\n", g_data.invalid_ips[i]);
+			printf("%s is invalid\n", g_data.invalid_ips[i]);
 	}
 	while (ip) {
 		ft_memset(&info, 0, sizeof(struct s_pinfo));

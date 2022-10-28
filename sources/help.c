@@ -49,7 +49,7 @@ static void		scan_techniques()
 {
 	printf("SCAN TECHNIQUES:\n"
 		"  Can specify a single or multiple scan technique(s) -s --scan <type(s)>\n"
-		"  Note that the program will run all types of scan if none are specified\n"
+		"  Note that by default, the program will run SYN or TCP scan depending of permissions\n"
 		"    Exemple: -s SYN,UDP,FIN; --scan=XMAS,TCP\n"
 		"  TCP SCANS:\n"
 		"    SYN: SYN scan, requires root privileges\n"
@@ -105,6 +105,7 @@ static void verbose()
 static void misc()
 {
 	printf("MISC:\n"
+		"  -a --all: Perform all scantypes\n"
 		"  -d --delay: Specify a delay between each packet that are sent by ft_nmap\n"
 		"    By default, ft_nmap send packets as fast as possible\n"
 		"  --no-progress: Hide the progress bar while scanning, this may result in a performance gain\n"
