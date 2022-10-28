@@ -13,8 +13,7 @@
 # Check allowed functions
 
 # Print down and errors if 0 port were scanned
-
-# check scan broadcast and gateway without privileges
+# Too many \n when host is down
 
 ##### IN THE FUTURE, MORE FEATURES TO COME
 

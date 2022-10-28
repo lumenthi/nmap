@@ -47,17 +47,9 @@ int tcp_scan(struct s_scan *scan, struct timeval timeout)
 	scan->service = g_data.ports[scan->dport].tcp_name;
 	scan->service_desc = g_data.ports[scan->dport].tcp_desc;
 
-	/* Setting read fds for select */
-	fd_set rfds;
-	FD_ZERO(&rfds);
-
-	/* Setting listen fds for select */
-	fd_set lfds;
-	FD_ZERO(&lfds);
-
-	/* Setting exception fds for select */
-	fd_set efds;
-	FD_ZERO(&efds);
+	/* Setting write fds for select */
+	fd_set wfds;
+	FD_ZERO(&wfds);
 
 	/* Default status */
 	scan->status = FILTERED;
@@ -65,13 +57,8 @@ int tcp_scan(struct s_scan *scan, struct timeval timeout)
 		/* Setting data */
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 345678;
-		FD_SET(sockfd, &rfds);
-		FD_SET(sockfd, &lfds);
-		FD_SET(sockfd, &efds);
-
-		/* Connect process */
-		connect(sockfd, (struct sockaddr *)&scan->daddr, sizeof(struct sockaddr));
-		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char*)&err, (socklen_t *)&len);
+		FD_ZERO(&wfds);
+		FD_SET(sockfd, &wfds);
 
 		/* Verbose print */
 		if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
@@ -80,6 +67,23 @@ int tcp_scan(struct s_scan *scan, struct timeval timeout)
 				inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
 			pthread_mutex_unlock(&g_data.print_lock);
 		}
+
+		/* Connect process */
+		connect(sockfd, (struct sockaddr *)&scan->daddr, sizeof(struct sockaddr));
+
+		if (errno == ENETUNREACH) {
+			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
+				pthread_mutex_lock(&g_data.print_lock);
+				fprintf(stderr, "[%ld] %s:%d is unreachable\n", pthread_self(),
+					inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+				pthread_mutex_unlock(&g_data.print_lock);
+			}
+			scan->status = FILTERED;
+			break;
+		}
+
+		/* SO_ERROR check */
+		getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&len);	
 
 		/* Getsockopt analysis */
 		if (err == ECONNREFUSED) {
@@ -104,7 +108,7 @@ int tcp_scan(struct s_scan *scan, struct timeval timeout)
 			break ;
 		}
 		/* A socket is ready, our port is open */
-		else if (select(sockfd+1, &rfds, &lfds, &efds, &timeout)) {
+		else if (select(sockfd+1, NULL, &wfds, NULL, &timeout)) {
 			if (write(sockfd, NULL, 0) != -1) {
 				if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 					pthread_mutex_lock(&g_data.print_lock);
