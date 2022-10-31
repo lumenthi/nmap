@@ -190,18 +190,20 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	}
 
 	if (g_data.nb_invalid_ips > 0) {
-		g_data.invalid_ips = malloc(sizeof(char *) * g_data.nb_invalid_ips);
+		g_data.invalid_ips = malloc(sizeof(char *) * (g_data.nb_invalid_ips+1));
 		if (!g_data.invalid_ips) {
 			perror("invalid ips:");
 			return 1;
 		}
+		ft_bzero(g_data.invalid_ips, sizeof(char *) * (g_data.nb_invalid_ips+1));
 	}
 	if (g_data.nb_down_ips > 0) {
-		g_data.down_ips = malloc(sizeof(struct in_addr) * g_data.nb_down_ips);
+		g_data.down_ips = malloc(sizeof(struct in_addr) * (g_data.nb_down_ips+1));
 		if (!g_data.down_ips) {
 			perror("down ips:");
 			return 1;
 		}
+		ft_bzero(g_data.down_ips, sizeof(struct in_addr) * (g_data.nb_down_ips+1));
 	}
 
 	/* Create real IPS */
@@ -212,13 +214,13 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		if (g_data.tmp_ips[k].status == UP ||
 			(g_data.tmp_ips[k].status == READY && g_data.opt & OPT_NO_DISCOVERY))
 			add_ip(&g_data.tmp_ips[k], &g_data.set);
-		else if (tmp->status == ERROR) {
-			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
-			j++;
-		}
 		else if (tmp->status == DOWN) {
 			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
 			i++;
+		}
+		else {
+			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
+			j++;
 		}
 		k++;
 	}
