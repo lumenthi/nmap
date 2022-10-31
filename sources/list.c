@@ -96,8 +96,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	}
 	struct hostent *host;
 	*slash = 0;
-	if (!(host = gethostbyname(destination)))
+	if (!(host = gethostbyname(destination))) {
+		fprintf(stderr, "\n%s is invalid\n\n", destination);
 		return 1;
+	}
 	*slash = '/';
 	struct in_addr hia, nia;
 	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
