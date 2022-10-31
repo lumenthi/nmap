@@ -43,6 +43,17 @@ void	init_data()
 	printf("size of struct ip = %ld\n", sizeof(struct s_ip));
 	printf("Free size = %ld\n", a_memory);
 	printf("%lu max ips\n", g_data.max_ips);*/
+
+	g_data.tmp_ips = malloc(sizeof(struct s_tmp_ip) * MAX_IPS);
+	if (!g_data.tmp_ips) {
+		fprintf(stderr, "Could not realloc tmp ips\n");
+		free_and_exit(EXIT_FAILURE);
+	}
+	ft_memset(g_data.tmp_ips, 0, sizeof(struct s_tmp_ip) * MAX_IPS);
+
+	/*printf("sizeof(s_ip) = %ld\n", sizeof(struct s_ip));
+	printf("sizeof(s_port) = %ld\n", sizeof(struct s_port));
+	printf("sizeof(s_scan) = %ld\n", sizeof(struct s_scan));*/
 }
 
 int		main(int argc, char **argv)

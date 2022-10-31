@@ -8,47 +8,27 @@
 #define G 1
 #define B 2
 
-static void	push_tmp_ip(struct s_tmp_ip **head, struct s_tmp_ip *new)
+void add_tmp_ip(struct s_tmp_ip *tmp, char *ip_string)
 {
-	struct s_tmp_ip *tmp = *head;
-
-	if (*head == NULL)
-		*head = new;
-	else {
-		while (tmp->next != NULL)
-			tmp = tmp->next;
-		tmp->next = new;
-	}
-}
-
-void add_tmp_ip(char *ip_string)
-{
-	struct s_tmp_ip *tmp;
-
-	tmp = (struct s_tmp_ip *)malloc(sizeof(struct s_ip));
-	if (tmp) {
-		ft_memset(tmp, 0, sizeof(struct s_tmp_ip));
-		tmp->destination = ip_string;
-		/* Default status */
-		tmp->status = READY;
-		if (dconfig(tmp->destination, 0, &tmp->daddr, &tmp->dhostname) != 0)
-			tmp->status = ERROR;
-		if (sconfig(inet_ntoa(tmp->daddr.sin_addr), &tmp->saddr) != 0)
-			tmp->status = ERROR;
-		tmp->srtt = 0;
-		tmp->rttvar = 0;
-		/* Default timeout */
-		tmp->timeout.tv_sec = 1;
-		tmp->timeout.tv_usec = 345678;
-		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
-			tmp->status = ERROR;
-		if (tmp->status == ERROR)
-			g_data.nb_invalid_ips++;
-		else if (!g_data.privilegied)
-			tmp->status = UP;
-		push_tmp_ip(&g_data.tmp_ips, tmp);
-		g_data.ip_counter++;
-	}
+	tmp->destination = ip_string;
+	/* Default status */
+	tmp->status = READY;
+	if (dconfig(tmp->destination, 0, &tmp->daddr, &tmp->dhostname) != 0)
+		tmp->status = ERROR;
+	if (sconfig(inet_ntoa(tmp->daddr.sin_addr), &tmp->saddr) != 0)
+		tmp->status = ERROR;
+	tmp->srtt = 0;
+	tmp->rttvar = 0;
+	/* Default timeout */
+	tmp->timeout.tv_sec = 1;
+	tmp->timeout.tv_usec = 345678;
+	if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+		tmp->status = ERROR;
+	if (tmp->status == ERROR)
+		g_data.nb_invalid_ips++;
+	else if (!g_data.privilegied)
+		tmp->status = UP;
+	g_data.ip_counter++;
 }
 
 void add_ip(struct s_tmp_ip *ip, t_set *set)
@@ -62,16 +42,9 @@ void add_ip(struct s_tmp_ip *ip, t_set *set)
 		tmp->dhostname = ft_strdup(ip->dhostname);
 		tmp->status = UP;
 		/* Prepare addr structs */
-		/* TODO: USELESS!! */
-		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->saddr || !tmp->daddr)
-			tmp->status = ERROR;
-		*(tmp->saddr) = ip->saddr;
-		*(tmp->daddr) = ip->daddr;
-		/* TODO: remove condition when daddr and saddr are not malloc anymore */
-		if (tmp->status == UP)
-			push_ports(&tmp, set);
+		tmp->saddr = ip->saddr;
+		tmp->daddr = ip->daddr;
+		push_ports(&tmp, set);
 		tmp->srtt = ip->srtt;
 		tmp->rttvar = ip->rttvar;
 		/* Default timeout */
@@ -84,8 +57,17 @@ void add_ip(struct s_tmp_ip *ip, t_set *set)
 
 int	add_ip_range(char *destination, char *slash, t_set *set)
 {
-	/* TODO: error if not 0 < mask < 32 */
 	int maskarg = ft_atoi(slash + 1);
+	if (maskarg > 32) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n",
+		destination);
+		maskarg = 32;
+	}
+	else if (maskarg < 12) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Cannot go under /12"
+		" (~1 million IPs). Assuming /12\n", destination);
+		maskarg = 12;
+	}
 	uint32_t mask = 0;
 	uint32_t nmask;
 	uint32_t nb_hosts;
@@ -106,7 +88,12 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		nb_hosts = 2;
 	else
 		nb_hosts = ft_power(2, 32 - maskarg);
-
+	
+	//printf("%u hosts\n", nb_hosts);
+	if (g_data.nb_tmp_ips + nb_hosts >= MAX_IPS) {
+		fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
+		return 1;
+	}
 	struct hostent *host;
 	*slash = 0;
 	if (!(host = gethostbyname(destination)))
@@ -115,21 +102,18 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	struct in_addr hia, nia;
 	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
 	//printf("\nStart ip = %s\n", inet_ntoa(nia));
+	//printf("sizeof(tmp) = %ld\n", sizeof(struct s_tmp_ip));
 	nia.s_addr &= mask;
 	hia.s_addr = ntohl(nia.s_addr);
 	for (uint32_t i = 0; i < nb_hosts; i++) {
 		nia.s_addr = htonl(hia.s_addr);
-		//if (hostname)
-		//	*hostname = ft_strdup(inet_ntoa(nia));
-		add_tmp_ip(inet_ntoa(nia));
-		//++g_data.ip_counter;
-		/*if (++g_data.ip_counter > MAX_IPS) {
-			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
-			return 1;
-		}*/
+		add_tmp_ip(&g_data.tmp_ips[i + g_data.nb_tmp_ips], inet_ntoa(nia));
 		//printf("ip = %s\n", inet_ntoa(nia));
+		//printf("%d/%d\n", i, nb_hosts);
 		hia.s_addr++;
 	}
+	g_data.nb_tmp_ips += nb_hosts;
+	//printf("\nEnd ip = %s\n", inet_ntoa(nia));
 	return 0;
 }
 
@@ -269,7 +253,7 @@ static void	free_ports(struct s_port *ports)
 
 static int push_scan(struct s_port *scanlist, struct s_scan *new)
 {
-	struct s_scan **tmp;
+	struct s_scan **tmp = NULL;
 
 	switch (new->scantype) {
 		case OPT_SCAN_SYN:
@@ -341,16 +325,14 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		tmp->status = READY;
 		tmp->dport = port;
 		tmp->scantype = scantype;
-		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
+		ft_memcpy(&tmp->saddr, &ip->saddr, sizeof(struct sockaddr_in));
 		/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
 		if (scantype != OPT_SCAN_TCP) {
 			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
 			tmp->saddr.sin_port = htons(tmp->sport);
 		}
 
-		ft_memcpy(&tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
 		tmp->dhostname = ip->dhostname;
-		tmp->daddr.sin_port = htons(tmp->dport);
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
@@ -440,7 +422,7 @@ void	print_ip_list(struct s_ip *ips)
 {
 	struct s_ip *tmp = ips;
 	while (tmp) {
-		printf("IP: %s\n", inet_ntoa(tmp->daddr->sin_addr));
+		printf("IP: %s\n", inet_ntoa(tmp->daddr.sin_addr));
 		tmp = tmp->next;
 	}
 }
@@ -452,10 +434,6 @@ void	ft_lstpopfront(struct s_ip **alst)
 	if (!alst)
 		return ;
 	new = (*alst)->next;
-	if ((*alst)->saddr)
-		free((*alst)->saddr);
-	if ((*alst)->daddr)
-		free((*alst)->daddr);
 	if ((*alst)->dhostname)
 		free((*alst)->dhostname);
 	free_ports((*alst)->ports);
@@ -495,10 +473,6 @@ void	free_ips(struct s_ip **ip)
 
 	while (current != NULL) {
 		next = current->next;
-		if (current->saddr)
-			free(current->saddr);
-		if (current->daddr)
-			free(current->daddr);
 		if (current->dhostname)
 			free(current->dhostname);
 		free_ports(current->ports);
@@ -510,15 +484,10 @@ void	free_ips(struct s_ip **ip)
 
 void	free_tmp_ips(struct s_tmp_ip **ip)
 {
-	struct s_tmp_ip *current = *ip;
-	struct s_tmp_ip *next;
-
-	while (current != NULL) {
-		next = current->next;
-		if (current->dhostname)
-			free(current->dhostname);
-		free(current);
-		current = next;
-	}
+	if (!ip || !(*ip))
+		return ;
+	for (uint32_t i = 0; i < g_data.nb_tmp_ips; i++)
+		free(g_data.tmp_ips[i].dhostname);
+	free(*ip);
 	*ip = NULL;
 }

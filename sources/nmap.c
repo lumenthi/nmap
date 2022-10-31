@@ -13,30 +13,30 @@ static void erase_progress_bar()
 	}
 }
 
-static int run_scan(struct s_scan *scan, struct s_port *ports,
-	struct timeval timeout)
+static int run_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
-			syn_scan(scan, ports, timeout);
+			syn_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_TCP:
-			tcp_scan(scan, timeout);
+			tcp_scan(daddr, scan, timeout);
 			break;
 		case OPT_SCAN_FIN:
-			fin_scan(scan, ports, timeout);
+			fin_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_NULL:
-			null_scan(scan, ports, timeout);
+			null_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_ACK:
-			ack_scan(scan, ports, timeout);
+			ack_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_XMAS:
-			xmas_scan(scan, ports, timeout);
+			xmas_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_UDP:
-			udp_scan(scan, ports, timeout);
+			udp_scan(daddr, scan, ports, timeout);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -47,8 +47,8 @@ static int run_scan(struct s_scan *scan, struct s_port *ports,
 	return 0;
 }
 
-static void start_scan(struct s_scan *scan, struct s_port *ports,
-	struct timeval timeout)
+static void start_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	static uint64_t	last_probe = 0;
 
@@ -66,7 +66,7 @@ static void start_scan(struct s_scan *scan, struct s_port *ports,
 		UNLOCK(scan);
 		if (g_data.opt & OPT_DELAY)
 			last_probe = get_time();
-		run_scan(scan, ports, timeout);
+		run_scan(daddr, scan, ports, timeout);
 		g_data.ports[scan->sport].status = FREE;
 	}
 	else
@@ -84,20 +84,22 @@ static int launch_scan(void *rip)
 			i = 0;
 			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
+				struct sockaddr_in daddr = ip->daddr;
+				daddr.sin_port = htons(i);
 				if (port.syn_scan)
-					start_scan(port.syn_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.syn_scan, ip->ports, ip->timeout);
 				if (port.null_scan)
-					start_scan(port.null_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.null_scan, ip->ports, ip->timeout);
 				if (port.fin_scan)
-					start_scan(port.fin_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.fin_scan, ip->ports, ip->timeout);
 				if (port.xmas_scan)
-					start_scan(port.xmas_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.xmas_scan, ip->ports, ip->timeout);
 				if (port.ack_scan)
-					start_scan(port.ack_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.ack_scan, ip->ports, ip->timeout);
 				if (port.udp_scan)
-					start_scan(port.udp_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.udp_scan, ip->ports, ip->timeout);
 				if (port.tcp_scan)
-					start_scan(port.tcp_scan, ip->ports, ip->timeout);
+					start_scan(daddr, port.tcp_scan, ip->ports, ip->timeout);
 				i++;
 			}
 		}
@@ -182,8 +184,9 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 		g_data.vip_counter = g_data.ip_counter - g_data.nb_invalid_ips;
 	
 	if (g_data.vip_counter > g_data.max_ips) {
-		fprintf(stderr, "Too much ips (maximum %ld with your currently"
-			"available memory\n", g_data.max_ips);
+		fprintf(stderr, "Too much ips: %d (maximum %ld with your currently"
+			" available memory)\n", g_data.vip_counter, g_data.max_ips);
+		return 1;
 	}
 
 	if (g_data.nb_invalid_ips > 0) {
@@ -203,20 +206,21 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 
 	/* Create real IPS */
 	int i = 0, j = 0;
+	unsigned int k = 0;
 	struct s_tmp_ip *tmp = g_data.tmp_ips;
-	while (tmp) {
-		if (tmp->status == UP ||
-			(tmp->status == READY && g_data.opt & OPT_NO_DISCOVERY))
-			add_ip(tmp, &g_data.set);
+	while (k < g_data.nb_tmp_ips) {
+		if (g_data.tmp_ips[k].status == UP ||
+			(g_data.tmp_ips[k].status == READY && g_data.opt & OPT_NO_DISCOVERY))
+			add_ip(&g_data.tmp_ips[k], &g_data.set);
 		else if (tmp->status == ERROR) {
-			g_data.invalid_ips[j] = tmp->destination;
+			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
 			j++;
 		}
 		else if (tmp->status == DOWN) {
-			g_data.down_ips[i] = tmp->daddr.sin_addr;
+			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
 			i++;
 		}
-		tmp = tmp->next;
+		k++;
 	}
 	//print_ip_list(g_data.ips);
 	free_tmp_ips(&g_data.tmp_ips);

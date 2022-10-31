@@ -440,8 +440,12 @@ int	parse_nmap_args(int ac, char **av)
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
-		add_tmp_ip(tmp->string);
 		tmp = tmp->next;
+		if (g_data.nb_tmp_ips + 1 >= MAX_IPS) {
+			fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
+			return 1;
+		}
+		add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips++], tmp->string);
 	}
 	/* Filling scans with ips from arguments */
 	char *slash;
@@ -452,8 +456,13 @@ int	parse_nmap_args(int ac, char **av)
 				if (add_ip_range(av[i], slash, &g_data.set))
 					return 1;
 			}
-			else
-				add_tmp_ip(av[i]);
+			else {
+				if (g_data.nb_tmp_ips + 1 >= MAX_IPS) {
+					fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
+					return 1;
+				}
+				add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips++], av[i]);
+			}
 		}
 	}
 
