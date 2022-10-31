@@ -440,12 +440,13 @@ int	parse_nmap_args(int ac, char **av)
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
-		tmp = tmp->next;
 		if (g_data.nb_tmp_ips + 1 >= MAX_IPS) {
 			fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
 			return 1;
 		}
+		/* printf("Adding IP: g_data.tmp_ips[%d] = %s\n", g_data.nb_tmp_ips, tmp->string); */
 		add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips++], tmp->string);
+		tmp = tmp->next;
 	}
 	/* Filling scans with ips from arguments */
 	char *slash;
