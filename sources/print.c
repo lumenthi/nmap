@@ -75,8 +75,8 @@ void print_time(struct timeval start_time, struct timeval end_time,
 	printf(" (%01lld.%02lld seconds scantime)\n", sec, ms);
 }
 
-static void print_content(struct s_scan *scan, struct s_pinfo *info,
-	const char **status, const char **colors)
+static void print_content(struct s_ip *ip, struct s_scan *scan,
+	struct s_pinfo *info, const char **status, const char **colors)
 {
 	long int sec;
 	long int usec;
@@ -100,11 +100,11 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	}
 	else {
 		if (scan->scantype == OPT_SCAN_UDP) {
-			if ((s_service = getservbyport(scan->daddr.sin_port, "udp")))
+			if ((s_service = getservbyport(ip->daddr.sin_port, "udp")))
 				service = s_service->s_name;
 		}
 		else {
-			if ((s_service = getservbyport(scan->daddr.sin_port, "tcp")))
+			if ((s_service = getservbyport(ip->daddr.sin_port, "tcp")))
 				service = s_service->s_name;
 		}
 	}
@@ -132,7 +132,7 @@ static void print_content(struct s_scan *scan, struct s_pinfo *info,
 	printf("\n");
 }
 
-static void print_scan(struct s_scan *scan, struct s_pinfo *info,
+static void print_scan(struct s_ip *ip, struct s_scan *scan, struct s_pinfo *info,
 	int *pstatus, size_t *cstatus, const char **status, const char **colors,
 	struct s_port port)
 {
@@ -145,7 +145,7 @@ static void print_scan(struct s_scan *scan, struct s_pinfo *info,
 					   || port.final_status == UNFILTERED))
 			|| (cstatus[CLOSED] <= 25 && port.final_status == CLOSED))
 		{
-			print_content(scan, info, status, colors);
+			print_content(ip, scan, info, status, colors);
 			*pstatus = port.final_status;
 			info->tick = 1;
 		}
@@ -153,7 +153,7 @@ static void print_scan(struct s_scan *scan, struct s_pinfo *info,
 	}
 }
 
-static int print_port(struct s_port port, struct s_pinfo *info,
+static int print_port(struct s_ip *ip, struct s_port port, struct s_pinfo *info,
 	const char **status, const char **colors, size_t *cstatus)
 {
 	int pstatus = -1; /* Final port status */
@@ -161,19 +161,19 @@ static int print_port(struct s_port port, struct s_pinfo *info,
 	info->tick = 0;
 
 	if (port.syn_scan)
-		print_scan(port.syn_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.syn_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.null_scan)
-		print_scan(port.null_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.null_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.fin_scan)
-		print_scan(port.fin_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.fin_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.xmas_scan)
-		print_scan(port.xmas_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.xmas_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.ack_scan)
-		print_scan(port.ack_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.ack_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.udp_scan)
-		print_scan(port.udp_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.udp_scan, info, &pstatus, cstatus, status, colors, port);
 	if (port.tcp_scan)
-		print_scan(port.tcp_scan, info, &pstatus, cstatus, status, colors, port);
+		print_scan(ip, port.tcp_scan, info, &pstatus, cstatus, status, colors, port);
 
 	if (info->tick) {
 		if (g_data.scan_types_counter > 1) {
@@ -311,7 +311,7 @@ void	print_scans(struct s_ip *ips)
 			printf("\n");
 			int i = 0;
 			while (i < USHRT_MAX+1) {
-				print_port(ip->ports[i], &info, status, colors, cstatus[ip_counter]);
+				print_port(ip, ip->ports[i], &info, status, colors, cstatus[ip_counter]);
 				i++;
 			}
 			if (g_data.port_counter > 1)

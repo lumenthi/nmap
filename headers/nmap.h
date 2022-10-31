@@ -77,7 +77,6 @@
 
 struct s_scan {
 	struct sockaddr_in	saddr; /* sockaddr_in of source */
-	struct sockaddr_in	daddr; /* sockaddr_in of dest */
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
@@ -241,23 +240,23 @@ void	print_scans(struct s_ip *ips);
 int		syn_scan(struct sockaddr_in daddr,
 	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* udp_scan.c */
-int		udp_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		udp_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* fin_scan.c */
-int		fin_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		fin_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* null_scan.c */
-int		null_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		null_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* xmas_scan.c */
-int		xmas_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		xmas_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* xmas_scan.c */
-int		ack_scan(struct s_scan *to_scan, struct s_port *ports,
-	struct timeval timeout);
+int		ack_scan(struct sockaddr_in daddr, 
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* tcp_scan.c */
-int		tcp_scan(struct s_scan *to_scan,
-	struct timeval timeout);
+int		tcp_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct timeval timeout);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,

@@ -21,22 +21,22 @@ struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 			syn_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_TCP:
-			tcp_scan(scan, timeout);
+			tcp_scan(daddr, scan, timeout);
 			break;
 		case OPT_SCAN_FIN:
-			fin_scan(scan, ports, timeout);
+			fin_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_NULL:
-			null_scan(scan, ports, timeout);
+			null_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_ACK:
-			ack_scan(scan, ports, timeout);
+			ack_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_XMAS:
-			xmas_scan(scan, ports, timeout);
+			xmas_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_UDP:
-			udp_scan(scan, ports, timeout);
+			udp_scan(daddr, scan, ports, timeout);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -84,8 +84,7 @@ static int launch_scan(void *rip)
 			i = 0;
 			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
-				struct sockaddr_in daddr;
-				ft_memset(&daddr, 0, sizeof(daddr));
+				struct sockaddr_in daddr = ip->daddr;
 				daddr.sin_port = htons(i);
 				if (port.syn_scan)
 					start_scan(daddr, port.syn_scan, ip->ports, ip->timeout);

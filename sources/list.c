@@ -332,9 +332,7 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 			tmp->saddr.sin_port = htons(tmp->sport);
 		}
 
-		ft_memcpy(&tmp->daddr, &ip->daddr, sizeof(struct sockaddr_in));
 		tmp->dhostname = ip->dhostname;
-		tmp->daddr.sin_port = htons(tmp->dport);
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
