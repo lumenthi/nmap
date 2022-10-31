@@ -103,8 +103,11 @@ int get_services()
 	int fd;
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
+		g_data.opt & OPT_VERBOSE_PACKET)
+	{
 		fprintf(stderr, "[*] Parsing services database %s\n", DB_SERVICES);
+	}
 
 	/* Structures allocation */
 	g_data.ports = malloc(sizeof(struct port) * (USHRT_MAX+1));
@@ -126,8 +129,11 @@ int get_services()
 	close(fd);
 
 	/* Verbose print */
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
+		g_data.opt & OPT_VERBOSE_PACKET)
+	{
 		fprintf(stderr, "[*] Parsed services database sucessfully\n");
+	}
 
 	return 0;
 }

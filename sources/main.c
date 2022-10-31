@@ -31,43 +31,31 @@ void	init_data()
 
 	g_data.ipset = NULL;
 
+	long pagesize = sysconf(_SC_PAGE_SIZE);
+	long a_pages = sysconf(_SC_AVPHYS_PAGES);
+	uint64_t total_size = pagesize * a_pages;
+	uint64_t a_memory = total_size * 0.8 - sizeof(g_data);
+	g_data.max_ips = a_memory / sizeof(struct s_ip);
+	/*printf("Page size = %ld\n", pagesize);
+	printf("Available pages = %ld\n", a_pages);
+	printf("Total size = %ld\n", total_size);
+	printf("size of g_data = %ld\n", sizeof(t_data));
+	printf("size of struct ip = %ld\n", sizeof(struct s_ip));
+	printf("Free size = %ld\n", a_memory);
+	printf("%lu max ips\n", g_data.max_ips);*/
+
+	g_data.tmp_ips = malloc(sizeof(struct s_tmp_ip) * MAX_IPS);
+	if (!g_data.tmp_ips) {
+		fprintf(stderr, "Could not realloc tmp ips\n");
+		free_and_exit(EXIT_FAILURE);
+	}
+	ft_memset(g_data.tmp_ips, 0, sizeof(struct s_tmp_ip) * MAX_IPS);
+
+	/*printf("sizeof(s_ip) = %ld\n", sizeof(struct s_ip));
+	printf("sizeof(s_port) = %ld\n", sizeof(struct s_port));
+	printf("sizeof(s_scan) = %ld\n", sizeof(struct s_scan));*/
 }
 
-void	print_start(void)
-{
-	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
-
-	printf("\n................. Config ..................\n");
-
-	if (g_data.ip_counter == 1) {
-		printf("Target IP : %s\n",
-		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
-	}
-	else {
-		printf("Scanning %d targets\n", g_data.ip_counter);
-	}
-
-	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
-	printf("Number of ports to scan : %d\n", nb_ports);
-
-	printf("Scan types to be performed : ");
-	int i = 0;
-	char *pipe = "";
-	while (scans[i])
-	{
-		if (g_data.opt & (1UL << (i + 2))) {
-			printf("%s%s", pipe, scans[i]);
-			pipe = "|";
-		}
-		i++;
-	}
-	printf("\n");
-	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
-	printf("Number of threads : %hhu\n", g_data.nb_threads);
-	printf("...........................................\n\n");
-}
-
-/* TODO: Check allowed functions */
 int		main(int argc, char **argv)
 {
 	/* Timers for the whole proccess */
@@ -89,7 +77,7 @@ int		main(int argc, char **argv)
 	ctime = time(NULL);
 	local_time = localtime(&ctime);
 
-	printf("\nStarting ft_nmap 0.1 ( https://github.com/lumenthi/nmap )"\
+	printf("Starting ft_nmap 0.1 (https://github.com/lumenthi/nmap)"\
 		" at %d-%d-%d %d:%d CEST\n", 1900 + local_time->tm_year, local_time->tm_mon + 1,
 		local_time->tm_mday, local_time->tm_hour, local_time->tm_min);
 
@@ -102,18 +90,18 @@ int		main(int argc, char **argv)
 	if (parse_nmap_args(argc, argv) != 0)
 		free_and_exit(EXIT_FAILURE);
 
-	if (g_data.ips == NULL) {
+	if (g_data.tmp_ips == NULL) {
 		fprintf(stdout, "Use -h for help\n");
 		print_usage(stdout);
 		free_and_exit(EXIT_FAILURE);
 	}
 
-	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
-		|| g_data.opt & OPT_VERBOSE_PACKET)
-		print_start();
-
 	/* Getting service list */
 	if (get_services() != 0)
+		free_and_exit(EXIT_FAILURE);
+
+	/* Getting service list */
+	if (get_payloads() != 0)
 		free_and_exit(EXIT_FAILURE);
 
 	ft_nmap(argv[0], &sstart_time, &send_time);

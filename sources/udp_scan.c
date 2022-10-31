@@ -1,17 +1,20 @@
 #include "nmap.h"
 #include "options.h"
 
-int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
+static int		send_udp(int udpsockfd, struct sockaddr_in *saddr,
 	struct sockaddr_in *daddr)
 {
+	unsigned short port = ntohs(daddr->sin_port);
 	unsigned int len = 0;
+	if (g_data.ports[port].payload_len > 0)
+		len = g_data.ports[port].payload_len;
 	char packet[sizeof(struct iphdr) + sizeof(struct udphdr) + len];
 	struct iphdr *ip = (struct iphdr*)packet;
 
 	ft_memset(packet, 0, sizeof(packet));
 	craft_ip_packet(packet, saddr, daddr, IPPROTO_UDP, NULL);
-	/* TODO: Send specific payload for ports 53 and 161 */
-	craft_udp_packet(packet, saddr, daddr, NULL, 0);
+	craft_udp_packet(packet, saddr, daddr,
+		g_data.ports[port].payload, g_data.ports[port].payload_len);
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
@@ -72,10 +75,10 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	if (ret < (ssize_t)sizeof(struct udp_packet) &&
 		icmpret < (ssize_t)icmp_len)
 		return 0;
+	
 
 	if (ret >= (ssize_t)sizeof(struct udp_packet)) {
 		ip = (struct iphdr *)buffer;
-		//printf("UDP!!\n");
 		if (ip->protocol == IPPROTO_UDP) {
 			status = OPEN;
 			udp_packet = (struct udp_packet *)buffer;
@@ -87,10 +90,9 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 		ip = (struct iphdr *)icmpbuffer;
 		if (ip->protocol == IPPROTO_ICMP) {
 			icmp_packet = (struct icmp_packet *)icmpbuffer;
-			/* TODO: Add delay to not spam hosts */
-			/*printf("ICMP type %d code %d!!\n",
-			icmp_packet->icmp.type, icmp_packet->icmp.code);
-			print_ip4_header((struct ip*)&icmp_packet->ip);*/
+			//printf("ICMP type %d code %d!!\n",
+			//icmp_packet->icmp.type, icmp_packet->icmp.code);
+			//print_ip4_header((struct ip*)&icmp_packet->ip);
 			if (icmp_packet->icmp.type == ICMP_DEST_UNREACH) {
 				if (icmp_packet->icmp.code == ICMP_PORT_UNREACH)
 					status = CLOSED;
@@ -130,12 +132,12 @@ static int read_udp(int udpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int		udp_scan(struct s_scan *scan, struct s_port *ports)
+int		udp_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	int	udpsockfd;
 	int	icmpsockfd;
 	int ret;
-	struct timeval timeout = {1, 345678};
 
 	//printf("UDP scan\n");
 
@@ -209,7 +211,7 @@ int		udp_scan(struct s_scan *scan, struct s_port *ports)
 
 	/* Scanning process */
 	ret = 0;
-	if (send_udp(udpsockfd, &scan->saddr, &scan->daddr) != 0) {
+	if (send_udp(udpsockfd, &scan->saddr, &daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
@@ -222,13 +224,13 @@ int		udp_scan(struct s_scan *scan, struct s_port *ports)
 			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] UDP request on %s:%d timedout\n", pthread_self(),
-					inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+					inet_ntoa(daddr.sin_addr), ntohs(daddr.sin_port));
 				pthread_mutex_unlock(&g_data.print_lock);
 			}
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
-			if (send_udp(udpsockfd, &scan->saddr, &scan->daddr) != 0) {
+			if (send_udp(udpsockfd, &scan->saddr, &daddr) != 0) {
 				scan->status = ERROR;
 				UNLOCK(scan);
 			}
@@ -256,10 +258,11 @@ int		udp_scan(struct s_scan *scan, struct s_port *ports)
 	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 		pthread_mutex_lock(&g_data.print_lock);
 		char *status[] = {
-			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
+			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", 
+			"DOWN", "ERROR", NULL
 		};
 		fprintf(stderr, "[%ld] Updating %s:%d UDP scan to %s\n", pthread_self(),
-		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
+		inet_ntoa(daddr.sin_addr), ntohs(daddr.sin_port),
 		status[scan->status]);
 		pthread_mutex_unlock(&g_data.print_lock);
 	}

@@ -123,12 +123,12 @@ static int read_fin_ack(int tcpsockfd, int icmpsockfd, struct s_scan *scan,
 	return 0;
 }
 
-int fin_scan(struct s_scan *scan, struct s_port *ports)
+int fin_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	int tcpsockfd;
 	int icmpsockfd;
 	int ret;
-	struct timeval timeout = {1, 345678};
 
 	LOCK(scan);
 
@@ -200,7 +200,7 @@ int fin_scan(struct s_scan *scan, struct s_port *ports)
 
 	/* Scanning process */
 	ret = 0;
-	if (send_fin(tcpsockfd, &scan->saddr, &scan->daddr) != 0) {
+	if (send_fin(tcpsockfd, &scan->saddr, &daddr) != 0) {
 		scan->status = ERROR;
 		UNLOCK(scan);
 	}
@@ -214,13 +214,13 @@ int fin_scan(struct s_scan *scan, struct s_port *ports)
 			if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 				pthread_mutex_lock(&g_data.print_lock);
 				fprintf(stderr, "[%ld] FIN request on %s:%d timedout\n", pthread_self(),
-					inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port));
+					inet_ntoa(daddr.sin_addr), ntohs(daddr.sin_port));
 				pthread_mutex_unlock(&g_data.print_lock);
 			}
 			/* Set the scan status to TIMEOUT, to inform we already timedout once */
 			scan->status = TIMEOUT;
 			/* Resend scan */
-			if (send_fin(tcpsockfd, &scan->saddr, &scan->daddr) != 0) {
+			if (send_fin(tcpsockfd, &scan->saddr, &daddr) != 0) {
 				scan->status = ERROR;
 				UNLOCK(scan);
 			}
@@ -248,10 +248,11 @@ int fin_scan(struct s_scan *scan, struct s_port *ports)
 	if (g_data.opt & OPT_VERBOSE_PACKET || g_data.opt & OPT_VERBOSE_DEBUG) {
 		pthread_mutex_lock(&g_data.print_lock);
 		char *status[] = {
-			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", NULL
+			"OPEN", "CLOSED", "FILTERED", "OPEN|FILTERED", "UNFILTERED", "DOWN",
+			"ERROR", NULL
 		};
 		fprintf(stderr, "[%ld] Updating %s:%d FIN scan to %s\n", pthread_self(),
-		inet_ntoa(scan->daddr.sin_addr), ntohs(scan->daddr.sin_port),
+		inet_ntoa(daddr.sin_addr), ntohs(daddr.sin_port),
 		status[scan->status]);
 		pthread_mutex_unlock(&g_data.print_lock);
 	}

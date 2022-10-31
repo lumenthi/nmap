@@ -224,38 +224,11 @@ static void assign_ports(uint16_t *port_min, uint16_t *port_max)
 		i++;
 	}
 
+	/* DEBUG */
+	/* *port_min = 32768;
+	*port_max = (*port_min)+5; */
+
 	close(fd);
-}
-
-static void add_ip(char *ip_string, t_set *set)
-{
-	struct s_ip *tmp;
-
-	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
-	if (tmp) {
-		ft_memset(tmp, 0, sizeof(struct s_ip));
-		tmp->destination = ip_string;
-		/* Default status */
-		tmp->status = UP;
-		/* Prepare addr structs */
-		/* TODO no need to malloc this.. */
-		tmp->saddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		tmp->daddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-		if (!tmp->saddr || !tmp->daddr)
-			tmp->status = ERROR;
-		if (dconfig(tmp->destination, 0, tmp->daddr, &tmp->dhostname) != 0)
-			tmp->status = DOWN;
-		if (sconfig(inet_ntoa(tmp->daddr->sin_addr), tmp->saddr) != 0)
-			tmp->status = ERROR;
-		if (tmp->status == UP) {
-			push_ports(&tmp, set);
-			++g_data.vip_counter;
-		}
-		tmp->srtt = 0;
-		tmp->rttvar = 0;
-		tmp->timeout = 1345678;
-		push_ip(&g_data.ips, tmp);
-	}
 }
 
 /*
@@ -266,14 +239,17 @@ int	parse_nmap_args(int ac, char **av)
 {
 	int	opt, option_index = 0, count = 1, ports_parsed = 0;
 	char		*optarg = NULL;
-	const char	*optstring = "hv::Vp:i:f:t:s:d";
+	const char	*optstring = "ahv::Vp:i:f:t:s:Dd:";
 	static struct option long_options[] = {
 		{"help",		0,					0, 'h'},
 		{"version",		0,					0, 'V'},
-		{"description",	0				,	0, 'd'},
+		{"description",	0				,	0, 'D'},
 		{"no-progress",	0				,	0,  0 },
+		{"no-discovery",0				,	0,  0 },
 		{"ascii",		0				,	0,  0 },
+		{"all",			0,					0, 'a'},
 		{"verbose",		optional_argument,	0, 'v'},
+		{"delay",		required_argument,	0, 'd'},
 		{"ports",		required_argument,	0, 'p'},
 		{"threads",		required_argument,	0, 't'},
 		{"file",		required_argument,	0, 'f'},
@@ -300,6 +276,8 @@ int	parse_nmap_args(int ac, char **av)
 						g_data.opt |= OPT_NO_PROGRESS;
 					else if (ft_strequ(long_options[option_index].name, "ascii"))
 						g_data.opt |= OPT_ASCII_PROGRESS;
+					else if (ft_strequ(long_options[option_index].name, "no-discovery"))
+						g_data.opt |= OPT_NO_DISCOVERY;
 					break;
 				}
 			case 's':
@@ -314,6 +292,19 @@ int	parse_nmap_args(int ac, char **av)
 						fprintf(stderr,
 						"You requested a scan type which requires root privileges.\n");
 						return 1;
+					}
+					break;
+				}
+			case 'a':
+				{
+					if (g_data.privilegied) {
+						g_data.opt |= OPT_SCAN_SYN;
+						g_data.opt |= OPT_SCAN_NULL;
+						g_data.opt |= OPT_SCAN_FIN;
+						g_data.opt |= OPT_SCAN_XMAS;
+						g_data.opt |= OPT_SCAN_ACK;
+						g_data.opt |= OPT_SCAN_UDP;
+						g_data.scan_types_counter = 6;
 					}
 					break;
 				}
@@ -341,6 +332,18 @@ int	parse_nmap_args(int ac, char **av)
 					}
 				}
 				break;
+			case 'd':
+				{
+					long long delay = ft_atoll(optarg);
+					if (delay <= 0 || delay > 10000) {
+						fprintf(stderr, "Invalid delay [0ms - 10 000ms]\n");
+						return 1;
+					}
+					g_data.delay = delay * 1000;
+					g_data.nb_threads = 0;
+					g_data.opt |= OPT_DELAY;
+					break;
+				}
 			case 't':
 				{
 					int threads = ft_atoi(optarg);
@@ -349,6 +352,8 @@ int	parse_nmap_args(int ac, char **av)
 						return 1;
 					}
 					g_data.nb_threads = threads;
+					g_data.delay = 0;
+					g_data.opt &= ~OPT_DELAY;
 					break;
 				}
 			case 'V':
@@ -393,7 +398,7 @@ int	parse_nmap_args(int ac, char **av)
 					free_and_exit(255);
 					break;
 				}
-			case 'd':
+			case 'D':
 				g_data.opt |= OPT_SERVICE_DESC;
 				break;
 			default:
@@ -406,11 +411,27 @@ int	parse_nmap_args(int ac, char **av)
 	}
 
 	/* Default SCAN */
-	/* TODO: default must be all scans (counter = 6) according to the subject */
 	if (!g_data.scan_types_counter) {
 		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 		g_data.scan_types_counter = 1;
 	}
+	/* TODO: Use this for defense */
+	/* Default SCAN */
+	/* if (!g_data.scan_types_counter) {
+		if (g_data.privilegied) {
+			g_data.opt |= OPT_SCAN_SYN;
+			g_data.opt |= OPT_SCAN_NULL;
+			g_data.opt |= OPT_SCAN_FIN;
+			g_data.opt |= OPT_SCAN_XMAS;
+			g_data.opt |= OPT_SCAN_ACK;
+			g_data.opt |= OPT_SCAN_UDP;
+			g_data.scan_types_counter = 6;
+		}
+		else {
+			g_data.opt |= OPT_SCAN_TCP;
+			g_data.scan_types_counter = 1;
+		}
+	}*/
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_PACKET)
@@ -419,20 +440,29 @@ int	parse_nmap_args(int ac, char **av)
 	/* Filling scans with ips from files */
 	t_ipset *tmp = g_data.ipset;
 	while (tmp) {
-		add_ip(tmp->string, &g_data.set);
-		if (++g_data.ip_counter > MAX_IPS) {
-			fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
+		if (g_data.nb_tmp_ips + 1 >= MAX_IPS) {
+			fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
 			return 1;
 		}
+		/* printf("Adding IP: g_data.tmp_ips[%d] = %s\n", g_data.nb_tmp_ips, tmp->string); */
+		add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips++], tmp->string);
 		tmp = tmp->next;
 	}
 	/* Filling scans with ips from arguments */
+	char *slash;
 	for (int i = 1; i < ac; i++) {
 		if (!is_arg_an_opt(av, i, optstring, long_options)) {
-			add_ip(av[i], &g_data.set);
-			if (++g_data.ip_counter > MAX_IPS) {
-				fprintf(stderr, "Max ip limit reached (%d)\n", MAX_IPS);
-				return 1;
+			slash = ft_strchr(av[i], '/');
+			if (slash) {
+				if (add_ip_range(av[i], slash, &g_data.set))
+					return 1;
+			}
+			else {
+				if (g_data.nb_tmp_ips + 1 >= MAX_IPS) {
+					fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
+					return 1;
+				}
+				add_tmp_ip(&g_data.tmp_ips[g_data.nb_tmp_ips++], av[i]);
 			}
 		}
 	}
@@ -441,6 +471,5 @@ int	parse_nmap_args(int ac, char **av)
 	if (g_data.opt & OPT_VERBOSE_PACKET)
 		fprintf(stderr, "[*] IP structs filled successfully\n");
 
-	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
 	return 0;
 }

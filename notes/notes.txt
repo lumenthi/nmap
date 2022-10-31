@@ -1,33 +1,35 @@
+###### Features to implement before defence
+
 # Flags d'opti (remove -g ?)
-
-# print date and hours at launch
-"Starting Nmap 7.60 ( https://nmap.org ) at 2022-10-06 10:24 CEST"
-
-#### Opti ####
-Do not identify the services in each thread during runtime but before.
-Going through the lists in every thread is slow. + the locking, and we do it two times:
-when the thread is searching for a scan to do, and when the thread updates a scan it received.
-So maybe use arrays or feed the threads with what scan they must do so they don't need to
-search themselves?
-Receiving in the threads is slow but it is necessary to receive soon enough after sending
-otherwise we may lose the answers
-
-# Do we really need to lock when saving scan results (check this with the future refactor)?
 
 # Remove useless comments before push
 
-# Allow 1024 ports max
+# Put all scantypes by default if none are specified (subject restriction) (sources/parse_option_line.c:397)
 
-# Scans
-All scans are consistant but UDP
+# Must recheck if segfault/leak when thread creation fail
 
-# Do not forget to put all scantypes by default if none are specified (subject restriction)
+# Print down and errors if 0 port were scanned
 
-# must recheck if segfault/leak when thread creation fail
+# Check scan broadcast and gateway without privileges
 
-# remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+# sudo ./ft_nmap 192.168.255/10 -t 250 -v DEBUG -p 1 infinite loop ?
 
-# UDP speed: scanning 1000 ports at once is slow due to icmp limiting but
-scanning multiple hosts is no big deal
+# sudo ./ft_nmap 192.168.255/255 -t 250 -v DEBUG -p 1 segfault
 
-# TODO: Include dynamic timeout in threads
+# Compute exact memory that ips are gonna take
+
+##### IN THE FUTURE, MORE FEATURES TO COME
+
+## NEW FEATURES
+# Parse initial, min and max rtt
+# Version detection
+# OS detection
+# Non root (connect) host discovery
+
+## OPTIMISATION
+# Use the same port structure for all IPs, ft_nmap will use way less memory to perform scans
+# Remove protocol checks in scans when possible (checking if protocol is tcp for a tcp socket is useless)
+
+## OTHER
+# No need to malloc saddr, daddr structs (sources/list.c:22)
+# Print TIMESTAMP in craft packet (sources/craft_packet.c)

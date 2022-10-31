@@ -1,0 +1,5 @@
+# Do one ip -> print -> free
+# -> rework main loop so that multiple hosts can be 
+scanned together, especially when delay is applied
+# Lighten struct ip 
+# Create an array of ips instead of a list

@@ -8,6 +8,117 @@
 #define G 1
 #define B 2
 
+void add_tmp_ip(struct s_tmp_ip *tmp, char *ip_string)
+{
+	tmp->destination = ip_string;
+	/* Default status */
+	tmp->status = READY;
+	if (dconfig(tmp->destination, 0, &tmp->daddr, &tmp->dhostname) != 0)
+		tmp->status = ERROR;
+	if (sconfig(inet_ntoa(tmp->daddr.sin_addr), &tmp->saddr) != 0)
+		tmp->status = ERROR;
+	tmp->srtt = 0;
+	tmp->rttvar = 0;
+	/* Default timeout */
+	tmp->timeout.tv_sec = 1;
+	tmp->timeout.tv_usec = 345678;
+	if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+		tmp->status = ERROR;
+	if (tmp->status == ERROR)
+		g_data.nb_invalid_ips++;
+	else if (!g_data.privilegied)
+		tmp->status = UP;
+	g_data.ip_counter++;
+}
+
+void add_ip(struct s_tmp_ip *ip, t_set *set)
+{
+	struct s_ip *tmp;
+
+	tmp = (struct s_ip *)malloc(sizeof(struct s_ip));
+	if (tmp) {
+		ft_memset(tmp, 0, sizeof(struct s_ip));
+		tmp->destination = ip->destination;
+		tmp->dhostname = ft_strdup(ip->dhostname);
+		tmp->status = UP;
+		/* Prepare addr structs */
+		tmp->saddr = ip->saddr;
+		tmp->daddr = ip->daddr;
+		push_ports(&tmp, set);
+		tmp->srtt = ip->srtt;
+		tmp->rttvar = ip->rttvar;
+		/* Default timeout */
+		tmp->timeout = ip->timeout;
+		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
+			tmp->status = ERROR;
+		push_ip(&g_data.ips, tmp);
+	}
+}
+
+int	add_ip_range(char *destination, char *slash, t_set *set)
+{
+	int maskarg = ft_atoi(slash + 1);
+	if (maskarg > 32) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Assuming /32 (one host)\n",
+		destination);
+		maskarg = 32;
+	}
+	else if (maskarg < 12) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Cannot go under /12"
+		" (~1 million IPs). Assuming /12\n", destination);
+		maskarg = 12;
+	}
+	uint32_t mask = 0;
+	uint32_t nmask;
+	uint32_t nb_hosts;
+	for (int i = 0; i < maskarg; i++)
+		mask |= (1 << (31 - i));
+	mask = htonl(mask);
+	nmask = ~mask;
+	(void)nmask;
+	(void)set;
+	//printf("mask = %u\n", ntohs(mask));
+	//printf("~mask = %u\n", ntohs(nmask));
+	struct in_addr imask;
+	ft_memcpy(&imask, &mask, sizeof(mask));
+	//printf("\nIP mask = %s\n", inet_ntoa(imask));
+	if (maskarg == 32)
+		nb_hosts = 1;
+	else if (maskarg == 31)
+		nb_hosts = 2;
+	else
+		nb_hosts = ft_power(2, 32 - maskarg);
+	
+	//printf("%u hosts\n", nb_hosts);
+	if (g_data.nb_tmp_ips + nb_hosts >= MAX_IPS) {
+		fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
+		return 1;
+	}
+	struct hostent *host;
+	*slash = 0;
+	if (!(host = gethostbyname(destination))) {
+		fprintf(stderr, "\n%s is invalid\n\n", destination);
+		return 1;
+	}
+	*slash = '/';
+	struct in_addr hia, nia;
+	ft_memcpy(&nia, host->h_addr_list[0], host->h_length);
+	//printf("\nStart ip = %s\n", inet_ntoa(nia));
+	//printf("sizeof(tmp) = %ld\n", sizeof(struct s_tmp_ip));
+	nia.s_addr &= mask;
+	hia.s_addr = ntohl(nia.s_addr);
+	for (uint32_t i = 0; i < nb_hosts; i++) {
+		nia.s_addr = htonl(hia.s_addr);
+		add_tmp_ip(&g_data.tmp_ips[i + g_data.nb_tmp_ips], inet_ntoa(nia));
+		//printf("ip = %s\n", inet_ntoa(nia));
+		//printf("%d/%d\n", i, nb_hosts);
+		hia.s_addr++;
+	}
+	g_data.nb_tmp_ips += nb_hosts;
+	//printf("\nEnd ip = %s\n", inet_ntoa(nia));
+	return 0;
+}
+
 void	print_progress()
 {
 	pthread_mutex_lock(&g_data.print_lock);
@@ -144,7 +255,7 @@ static void	free_ports(struct s_port *ports)
 
 static int push_scan(struct s_port *scanlist, struct s_scan *new)
 {
-	struct s_scan **tmp;
+	struct s_scan **tmp = NULL;
 
 	switch (new->scantype) {
 		case OPT_SCAN_SYN:
@@ -178,10 +289,28 @@ static int push_scan(struct s_port *scanlist, struct s_scan *new)
 
 int assign_port(uint16_t min, uint16_t max)
 {
+	static int start = -1;
 	static int port = 0;
 
+	if (start == -1) {
+		start = ft_random(min, max);
+		/* Verbose print */
+		if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG ||
+			g_data.opt & OPT_VERBOSE_PACKET)
+		{
+			fprintf(stderr, "[*] Starting scans from source port: %d\n",
+				start);
+		}
+	}
+
+	if (start == -1) {
+		fprintf(stderr, "Port randomisation failed, setting start port to %d\n",
+			min);
+		start = min;
+	}
+
 	if (port < min || port >= max)
-		port = min;
+		port = start;
 	else
 		port++;
 
@@ -198,16 +327,14 @@ static struct s_scan *create_scan(struct s_ip *ip, uint16_t port, int scantype)
 		tmp->status = READY;
 		tmp->dport = port;
 		tmp->scantype = scantype;
-		ft_memcpy(&tmp->saddr, ip->saddr, sizeof(struct sockaddr_in));
+		ft_memcpy(&tmp->saddr, &ip->saddr, sizeof(struct sockaddr_in));
 		/* Ephemeral Port Range, /proc/sys/net/ipv4/ip_local_port_range */
 		if (scantype != OPT_SCAN_TCP) {
 			tmp->sport = assign_port(g_data.port_min, g_data.port_max);
 			tmp->saddr.sin_port = htons(tmp->sport);
 		}
 
-		ft_memcpy(&tmp->daddr, ip->daddr, sizeof(struct sockaddr_in));
 		tmp->dhostname = ip->dhostname;
-		tmp->daddr.sin_port = htons(tmp->dport);
 
 		if (pthread_mutex_init(&tmp->lock, NULL) != 0)
 			tmp->status = ERROR;
@@ -293,6 +420,54 @@ void	push_ip(struct s_ip **head, struct s_ip *new)
 	}
 }
 
+void	print_ip_list(struct s_ip *ips)
+{
+	struct s_ip *tmp = ips;
+	while (tmp) {
+		printf("IP: %s\n", inet_ntoa(tmp->daddr.sin_addr));
+		tmp = tmp->next;
+	}
+}
+
+void	ft_lstpopfront(struct s_ip **alst)
+{
+	struct s_ip	*new;
+
+	if (!alst)
+		return ;
+	new = (*alst)->next;
+	if ((*alst)->dhostname)
+		free((*alst)->dhostname);
+	free_ports((*alst)->ports);
+	free(*alst);
+	*alst = new;
+}
+
+void	remove_ip(struct s_ip **ips, struct s_ip *ip)
+{
+	struct s_ip	*prec;
+	struct s_ip	*tmp;
+
+	tmp = *ips;
+	prec = NULL;
+	while (tmp)
+	{
+		if (tmp == ip)
+		{
+			ft_lstpopfront(&tmp);
+			if (prec)
+				prec->next = tmp;
+			else
+				*ips = tmp;
+		}
+		else
+		{
+			prec = tmp;
+			tmp = tmp->next;
+		}
+	}
+}
+
 void	free_ips(struct s_ip **ip)
 {
 	struct s_ip *current = *ip;
@@ -300,15 +475,21 @@ void	free_ips(struct s_ip **ip)
 
 	while (current != NULL) {
 		next = current->next;
-		if (current->saddr)
-			free(current->saddr);
-		if (current->daddr)
-			free(current->daddr);
 		if (current->dhostname)
 			free(current->dhostname);
 		free_ports(current->ports);
 		free(current);
 		current = next;
 	}
+	*ip = NULL;
+}
+
+void	free_tmp_ips(struct s_tmp_ip **ip)
+{
+	if (!ip || !(*ip))
+		return ;
+	for (uint32_t i = 0; i < g_data.nb_tmp_ips; i++)
+		free(g_data.tmp_ips[i].dhostname);
+	free(*ip);
 	*ip = NULL;
 }

@@ -13,29 +13,30 @@ static void erase_progress_bar()
 	}
 }
 
-static int run_scan(struct s_scan *scan, struct s_port *ports)
+static int run_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
 	switch (scan->scantype) {
 		case OPT_SCAN_SYN:
-			syn_scan(scan, ports);
+			syn_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_TCP:
-			tcp_scan(scan);
+			tcp_scan(daddr, scan, timeout);
 			break;
 		case OPT_SCAN_FIN:
-			fin_scan(scan, ports);
+			fin_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_NULL:
-			null_scan(scan, ports);
+			null_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_ACK:
-			ack_scan(scan, ports);
+			ack_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_XMAS:
-			xmas_scan(scan, ports);
+			xmas_scan(daddr, scan, ports, timeout);
 			break;
 		case OPT_SCAN_UDP:
-			udp_scan(scan, ports);
+			udp_scan(daddr, scan, ports, timeout);
 			break;
 		default:
 			fprintf(stderr,"Unknown scan type\n");
@@ -46,8 +47,16 @@ static int run_scan(struct s_scan *scan, struct s_port *ports)
 	return 0;
 }
 
-static void start_scan(struct s_scan *scan, struct s_port *ports)
+static void start_scan(struct sockaddr_in daddr,
+struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 {
+	static uint64_t	last_probe = 0;
+
+	if (g_data.opt & OPT_DELAY) {
+		uint64_t currtime = get_time();
+		while (currtime - last_probe < g_data.delay)
+			currtime = get_time();
+	}
 	if (scan->sport == g_data.port_max)
 		while (g_data.ports[scan->sport].status == IN_USE);
 	LOCK(scan);
@@ -55,7 +64,9 @@ static void start_scan(struct s_scan *scan, struct s_port *ports)
 		scan->status = SCANNING;
 		g_data.ports[scan->sport].status = IN_USE;
 		UNLOCK(scan);
-		run_scan(scan, ports);
+		if (g_data.opt & OPT_DELAY)
+			last_probe = get_time();
+		run_scan(daddr, scan, ports, timeout);
 		g_data.ports[scan->sport].status = FREE;
 	}
 	else
@@ -73,20 +84,22 @@ static int launch_scan(void *rip)
 			i = 0;
 			while (i < USHRT_MAX+1) {
 				port = ip->ports[i];
+				struct sockaddr_in daddr = ip->daddr;
+				daddr.sin_port = htons(i);
 				if (port.syn_scan)
-					start_scan(port.syn_scan, ip->ports);
+					start_scan(daddr, port.syn_scan, ip->ports, ip->timeout);
 				if (port.null_scan)
-					start_scan(port.null_scan, ip->ports);
+					start_scan(daddr, port.null_scan, ip->ports, ip->timeout);
 				if (port.fin_scan)
-					start_scan(port.fin_scan, ip->ports);
+					start_scan(daddr, port.fin_scan, ip->ports, ip->timeout);
 				if (port.xmas_scan)
-					start_scan(port.xmas_scan, ip->ports);
+					start_scan(daddr, port.xmas_scan, ip->ports, ip->timeout);
 				if (port.ack_scan)
-					start_scan(port.ack_scan, ip->ports);
+					start_scan(daddr, port.ack_scan, ip->ports, ip->timeout);
 				if (port.udp_scan)
-					start_scan(port.udp_scan, ip->ports);
+					start_scan(daddr, port.udp_scan, ip->ports, ip->timeout);
 				if (port.tcp_scan)
-					start_scan(port.tcp_scan, ip->ports);
+					start_scan(daddr, port.tcp_scan, ip->ports, ip->timeout);
 				i++;
 			}
 		}
@@ -99,6 +112,8 @@ static int launch_threads()
 {
 	void *retval;
 
+	if (g_data.threads)
+		free(g_data.threads);
 	g_data.threads = malloc(sizeof(pthread_t) * g_data.nb_threads);
 	if (!g_data.threads)
 		return -1;
@@ -120,6 +135,40 @@ static int launch_threads()
 	return 0;
 }
 
+static void	print_start(void)
+{
+	char *scans[] = {"SYN", "NULL", "FIN", "XMAS", "ACK", "UDP", "TCP", NULL};
+
+	printf("\n................. Config ..................\n");
+
+	if (g_data.vip_counter == 1) {
+		printf("Target IP : %s\n",
+		g_data.ips->dhostname ? g_data.ips->dhostname : g_data.ips->destination);
+	}
+	else {
+		printf("Scanning %d targets\n", g_data.ip_counter);
+	}
+
+	int nb_ports = g_data.vip_counter > 0 ? g_data.port_counter / g_data.vip_counter : 0;
+	printf("Number of ports to scan : %d\n", nb_ports);
+
+	printf("Scan types to be performed : ");
+	int i = 0;
+	char *pipe = "";
+	while (scans[i])
+	{
+		if (g_data.opt & (1UL << (i + 2))) {
+			printf("%s%s", pipe, scans[i]);
+			pipe = "|";
+		}
+		i++;
+	}
+	printf("\n");
+	printf("Total scans to performed : %d\n", g_data.total_scan_counter);
+	printf("Number of threads : %hhu\n", g_data.nb_threads);
+	printf("...........................................\n\n");
+}
+
 int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 {
 	start->tv_sec = 0;
@@ -127,7 +176,62 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 	end->tv_sec = 0;
 	end->tv_usec = 0;
 
-	host_discovery();
+	/* host discovery */
+	if (!(g_data.opt & OPT_NO_DISCOVERY) && g_data.privilegied == 1) {
+		host_discovery();
+	}
+	else
+		g_data.vip_counter = g_data.ip_counter - g_data.nb_invalid_ips;
+	
+	if (g_data.vip_counter > g_data.max_ips) {
+		fprintf(stderr, "Too much ips: %d (maximum %ld with your currently"
+			" available memory)\n", g_data.vip_counter, g_data.max_ips);
+		return 1;
+	}
+
+	if (g_data.nb_invalid_ips > 0) {
+		g_data.invalid_ips = malloc(sizeof(char *) * (g_data.nb_invalid_ips+1));
+		if (!g_data.invalid_ips) {
+			perror("invalid ips:");
+			return 1;
+		}
+		ft_bzero(g_data.invalid_ips, sizeof(char *) * (g_data.nb_invalid_ips+1));
+	}
+	if (g_data.nb_down_ips > 0) {
+		g_data.down_ips = malloc(sizeof(struct in_addr) * (g_data.nb_down_ips+1));
+		if (!g_data.down_ips) {
+			perror("down ips:");
+			return 1;
+		}
+		ft_bzero(g_data.down_ips, sizeof(struct in_addr) * (g_data.nb_down_ips+1));
+	}
+
+	/* Create real IPS */
+	int i = 0, j = 0;
+	unsigned int k = 0;
+	struct s_tmp_ip *tmp = g_data.tmp_ips;
+	while (k < g_data.nb_tmp_ips) {
+		if (g_data.tmp_ips[k].status == UP ||
+			(g_data.tmp_ips[k].status == READY && g_data.opt & OPT_NO_DISCOVERY))
+			add_ip(&g_data.tmp_ips[k], &g_data.set);
+		else if (tmp->status == DOWN) {
+			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
+			i++;
+		}
+		else {
+			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
+			j++;
+		}
+		k++;
+	}
+	//print_ip_list(g_data.ips);
+	free_tmp_ips(&g_data.tmp_ips);
+
+	g_data.total_scan_counter = g_data.port_counter * g_data.scan_types_counter;
+
+	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG
+		|| g_data.opt & OPT_VERBOSE_PACKET)
+		print_start();
 
 	/* Verbose print */
 	if (g_data.opt & OPT_VERBOSE_INFO || g_data.opt & OPT_VERBOSE_DEBUG)

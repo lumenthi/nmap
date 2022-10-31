@@ -35,6 +35,10 @@
 #define SERVICES_FILENAME "services"
 #define DB_SERVICES DB_PATH SERVICES_FILENAME
 
+/* PAYLOADS */
+#define PAYLOADS_FILENAME "payloads"
+#define DB_PAYLOADS DB_PATH PAYLOADS_FILENAME
+
 /* ASCII ART */
 #define ASCII_FILENAME "art.ascii"
 #define DB_ASCII DB_PATH ASCII_FILENAME
@@ -61,8 +65,8 @@
 #define UPDATE_TARGET 2
 #define ALREADY_UPDATED 3
 
-/* Max ips to scan in one command */
-#define MAX_IPS 15
+/* Max ips to discover in one command */
+#define MAX_IPS 1048574
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768
@@ -73,7 +77,6 @@
 
 struct s_scan {
 	struct sockaddr_in	saddr; /* sockaddr_in of source */
-	struct sockaddr_in	daddr; /* sockaddr_in of dest */
 	char				*dhostname; /* found destination hostname */
 	int					scantype; /* Type of scan */
 	int					status; /* Current status [READY/SCANNING/OPEN/CLOSED/FILTERED] */
@@ -94,6 +97,10 @@ struct port {
 	char	*udp_name;
 	char	*udp_desc;
 
+	/* UDP payload */
+	char	*payload;
+	size_t	payload_len;
+
 	/* Is this port currently used for sending */
 	int		status;
 };
@@ -112,16 +119,30 @@ struct s_port {
 };
 
 struct s_ip {
-	struct sockaddr_in	*saddr; /* sockaddr_in of source */
-	struct sockaddr_in	*daddr; /* sockaddr_in of dest */
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
 	int64_t				srtt;
 	int64_t				rttvar;
-	uint64_t			timeout;
+	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
 	char				*dhostname; /* found ip hostname */
 	char				*destination; /* user input */
 	int					status; /* [UP/DOWN/ERROR] */
 	struct s_port		ports[USHRT_MAX+1]; /* All ports for an IP */
+	pthread_mutex_t		lock; /* Mutex */
+
 	struct s_ip			*next; /* next ip */
+};
+
+struct s_tmp_ip {
+	struct sockaddr_in	saddr; /* sockaddr_in of source */
+	struct sockaddr_in	daddr; /* sockaddr_in of dest */
+	int64_t				srtt;
+	int64_t				rttvar;
+	struct timeval		timeout; /* Time to wait until timeout (determined by host discovery) */
+	char				*destination;
+	char				*dhostname;
+	int					status;
+	pthread_mutex_t		lock; /* Mutex */
 };
 
 typedef struct	s_data {
@@ -132,6 +153,14 @@ typedef struct	s_data {
 
 	/* Scan list */
 	struct s_ip			*ips;
+
+	/* Pseudo ips */
+	struct s_tmp_ip		*tmp_ips;
+	unsigned int		nb_tmp_ips;
+	struct in_addr		*down_ips;
+	int					nb_down_ips;
+	char				**invalid_ips;
+	int					nb_invalid_ips;
 
 	/* Threads related */
 	pthread_t			*threads;
@@ -155,6 +184,9 @@ typedef struct	s_data {
 	struct timeval		max_rtt;
 	struct timeval		min_rtt;
 	struct timeval		initial_rtt;
+	uint64_t			delay;
+
+	long				max_ips;
 
 	/* Counters */
 	int					ip_counter;
@@ -205,20 +237,26 @@ void	print_time(struct timeval start_time, struct timeval end_time,
 void	print_scans(struct s_ip *ips);
 
 /* syn_scan.c */
-int		syn_scan(struct s_scan *to_scan, struct s_port *ports);
+int		syn_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* udp_scan.c */
-int		udp_scan(struct s_scan *to_scan, struct s_port *ports);
+int		udp_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* fin_scan.c */
-int		fin_scan(struct s_scan *to_scan, struct s_port *ports);
+int		fin_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* null_scan.c */
-int		null_scan(struct s_scan *to_scan, struct s_port *ports);
+int		null_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* xmas_scan.c */
-int		xmas_scan(struct s_scan *to_scan, struct s_port *ports);
+int		xmas_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* xmas_scan.c */
-int		ack_scan(struct s_scan *to_scan, struct s_port *ports);
-
+int		ack_scan(struct sockaddr_in daddr, 
+	struct s_scan *to_scan, struct s_port *ports, struct timeval timeout);
 /* tcp_scan.c */
-int		tcp_scan(struct s_scan *to_scan);
+int		tcp_scan(struct sockaddr_in daddr,
+	struct s_scan *to_scan, struct timeval timeout);
 
 /* addr_config.c */
 int dconfig(char *destination, uint16_t port, struct sockaddr_in *daddr,
@@ -256,6 +294,10 @@ void	craft_icmp_packet(void *packet, uint8_t type, uint8_t code,
 int		get_services(void);
 void	free_services(void);
 
+/* payload.c */
+int		get_payloads(void);
+void	free_payloads(void);
+
 /* list.c */
 void	print_progress(void);
 int update_scans(struct s_scan *scan, struct s_port *ports, int status,
@@ -263,13 +305,18 @@ int update_scans(struct s_scan *scan, struct s_port *ports, int status,
 void	push_ip(struct s_ip **head, struct s_ip *new);
 void	push_ports(struct s_ip **input, t_set *set);
 void	free_ips(struct s_ip **ip);
+void	free_tmp_ips(struct s_tmp_ip **ip);
 int		assign_port(uint16_t min, uint16_t max);
+void	add_tmp_ip(struct s_tmp_ip *tmp, char *ip_string);
+int		add_ip_range(char *destination, char *slash, t_set *set);
+void	add_ip(struct s_tmp_ip *ip, t_set *set);
+void	print_ip_list(struct s_ip *ips);
+void	remove_ip(struct s_ip **ips, struct s_ip *ip);
 
 /* timedout.c */
-int timed_out(struct timeval start, struct timeval timeout, int status);
+int		timed_out(struct timeval start, struct timeval timeout, int status);
 
 /* host_discovery.c */
-int	host_discovery(void);
-void update_timeout(struct s_ip *ip, uint64_t start, uint64_t end);
+int		host_discovery(void);
 
 #endif

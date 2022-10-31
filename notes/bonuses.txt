@@ -1,18 +1,32 @@
-# Bonus scans: TCP connect scan.
-# Host discovery (https://nmap.org/book/man-host-discovery.html)
-# Dynamic timeout (https://nmap.org/book/port-scanning-algorithms.html#idm45323736699888)
+# Bonus scans: Non root TCP connect scan.
+# MULTITHREADED!! Host discovery (https://nmap.org/book/man-host-discovery.html)
+# DYNAMIC TIMEOUT !
 # Progress bar
 # Verbose output with multiple levels
 # Insane help menu
-# Able to launch without privileges
 # Able to scan more than 1024 ports at once
 # Reverse DNS
 # Advanced service resolution + description
 # Server
+# Implement scan delay
+# Parsing of IP ranges: 1.1.1.1/24. Allow us to scan a whole network
+# Ressources check (Determining the max number of ips we can scan in one run)
 
 Ideas
-# Implement scan delay
 # Parse initial, min and max rtt
-# Parse ranges of IP? 1.1.1.1/24. Host discovery is interesting here?
 # Version detection?
 # OS detection?
+
+##### Allowed functions
+
+◦ fcntl: Non root TCP scan
+◦ floor: Progress bar
+◦ fprintf: printf family
+◦ getnameinfo: reverse DNS lookup
+◦ getsockopt: Non root TCP scan
+◦ localtime: Overall display with progress bar
+◦ ntohl: Will be added in the future (error from the subject)
+◦ pthread_self: Multiple level verbose bonus
+◦ select: Non root TCP scan
+◦ sysconf: Ressources check bonus
+◦ time: Overall display with progress bar
