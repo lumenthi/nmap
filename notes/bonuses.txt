@@ -16,3 +16,17 @@ Ideas
 # Parse initial, min and max rtt
 # Version detection?
 # OS detection?
+
+##### Allowed functions
+
+◦ fcntl: Non root TCP scan
+◦ floor: Progress bar
+◦ fprintf: printf family
+◦ getnameinfo: reverse DNS lookup
+◦ getsockopt: Non root TCP scan
+◦ localtime: Overall display with progress bar
+◦ ntohl: Will be added in the future (error from the subject)
+◦ pthread_self: Multiple level verbose bonus
+◦ select: Non root TCP scan
+◦ sysconf: Ressources check bonus
+◦ time: Overall display with progress bar

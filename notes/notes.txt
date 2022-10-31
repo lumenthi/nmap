@@ -8,8 +8,6 @@
 
 # Must recheck if segfault/leak when thread creation fail
 
-# Check allowed functions
-
 # Print down and errors if 0 port were scanned
 
 # Check scan broadcast and gateway without privileges
