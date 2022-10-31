@@ -37,7 +37,7 @@ size_t	asciilen(char *tmp, char escapes[])
 			// Hexa
 			if (*(tmp + 1) == 'x') {
 				if (!(*(tmp + 2))) {
-					printf("ERROR unfinished hexa\n");
+					/*printf("ERROR unfinished hexa\n");*/
 					return 0;
 				}
 				tmp += 3;
@@ -48,8 +48,8 @@ size_t	asciilen(char *tmp, char escapes[])
 			else {
 				char c = escapes[(int)*(tmp + 1)];
 				if (c == '?') {
-					printf("ERROR unknown escape sequence \\%c\n",
-							*(tmp + 1));
+					/*printf("ERROR unknown escape sequence \\%c\n",
+							*(tmp + 1));*/
 					return 0;
 				}
 				tmp += 2;
@@ -79,7 +79,7 @@ static int assign_payload(char *port_list, char *payload, char escapes[], struct
 				if (ports[port].payload_len > 0)
 					ports[port].payload = ft_strnew(ports[port].payload_len);
 				if (!ports[port].payload) {
-					fprintf(stderr, "Strnew fail!\n");
+					/*fprintf(stderr, "Strnew fail!\n");*/
 					free_split(split);
 					return 1;
 				}
@@ -90,7 +90,7 @@ static int assign_payload(char *port_list, char *payload, char escapes[], struct
 						// Hexa
 						if (*(tmp + 1) == 'x') {
 							if (!(*(tmp + 2))) {
-								fprintf(stderr, "ERROR unfinished hexa\n");
+								/*fprintf(stderr, "ERROR unfinished hexa\n");*/
 							}
 							ports[port].payload[j] = ft_atoi_base(tmp + 2,
 								HEX_BASE_STR);
@@ -102,8 +102,8 @@ static int assign_payload(char *port_list, char *payload, char escapes[], struct
 						else {
 							char c = escapes[(int)*(tmp + 1)];
 							if (c == '?') {
-								fprintf(stderr,
-								"ERROR unknown escape sequence \\%c\n", *(tmp + 1));
+								/*fprintf(stderr,
+								"ERROR unknown escape sequence \\%c\n", *(tmp + 1));*/
 							}
 							ports[port].payload[j] = c;
 							tmp += 2;
