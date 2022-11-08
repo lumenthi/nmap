@@ -66,7 +66,8 @@
 #define ALREADY_UPDATED 3
 
 /* Max ips to discover in one command */
-#define MAX_IPS 1048574
+#define MAX_FINAL_IPS 256
+#define MAX_IPS 65534
 
 /* Default ephemeral ports */
 #define DEFAULT_EPHEMERAL_MIN 32768

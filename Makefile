@@ -14,7 +14,7 @@ NAME = ft_nmap
 SERVER_NAME = ft_server
 
 CC = gcc
-FLAGS = -Wall -Werror -Wextra -g
+FLAGS = -Wall -Werror -Wextra -O3 -flto
 LDFLAGS = -lpthread -lm
 
 GREEN = '\033[4;32m'

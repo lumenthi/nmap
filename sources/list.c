@@ -63,10 +63,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 		destination);
 		maskarg = 32;
 	}
-	else if (maskarg < 12) {
-		fprintf(stderr, "Illegal netmask in \"%s\". Cannot go under /12"
-		" (~1 million IPs). Assuming /12\n", destination);
-		maskarg = 12;
+	else if (maskarg < 16) {
+		fprintf(stderr, "Illegal netmask in \"%s\". Cannot go under /16"
+		" (~1 million IPs). Assuming /16\n", destination);
+		maskarg = 16;
 	}
 	uint32_t mask = 0;
 	uint32_t nmask;
@@ -87,10 +87,10 @@ int	add_ip_range(char *destination, char *slash, t_set *set)
 	else if (maskarg == 31)
 		nb_hosts = 2;
 	else
-		nb_hosts = ft_power(2, 32 - maskarg);
+		nb_hosts = ft_power(2, 32 - maskarg) - 2;
 	
 	//printf("%u hosts\n", nb_hosts);
-	if (g_data.nb_tmp_ips + nb_hosts >= MAX_IPS) {
+	if (g_data.nb_tmp_ips + nb_hosts > MAX_IPS) {
 		fprintf(stderr, "Too many IPs to test (> %d)\n", MAX_IPS);
 		return 1;
 	}

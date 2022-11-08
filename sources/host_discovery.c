@@ -70,7 +70,6 @@ static int send_tcp(int tcpsockfd, struct s_tmp_ip *ip,
 		if (tcp->dest == saddr->sin_port
 			&& iphdr->daddr == ip->saddr.sin_addr.s_addr
 			&& (tcp->source == ntohs(443) || tcp->source == ntohs(80))) {
-			/* TODO: if there was a given initial timeout, don't do this */
 			if (g_data.opt & OPT_VERBOSE_DEBUG || g_data.opt & OPT_VERBOSE_PACKET)
 				fprintf(stderr, "[***] Received TCP from port %d\n",
 				ntohs(tcp->source));
