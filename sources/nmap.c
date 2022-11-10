@@ -217,7 +217,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
 			i++;
 		}
-		else {
+		else if (tmp->status == ERROR) {
 			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
 			j++;
 		}
