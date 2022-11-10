@@ -30,6 +30,9 @@
 #define RST 4
 
 int run = 1;
+int sockfd;
+char *sport;
+uint8_t mode;
 
 struct			tcp_packet {
 	struct iphdr		ip;
@@ -48,10 +51,73 @@ void	print_udp_header(struct udphdr *header);
 unsigned short tcp_checksum(struct iphdr *ip, struct tcphdr *tcp);
 unsigned short checksum(const char *buf, unsigned int size);
 
+static void iptable(char *sport, uint8_t filter, uint8_t mode)
+{
+	(void)filter;
+	/* OPEN */
+	char *aiptables_enable[] = {"/sbin/iptables", "-A", "OUTPUT", "-p", "tcp",
+		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
+		"DROP", NULL};
+	char *aiptables_disable[] = {"/sbin/iptables", "-D", "OUTPUT", "-p", "tcp",
+		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
+		"DROP", NULL};
+
+	/* RST */
+	char *aiptables_cenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
+		NULL};
+	char *aiptables_cdisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
+		NULL};
+
+	/* UNREACHABLE */
+	char *aiptables_uenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
+		NULL};
+	char *aiptables_udisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
+		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
+		NULL};
+
+	char **selected_mode;
+
+	int status;
+	pid_t pid = fork();
+
+	if (pid == -1)
+		printf("[!] Failed to execute iptable commande\n");
+	else if (pid > 0)
+		waitpid(pid, &status, 0);
+	else {
+		if (mode == ENABLE) {
+			selected_mode = aiptables_enable;
+			if (filter == RST)
+				selected_mode = aiptables_cenable;
+			else if (filter == UNREACHABLE)
+				selected_mode = aiptables_uenable;
+		}
+		else if (mode == DISABLE) {
+			selected_mode = aiptables_disable;
+			if (filter == RST)
+				selected_mode = aiptables_cdisable;
+			else if (filter == UNREACHABLE)
+				selected_mode = aiptables_udisable;
+		}
+
+		if (execve("/sbin/iptables", selected_mode, NULL) == -1)
+			printf("[!] Failed to modify IPTABLE rule, run as sudo\n");
+		_exit(EXIT_FAILURE);   // exec never returns
+	}
+}
+
 static void intHandler(int code)
 {
 	(void)code;
 	run = 0;
+
+	printf("\n[*] Stopping server...\n");
+	iptable(sport, mode, DISABLE);
+	close(sockfd);
+	exit(0);
 }
 
 static void update_cursor(int sockfd, unsigned int len, int sport,
@@ -188,70 +254,11 @@ static void print_usage(char *path)
 	"1: OPEN\n2: NO RESPONSE\n3: UNREACHABLE\n4: RST\n", path);
 }
 
-static void iptable(char *sport, uint8_t filter, uint8_t mode)
-{
-	(void)filter;
-	/* OPEN */
-	char *aiptables_enable[] = {"/sbin/iptables", "-A", "OUTPUT", "-p", "tcp",
-		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
-		"DROP", NULL};
-	char *aiptables_disable[] = {"/sbin/iptables", "-D", "OUTPUT", "-p", "tcp",
-		"--source-port", sport, "--tcp-flags", "RST", "RST", "-j",
-		"DROP", NULL};
-
-	/* RST */
-	char *aiptables_cenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
-		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
-		NULL};
-	char *aiptables_cdisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
-		"--dport", sport, "-j", "REJECT", "--reject-with", "tcp-reset",
-		NULL};
-
-	/* UNREACHABLE */
-	char *aiptables_uenable[] = {"/sbin/iptables", "-A", "INPUT", "-p", "tcp",
-		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
-		NULL};
-	char *aiptables_udisable[] = {"/sbin/iptables", "-D", "INPUT", "-p", "tcp",
-		"--dport", sport, "-j", "REJECT", "--reject-with", "icmp-host-unreachable",
-		NULL};
-
-	char **selected_mode;
-
-	int status;
-	pid_t pid = fork();
-
-	if (pid == -1)
-		printf("[!] Failed to execute iptable commande\n");
-	else if (pid > 0)
-		waitpid(pid, &status, 0);
-	else {
-		if (mode == ENABLE) {
-			selected_mode = aiptables_enable;
-			if (filter == RST)
-				selected_mode = aiptables_cenable;
-			else if (filter == UNREACHABLE)
-				selected_mode = aiptables_uenable;
-		}
-		else if (mode == DISABLE) {
-			selected_mode = aiptables_disable;
-			if (filter == RST)
-				selected_mode = aiptables_cdisable;
-			else if (filter == UNREACHABLE)
-				selected_mode = aiptables_udisable;
-		}
-
-		if (execve("/sbin/iptables", selected_mode, NULL) == -1)
-			printf("[!] Failed to modify IPTABLE rule, run as sudo\n");
-		_exit(EXIT_FAILURE);   // exec never returns
-	}
-}
-
 /* sport: string port */
-static void server(char *path, char *sport, uint16_t port, uint8_t mode)
+static void server(char *path, uint16_t port)
 {
 	int len = 1024;
 	char buffer[len];
-	int sockfd;
 	int one = 1;
 	struct sockaddr_in servaddr;
 	struct tcp_packet *packet;
@@ -299,16 +306,15 @@ static void server(char *path, char *sport, uint16_t port, uint8_t mode)
 				server_response(sockfd, mode, (void*)packet, port);
 		}
 	}
-
-	printf("\n[*] Stopping server...\n");
-	iptable(sport, mode, DISABLE);
-	close(sockfd);
 }
 
 int main(int argc, char **argv)
 {
-	if (argc > 2)
-		server(argv[0], argv[1], atoi(argv[1]), atoi(argv[2]));
+	if (argc > 2) {
+		sport = argv[1];
+		mode = atoi(argv[2]);
+		server(argv[0], atoi(argv[1]));
+	}
 	else
 		print_usage(argv[0]);
 }

@@ -57,10 +57,8 @@ struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 		while (currtime - last_probe < g_data.delay)
 			currtime = get_time();
 	}
-	if (scan->sport == g_data.port_max)
-		while (g_data.ports[scan->sport].status == IN_USE);
 	LOCK(scan);
-	if (scan->status == READY) {
+	if (scan->status == READY && g_data.ports[scan->sport].status != IN_USE) {
 		scan->status = SCANNING;
 		g_data.ports[scan->sport].status = IN_USE;
 		UNLOCK(scan);
