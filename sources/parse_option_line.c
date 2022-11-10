@@ -415,7 +415,6 @@ int	parse_nmap_args(int ac, char **av)
 		g_data.opt |= g_data.privilegied ? OPT_SCAN_SYN : OPT_SCAN_TCP;
 		g_data.scan_types_counter = 1;
 	}
-	/* TODO: Use this for defense */
 	/* Default SCAN */
 	/* if (!g_data.scan_types_counter) {
 		if (g_data.privilegied) {

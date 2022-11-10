@@ -57,10 +57,8 @@ struct s_scan *scan, struct s_port *ports, struct timeval timeout)
 		while (currtime - last_probe < g_data.delay)
 			currtime = get_time();
 	}
-	if (scan->sport == g_data.port_max)
-		while (g_data.ports[scan->sport].status == IN_USE);
 	LOCK(scan);
-	if (scan->status == READY) {
+	if (scan->status == READY && g_data.ports[scan->sport].status != IN_USE) {
 		scan->status = SCANNING;
 		g_data.ports[scan->sport].status = IN_USE;
 		UNLOCK(scan);
@@ -219,7 +217,7 @@ int ft_nmap(char *path, struct timeval *start, struct timeval *end)
 			g_data.down_ips[i] = g_data.tmp_ips[k].daddr.sin_addr;
 			i++;
 		}
-		else {
+		else if (tmp->status == ERROR) {
 			g_data.invalid_ips[j] = g_data.tmp_ips[k].destination;
 			j++;
 		}

@@ -85,6 +85,8 @@ static void print_content(struct s_ip *ip, struct s_scan *scan,
 	char *service = "unknown";
 	char *service_desc = NULL;
 
+	(void)ip;
+
 	char *scans[] = {"syn", "null", "fin", "xmas",
 		"ack", "udp", "tcp", NULL};
 
@@ -100,11 +102,11 @@ static void print_content(struct s_ip *ip, struct s_scan *scan,
 	}
 	else {
 		if (scan->scantype == OPT_SCAN_UDP) {
-			if ((s_service = getservbyport(ip->daddr.sin_port, "udp")))
+			if ((s_service = getservbyport(ntohs(scan->dport), "udp")))
 				service = s_service->s_name;
 		}
 		else {
-			if ((s_service = getservbyport(ip->daddr.sin_port, "tcp")))
+			if ((s_service = getservbyport(ntohs(scan->dport), "tcp")))
 				service = s_service->s_name;
 		}
 	}
@@ -138,7 +140,7 @@ static void print_scan(struct s_ip *ip, struct s_scan *scan, struct s_pinfo *inf
 {
 	if (scan->status != ERROR) {
 		if (port.final_status == OPEN
-			|| g_data.port_counter / g_data.ip_counter <= 25
+			|| g_data.port_counter / g_data.vip_counter <= 25
 			|| (cstatus[FILTERED]+cstatus[OPEN_FILTERED]+cstatus[UNFILTERED]
 				<= 25 && (port.final_status == FILTERED
 					   || port.final_status == OPEN_FILTERED
