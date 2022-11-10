@@ -1,15 +1,14 @@
 # ft_nmap [![Generic badge](https://img.shields.io/badge/version-1.0.0-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/distro-linux-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/language-c-orange.svg)](https://shields.io/)
 ![dg](docs/main.gif)  
-This is our ft_nmap program from 42, a low-level networking project
-The goal is to re-code a part of the [nmap](https://nmap.org/) utility
+This is our ft_nmap program from 42 (https://42.fr/) a low-level networking project, the goal is to re-code a part of the [nmap](https://nmap.org/) utility with some extra features.
 ## Summary
 * [Introduction](#introduction)
-* [Demo](#Demo)
+* [Demo](#demo)
 * [Constraints](#constraints)
 * [Features](#features)
-* [Scans](#Scans)
+* [Scans](#scans)
 * [Installation](#installation)
-* [Usage](#Usage)
+* [Usage](#usage)
 * [Examples](#examples)
 * [Compatibility](#compatibility)
 * [Authors](#authors)
