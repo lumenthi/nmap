@@ -1,4 +1,4 @@
-# ft_nmap [![Generic badge](https://img.shields.io/badge/version-1.0.0-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/distro-linux-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/language-c-orange.svg)](https://shields.io/)
+# ft_nmap [![Generic badge](https://img.shields.io/badge/version-1.0.0-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/distro-linux-green.svg)](https://shields.io/) [![Generic badge](https://img.shields.io/badge/language-c-orange.svg)](https://shields.io/) [![lnicosia's 42 ft_nmap Score](https://badge42.vercel.app/api/v2/clatxjb5h00200gl7einwlrff/project/2761407)](https://github.com/JaeSeoKim/badge42)
 ![dg](docs/main.gif)  
 This is our ft_nmap program from 42 (https://42.fr/) a low-level networking project, the goal is to re-code a part of the [nmap](https://nmap.org/) utility with some extra features.
 ## Summary
